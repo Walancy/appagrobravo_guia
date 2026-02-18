@@ -1,0 +1,27 @@
+import 'package:dartz/dartz.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:agrobravo/features/auth/domain/entities/user_entity.dart';
+
+abstract class AuthRepository {
+  Future<Either<Exception, UserEntity>> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
+
+  Future<Either<Exception, UserEntity>> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String name,
+    required String userType, // 'USER_APP' or 'GUIA'
+  });
+
+  Future<void> signOut();
+
+  Future<Option<UserEntity>> getCurrentUser();
+
+  Future<Either<Exception, void>> resetPassword(String email);
+  Future<Either<Exception, void>> updatePassword(String newPassword);
+  Future<Either<Exception, void>> signInWithGoogle();
+  Future<Either<Exception, void>> signInWithApple();
+  Stream<AuthChangeEvent> get onAuthStateChange;
+}

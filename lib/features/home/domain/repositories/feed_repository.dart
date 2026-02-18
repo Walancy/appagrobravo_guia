@@ -1,0 +1,39 @@
+import 'package:dartz/dartz.dart';
+import 'package:agrobravo/features/home/domain/entities/post_entity.dart';
+import 'package:agrobravo/features/home/domain/entities/comment_entity.dart';
+import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
+
+abstract class FeedRepository {
+  Future<Either<Exception, List<PostEntity>>> getFeed();
+  Future<Either<Exception, List<CommentEntity>>> getComments(String postId);
+  Future<Either<Exception, Unit>> likePost(String postId);
+  Future<Either<Exception, Unit>> unlikePost(String postId);
+  Future<Either<Exception, Unit>> likeComment(String commentId);
+  Future<Either<Exception, Unit>> unlikeComment(String commentId);
+  Future<Either<Exception, CommentEntity>> addComment(
+    String postId,
+    String text, {
+    String? parentCommentId,
+  });
+  Future<Either<Exception, Unit>> updateComment(String commentId, String text);
+  Future<Either<Exception, Unit>> deleteComment(String commentId);
+  Future<Either<Exception, PostEntity>> createPost({
+    required List<dynamic> images,
+    required String caption,
+    String? missionId,
+    bool privado = false,
+  });
+  Future<Either<Exception, PostEntity>> updatePost({
+    required String postId,
+    required List<dynamic>
+    images, // Mixture of new XFiles/paths and existing URLs
+    required String caption,
+    String? missionId,
+    required bool privado,
+  });
+  Future<Either<Exception, bool>> canUserPost();
+  Future<Either<Exception, List<MissionEntity>>> getUserMissions();
+  Future<Either<Exception, MissionEntity?>> getLatestMissionAlert();
+  Future<Either<Exception, Unit>> deletePost(String postId);
+  String? getCurrentUserId();
+}

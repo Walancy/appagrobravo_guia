@@ -1,0 +1,152 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/itinerary_item.dart';
+
+part 'itinerary_item_dto.freezed.dart';
+part 'itinerary_item_dto.g.dart';
+
+@freezed
+abstract class ItineraryItemDto with _$ItineraryItemDto {
+  const factory ItineraryItemDto({
+    @JsonKey(name: 'id') required String id,
+    @JsonKey(name: 'titulo') String? title, // Mapped from 'titulo'
+    @JsonKey(name: 'nome') String? oldName, // Backwards compat
+    @JsonKey(name: 'tipo') required String typeString,
+    @JsonKey(name: 'data') String? dateString,
+    @JsonKey(name: 'hora_inicio') String? timeString,
+    @JsonKey(name: 'hora_fim') String? endTimeString,
+    @JsonKey(name: 'hora_inicio2') DateTime? startDateTimeOld,
+    @JsonKey(name: 'descricao') String? description,
+    @JsonKey(name: 'localizacao') String? location,
+    @JsonKey(name: 'imagem') String? imageUrl,
+    @JsonKey(name: 'codigo_de') String? fromCode,
+    @JsonKey(name: 'codigo_para') String? toCode,
+    @JsonKey(name: 'de') String? fromCity,
+    @JsonKey(name: 'para') String? toCity,
+    @JsonKey(name: 'motorista') String? driverName,
+    @JsonKey(name: 'duracao') String? durationString,
+    @JsonKey(name: 'tempo_deslocamento') String? travelTime,
+    @JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections,
+  }) = _ItineraryItemDto;
+
+  const ItineraryItemDto._();
+
+  factory ItineraryItemDto.fromJson(Map<String, dynamic> json) =>
+      _$ItineraryItemDtoFromJson(json);
+
+  ItineraryItemEntity toEntity() {
+    ItineraryType type;
+    switch (typeString.toUpperCase()) {
+      // Standardize case
+      case 'RESTAURANTE':
+      case 'FOOD':
+        type = ItineraryType.food;
+        break;
+      case 'HOTEL':
+        type = ItineraryType.hotel;
+        break;
+      case 'VISITA_TECNICA':
+      case 'VISIT':
+        type = ItineraryType.visit;
+        break;
+      case 'TEMPO_LIVRE':
+      case 'LEISURE':
+        type = ItineraryType.leisure;
+        break;
+      case 'TRANSPORTE':
+      case 'TRANSFER':
+      case 'FLIGHT': // Flight is distinct in enum but 'tipo' in DB might differ
+        if (fromCode != null && fromCode!.isNotEmpty) {
+          type = ItineraryType.flight;
+        } else if (typeString.toUpperCase() == 'FLIGHT') {
+          type = ItineraryType.flight;
+        } else {
+          type = ItineraryType.transfer;
+        }
+        break;
+
+      // Handle legacy/other cases
+      case 'EVENTO':
+      default:
+        if (typeString.toUpperCase() == 'FLIGHT') {
+          type = ItineraryType.flight;
+        } else if (typeString.toUpperCase() == 'RETURN') {
+          type = ItineraryType.returnType;
+        } else {
+          type = ItineraryType.other;
+        }
+    }
+
+    // Date Logic
+    DateTime? start;
+    DateTime? end;
+
+    if (dateString != null) {
+      final datePart = DateTime.parse(dateString!);
+
+      if (timeString != null) {
+        try {
+          final timeParts = timeString!.split(':').map(int.parse).toList();
+          start = DateTime(
+            datePart.year,
+            datePart.month,
+            datePart.day,
+            timeParts[0],
+            timeParts[1],
+            timeParts.length > 2 ? timeParts[2] : 0,
+          );
+        } catch (_) {}
+      }
+
+      if (endTimeString != null) {
+        try {
+          final endParts = endTimeString!.split(':').map(int.parse).toList();
+          // Temporary end date constructed with same day
+          DateTime tempEnd = DateTime(
+            datePart.year,
+            datePart.month,
+            datePart.day,
+            endParts[0],
+            endParts[1],
+            endParts.length > 2 ? endParts[2] : 0,
+          );
+
+          // Check for day crossing (next day arrival)
+          if (start != null && tempEnd.isBefore(start)) {
+            tempEnd = tempEnd.add(const Duration(days: 1));
+          }
+          end = tempEnd;
+        } catch (_) {}
+      }
+    }
+
+    if (start == null) {
+      start = startDateTimeOld;
+    }
+
+    // Fallback if data is only in one place and not the other, try to parse what we have.
+    if (start == null && dateString != null) {
+      try {
+        start = DateTime.parse(dateString!);
+      } catch (_) {}
+    }
+
+    return ItineraryItemEntity(
+      id: id,
+      name: title ?? oldName ?? 'Evento sem nome',
+      type: type,
+      startDateTime: start,
+      endDateTime: end,
+      description: description,
+      location: location,
+      imageUrl: imageUrl,
+      fromCode: fromCode,
+      toCode: toCode,
+      fromCity: fromCity,
+      toCity: toCity,
+      driverName: driverName,
+      durationString: durationString,
+      travelTime: travelTime,
+      connections: connections,
+    );
+  }
+}
