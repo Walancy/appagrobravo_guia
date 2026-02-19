@@ -58,31 +58,32 @@ class FeedRepositoryImpl implements FeedRepository {
           ''')
           .order('created_at', ascending: false);
 
-      final posts = (response as List).map((postMap) {
-        final post = PostModel.fromJson(postMap);
-        final user = postMap['users'] as Map<String, dynamic>?;
-        final missao = postMap['missoes'] as Map<String, dynamic>?;
+      final posts =
+          (response as List).map((postMap) {
+            final post = PostModel.fromJson(postMap);
+            final user = postMap['users'] as Map<String, dynamic>?;
+            final missao = postMap['missoes'] as Map<String, dynamic>?;
 
-        final curtidasList = postMap['curtidas'] as List?;
-        final commentsList = postMap['comentarios'] as List?;
+            final curtidasList = postMap['curtidas'] as List?;
+            final commentsList = postMap['comentarios'] as List?;
 
-        final likesCount = curtidasList?.length ?? 0;
-        final commentsCount = commentsList?.length ?? 0;
+            final likesCount = curtidasList?.length ?? 0;
+            final commentsCount = commentsList?.length ?? 0;
 
-        final isLiked =
-            userId != null &&
-            curtidasList != null &&
-            curtidasList.any((c) => c['user_id'] == userId);
+            final isLiked =
+                userId != null &&
+                curtidasList != null &&
+                curtidasList.any((c) => c['user_id'] == userId);
 
-        return post.copyWith(
-          userName: user?['nome'],
-          userAvatar: user?['foto'],
-          missionName: missao?['nome'],
-          likesCount: likesCount,
-          commentsCount: commentsCount,
-          isLiked: isLiked,
-        );
-      }).toList();
+            return post.copyWith(
+              userName: user?['nome'],
+              userAvatar: user?['foto'],
+              missionName: missao?['nome'],
+              likesCount: likesCount,
+              commentsCount: commentsCount,
+              isLiked: isLiked,
+            );
+          }).toList();
 
       await _saveFeedToCache(posts);
 
@@ -163,36 +164,38 @@ class FeedRepositoryImpl implements FeedRepository {
       final List<dynamic> data = response as List;
       await _saveCommentsToCache(postId, data);
 
-      final allComments = data.map((cMap) {
-        final user = cMap['users'] as Map<String, dynamic>?;
-        final curtidasList = cMap['curtidas_comentarios'] as List?;
-        final likesCount = curtidasList?.length ?? 0;
-        final isLiked =
-            userId != null &&
-            curtidasList != null &&
-            curtidasList.any((c) => c['user_id'] == userId);
+      final allComments =
+          data.map((cMap) {
+            final user = cMap['users'] as Map<String, dynamic>?;
+            final curtidasList = cMap['curtidas_comentarios'] as List?;
+            final likesCount = curtidasList?.length ?? 0;
+            final isLiked =
+                userId != null &&
+                curtidasList != null &&
+                curtidasList.any((c) => c['user_id'] == userId);
 
-        return CommentModel.fromJson(cMap).copyWith(
-          userName: user?['nome'],
-          userAvatar: user?['foto'],
-          likesCount: likesCount,
-          isLiked: isLiked,
-        );
-      }).toList();
+            return CommentModel.fromJson(cMap).copyWith(
+              userName: user?['nome'],
+              userAvatar: user?['foto'],
+              likesCount: likesCount,
+              isLiked: isLiked,
+            );
+          }).toList();
 
       // Build hierarchy
-      final mainComments = allComments
-          .where((c) => c.parentId == null)
-          .toList();
+      final mainComments =
+          allComments.where((c) => c.parentId == null).toList();
       final replies = allComments.where((c) => c.parentId != null).toList();
 
-      final entities = mainComments.map((main) {
-        final commentReplies = replies
-            .where((r) => r.parentId == main.id)
-            .map((r) => r.toEntity())
-            .toList();
-        return main.toEntity(replies: commentReplies);
-      }).toList();
+      final entities =
+          mainComments.map((main) {
+            final commentReplies =
+                replies
+                    .where((r) => r.parentId == main.id)
+                    .map((r) => r.toEntity())
+                    .toList();
+            return main.toEntity(replies: commentReplies);
+          }).toList();
 
       return Right(entities);
     } catch (e) {
@@ -200,20 +203,20 @@ class FeedRepositoryImpl implements FeedRepository {
       final cachedComments = await _getCommentsFromCache(postId);
       if (cachedComments.isNotEmpty) {
         // Build hierarchy from cache
-        final mainComments = cachedComments
-            .where((c) => c.parentId == null)
-            .toList();
-        final replies = cachedComments
-            .where((c) => c.parentId != null)
-            .toList();
+        final mainComments =
+            cachedComments.where((c) => c.parentId == null).toList();
+        final replies =
+            cachedComments.where((c) => c.parentId != null).toList();
 
-        final entities = mainComments.map((main) {
-          final commentReplies = replies
-              .where((r) => r.parentId == main.id)
-              .map((r) => r.toEntity())
-              .toList();
-          return main.toEntity(replies: commentReplies);
-        }).toList();
+        final entities =
+            mainComments.map((main) {
+              final commentReplies =
+                  replies
+                      .where((r) => r.parentId == main.id)
+                      .map((r) => r.toEntity())
+                      .toList();
+              return main.toEntity(replies: commentReplies);
+            }).toList();
 
         return Right(entities);
       }
@@ -299,19 +302,20 @@ class FeedRepositoryImpl implements FeedRepository {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return Left(Exception('Usuário não autenticado'));
 
-      final response = await _supabaseClient
-          .from('comentarios')
-          .insert({
-            'post_id': postId,
-            'user_id': userId,
-            'comentario': text,
-            'id_comentario': parentCommentId,
-          })
-          .select('''
+      final response =
+          await _supabaseClient
+              .from('comentarios')
+              .insert({
+                'post_id': postId,
+                'user_id': userId,
+                'comentario': text,
+                'id_comentario': parentCommentId,
+              })
+              .select('''
             *,
             users:user_id (nome, foto)
           ''')
-          .single();
+              .single();
 
       final user = response['users'] as Map<String, dynamic>?;
       final model = CommentModel.fromJson(
@@ -405,21 +409,22 @@ class FeedRepositoryImpl implements FeedRepository {
         'CREATE_POST: Inserting into DB with ${imageUrls.length} urls',
       );
 
-      final response = await _supabaseClient
-          .from('posts')
-          .insert({
-            'user_id': userId,
-            'missao_id': missionId,
-            'imagens': imageUrls,
-            'legenda': caption,
-            'privado': privado,
-          })
-          .select('''
+      final response =
+          await _supabaseClient
+              .from('posts')
+              .insert({
+                'user_id': userId,
+                'missao_id': missionId,
+                'imagens': imageUrls,
+                'legenda': caption,
+                'privado': privado,
+              })
+              .select('''
             *,
             users:user_id (nome, foto),
             missoes:missao_id (nome)
           ''')
-          .single();
+              .single();
 
       final user = response['users'] as Map<String, dynamic>?;
       final missao = response['missoes'] as Map<String, dynamic>?;
@@ -456,11 +461,12 @@ class FeedRepositoryImpl implements FeedRepository {
       if (userId == null) return Left(Exception('Usuário não autenticado.'));
 
       // Check ownership first
-      final existingPost = await _supabaseClient
-          .from('posts')
-          .select('user_id')
-          .eq('id', postId)
-          .single();
+      final existingPost =
+          await _supabaseClient
+              .from('posts')
+              .select('user_id')
+              .eq('id', postId)
+              .single();
 
       if (existingPost['user_id'] != userId) {
         return Left(Exception('Você não tem permissão para editar este post.'));
@@ -510,23 +516,24 @@ class FeedRepositoryImpl implements FeedRepository {
         finalImageUrls.add(url);
       }
 
-      final response = await _supabaseClient
-          .from('posts')
-          .update({
-            'missao_id': missionId,
-            'imagens': finalImageUrls,
-            'legenda': caption,
-            'privado': privado,
-          })
-          .eq('id', postId)
-          .select('''
+      final response =
+          await _supabaseClient
+              .from('posts')
+              .update({
+                'missao_id': missionId,
+                'imagens': finalImageUrls,
+                'legenda': caption,
+                'privado': privado,
+              })
+              .eq('id', postId)
+              .select('''
             *,
             users:user_id (nome, foto),
             missoes:missao_id (nome),
             curtidas:curtidas(user_id),
             comentarios:comentarios(id)
           ''')
-          .single();
+              .single();
 
       final user = response['users'] as Map<String, dynamic>?;
       final missao = response['missoes'] as Map<String, dynamic>?;
@@ -534,9 +541,7 @@ class FeedRepositoryImpl implements FeedRepository {
       final commentsList = response['comentarios'] as List?;
       final likesCount = curtidasList?.length ?? 0;
       final commentsCount = commentsList?.length ?? 0;
-      final isLiked =
-          userId != null &&
-          (curtidasList?.any((c) => c['user_id'] == userId) ?? false);
+      final isLiked = curtidasList?.any((c) => c['user_id'] == userId) ?? false;
 
       final model = PostModel.fromJson(response).copyWith(
         userName: user?['nome'],
@@ -579,11 +584,12 @@ class FeedRepositoryImpl implements FeedRepository {
       if (userId == null) return const Right(false);
 
       // Check if user is MASTER, COLABORADOR, or belongs to a mission (missoesParticipantes)
-      final userProfile = await _supabaseClient
-          .from('users')
-          .select('tipouser')
-          .eq('id', userId)
-          .single();
+      final userProfile =
+          await _supabaseClient
+              .from('users')
+              .select('tipouser')
+              .eq('id', userId)
+              .single();
 
       final roles = List<String>.from(userProfile['tipouser'] ?? []);
       if (roles.contains('MASTER') || roles.contains('COLABORADOR')) {
@@ -614,18 +620,19 @@ class FeedRepositoryImpl implements FeedRepository {
   Future<void> _saveUserMissionsToCache(List<MissionEntity> missions) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonList = missions
-          .map(
-            (m) => {
-              'id': m.id,
-              'name': m.name,
-              'logo': m.logo,
-              // Save other fields if present, though getUserMissions mainly uses these
-              'location': m.location,
-              'groupName': m.groupName,
-            },
-          )
-          .toList();
+      final jsonList =
+          missions
+              .map(
+                (m) => {
+                  'id': m.id,
+                  'name': m.name,
+                  'logo': m.logo,
+                  // Save other fields if present, though getUserMissions mainly uses these
+                  'location': m.location,
+                  'groupName': m.groupName,
+                },
+              )
+              .toList();
       await prefs.setString('cached_user_missions', jsonEncode(jsonList));
     } catch (e) {
       debugPrint('Erro ao salvar missões no cache: $e');
@@ -704,12 +711,12 @@ class FeedRepositoryImpl implements FeedRepository {
           seguroObrigatorio: json['seguroObrigatorio'] ?? false,
           carteiraObrigatoria: json['carteiraObrigatoria'] ?? false,
           autorizacaoObrigatoria: json['autorizacaoObrigatoria'] ?? false,
-          startDate: json['startDate'] != null
-              ? DateTime.parse(json['startDate'])
-              : null,
-          endDate: json['endDate'] != null
-              ? DateTime.parse(json['endDate'])
-              : null,
+          startDate:
+              json['startDate'] != null
+                  ? DateTime.parse(json['startDate'])
+                  : null,
+          endDate:
+              json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
         );
       }
     } catch (e) {
@@ -731,11 +738,12 @@ class FeedRepositoryImpl implements FeedRepository {
           .select('grupo_id')
           .eq('user_id', userId);
 
-      final groupIds = (groupsResponse as List)
-          .map((e) => e['grupo_id'] as String?)
-          .where((e) => e != null)
-          .cast<String>()
-          .toList();
+      final groupIds =
+          (groupsResponse as List)
+              .map((e) => e['grupo_id'] as String?)
+              .where((e) => e != null)
+              .cast<String>()
+              .toList();
 
       if (groupIds.isEmpty) {
         // Clear cache if online but empty? Not strictly necessary but consistent.
@@ -749,12 +757,13 @@ class FeedRepositoryImpl implements FeedRepository {
           .select('missao_id')
           .inFilter('id', groupIds);
 
-      final missionIds = (groupsDetailsResponse as List)
-          .map((e) => e['missao_id'] as String?)
-          .where((e) => e != null)
-          .cast<String>()
-          .toSet() // Remove duplicates
-          .toList();
+      final missionIds =
+          (groupsDetailsResponse as List)
+              .map((e) => e['missao_id'] as String?)
+              .where((e) => e != null)
+              .cast<String>()
+              .toSet() // Remove duplicates
+              .toList();
 
       if (missionIds.isEmpty) {
         await _saveUserMissionsToCache([]);
@@ -767,13 +776,14 @@ class FeedRepositoryImpl implements FeedRepository {
           .select('id, nome, logo')
           .inFilter('id', missionIds);
 
-      final missions = (missionsResponse as List).map((m) {
-        return MissionEntity(
-          id: m['id'],
-          name: m['nome'] ?? 'Sem nome',
-          logo: m['logo'],
-        );
-      }).toList();
+      final missions =
+          (missionsResponse as List).map((m) {
+            return MissionEntity(
+              id: m['id'],
+              name: m['nome'] ?? 'Sem nome',
+              logo: m['logo'],
+            );
+          }).toList();
 
       // Fallback: also check missoesParticipantes directly just in case some users are linked directly
       try {
@@ -823,16 +833,29 @@ class FeedRepositoryImpl implements FeedRepository {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return const Right(null);
 
+      // 0. Check user roles - Guides/Admins don't get this "Welcome" alert
+      final userProfile =
+          await _supabaseClient
+              .from('users')
+              .select('tipouser')
+              .eq('id', userId)
+              .single();
+      final roles = List<String>.from(userProfile['tipouser'] ?? []);
+      if (roles.contains('MASTER') || roles.contains('COLABORADOR')) {
+        return const Right(null);
+      }
+
       // 1. Get the most recent group participation
-      final groupResponse = await _supabaseClient
-          .from('gruposParticipantes')
-          .select(
-            'grupo_id, grupos:grupo_id (nome, data_inicio, data_fim, logo, missoes:missao_id (id, nome, logo, localizacao, passaporte_obrigatorio, visto_obrigatorio, vacina_obrigatorio, seguro_obrigatorio, cnh_obrigatorio, autorizacao_obrigatorio))',
-          )
-          .eq('user_id', userId)
-          .order('id', ascending: false)
-          .limit(1)
-          .maybeSingle();
+      final groupResponse =
+          await _supabaseClient
+              .from('gruposParticipantes')
+              .select(
+                'grupo_id, grupos:grupos!gruposParticipantes_grupo_id_fkey (nome, data_inicio, data_fim, logo, missoes:missao_id (id, nome, logo, continente, paises, documentos_exigidos))',
+              )
+              .eq('user_id', userId)
+              .order('id', ascending: false)
+              .limit(1)
+              .maybeSingle();
 
       if (groupResponse == null) {
         await _saveMissionAlertToCache(null);
@@ -853,12 +876,14 @@ class FeedRepositoryImpl implements FeedRepository {
 
       final missionId = missionData['id'] as String;
 
-      final startDate = grupoData['data_inicio'] != null
-          ? DateTime.tryParse(grupoData['data_inicio'].toString())
-          : null;
-      final endDate = grupoData['data_fim'] != null
-          ? DateTime.tryParse(grupoData['data_fim'].toString())
-          : null;
+      final startDate =
+          grupoData['data_inicio'] != null
+              ? DateTime.tryParse(grupoData['data_inicio'].toString())
+              : null;
+      final endDate =
+          grupoData['data_fim'] != null
+              ? DateTime.tryParse(grupoData['data_fim'].toString())
+              : null;
 
       // 2. Count pending documents
       final docsResponse = await _supabaseClient
@@ -867,18 +892,20 @@ class FeedRepositoryImpl implements FeedRepository {
           .eq('user_id', userId);
 
       final docsList = docsResponse as List;
-      final approvedTypes = docsList
-          .where((d) => d['status'] == 'APROVADO')
-          .map((d) => d['tipo'] as String)
-          .toSet();
+      final approvedTypes =
+          docsList
+              .where((d) => d['status'] == 'APROVADO')
+              .map((d) => d['tipo'] as String)
+              .toSet();
 
-      // Get mandatory flags from mission
-      final bool passReq = missionData['passaporte_obrigatorio'] ?? false;
-      final bool visaReq = missionData['visto_obrigatorio'] ?? false;
-      final bool vacReq = missionData['vacina_obrigatorio'] ?? false;
-      final bool segReq = missionData['seguro_obrigatorio'] ?? false;
-      final bool cnhReq = missionData['cnh_obrigatorio'] ?? false;
-      final bool autReq = missionData['autorizacao_obrigatorio'] ?? false;
+      final List<dynamic> docsExigidos =
+          missionData['documentos_exigidos'] ?? [];
+      final bool passReq = docsExigidos.contains('PASSAPORTE');
+      final bool visaReq = docsExigidos.contains('VISTO');
+      final bool vacReq = docsExigidos.contains('VACINA');
+      final bool segReq = docsExigidos.contains('SEGURO');
+      final bool cnhReq = docsExigidos.contains('CARTEIRA_MOTORISTA');
+      final bool autReq = docsExigidos.contains('AUTORIZACAO_MENORES');
 
       final requiredTypes = [
         if (passReq) 'PASSAPORTE',
@@ -890,9 +917,10 @@ class FeedRepositoryImpl implements FeedRepository {
       ];
 
       // If no flags are set, fallback to a default set (backwards compatibility)
-      final effectiveRequiredTypes = requiredTypes.isEmpty
-          ? ['PASSAPORTE', 'VISTO', 'VACINA', 'SEGURO']
-          : requiredTypes;
+      final effectiveRequiredTypes =
+          requiredTypes.isEmpty
+              ? ['PASSAPORTE', 'VISTO', 'VACINA', 'SEGURO']
+              : requiredTypes;
 
       int pendingCount = 0;
       for (var type in effectiveRequiredTypes) {
@@ -903,20 +931,20 @@ class FeedRepositoryImpl implements FeedRepository {
 
       // 3. Ensure a notification record exists for this mission addition
       try {
-        final existingNotification = await _supabaseClient
-            .from('notificacoes')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('tipo', 'missionUpdate')
-            .eq('grupo_id', groupResponse['grupo_id'])
-            .limit(1)
-            .maybeSingle();
+        final existingNotification =
+            await _supabaseClient
+                .from('notificacoes')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('assunto', 'missionUpdate')
+                .eq('grupo_id', groupResponse['grupo_id'])
+                .limit(1)
+                .maybeSingle();
 
         if (existingNotification == null) {
           await _supabaseClient.from('notificacoes').insert({
             'user_id': userId,
             'assunto': 'missionUpdate',
-            'tipo': 'missionUpdate', // Keeping for DB compatibility
             'grupo_id': groupResponse['grupo_id'],
             'missao_id': missionData['id'],
             'titulo': 'Nova Missão',
@@ -932,7 +960,12 @@ class FeedRepositoryImpl implements FeedRepository {
         id: missionId,
         name: missionData['nome'] ?? 'Sua Missão',
         logo: missionData['logo'],
-        location: missionData['localizacao'],
+        location:
+            missionData['continente'] ??
+            (missionData['paises'] is List &&
+                    (missionData['paises'] as List).isNotEmpty
+                ? (missionData['paises'] as List).first
+                : null),
         groupName: grupoData['nome'],
         pendingDocsCount: pendingCount,
         passaporteObrigatorio: passReq,
@@ -965,11 +998,12 @@ class FeedRepositoryImpl implements FeedRepository {
       if (userId == null) return Left(Exception('Usuário não autenticado.'));
 
       // Check ownership
-      final post = await _supabaseClient
-          .from('posts')
-          .select('user_id')
-          .eq('id', postId)
-          .single();
+      final post =
+          await _supabaseClient
+              .from('posts')
+              .select('user_id')
+              .eq('id', postId)
+              .single();
 
       if (post['user_id'] != userId) {
         return Left(

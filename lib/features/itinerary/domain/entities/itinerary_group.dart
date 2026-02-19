@@ -9,6 +9,8 @@ abstract class ItineraryGroupEntity with _$ItineraryGroupEntity {
     required String name,
     required DateTime startDate,
     required DateTime endDate,
+    String? logo,
+    String? missionLocation,
   }) = _ItineraryGroupEntity;
 
   const ItineraryGroupEntity._();

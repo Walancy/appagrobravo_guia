@@ -12,6 +12,8 @@ import '../../domain/entities/itinerary_item.dart';
 import '../../domain/entities/emergency_contacts.dart';
 import '../models/itinerary_group_dto.dart';
 import '../models/itinerary_item_dto.dart';
+import '../../domain/entities/guide_mission.dart';
+import '../../../home/domain/entities/mission_entity.dart';
 
 @LazySingleton(as: ItineraryRepository)
 class ItineraryRepositoryImpl implements ItineraryRepository {
@@ -24,17 +26,37 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
     String groupId,
   ) async {
     try {
-      final response = await _supabaseClient
-          .from('grupos')
-          .select()
-          .eq('id', groupId)
-          .single();
+      final response =
+          await _supabaseClient
+              .from('grupos')
+              .select('*, missoes(continente, paises)')
+              .eq('id', groupId)
+              .single();
+
+      final missionData = response['missoes'];
+      String? missionLocation;
+      if (missionData != null) {
+        missionLocation =
+            missionData['continente'] ??
+            (missionData['paises'] is List &&
+                    (missionData['paises'] as List).isNotEmpty
+                ? (missionData['paises'] as List).first
+                : null);
+      }
+
+      final dataWithLocation = {
+        ...response,
+        'missao_localizacao': missionLocation,
+      };
 
       // Cache the response
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('cached_group_$groupId', jsonEncode(response));
+      await prefs.setString(
+        'cached_group_$groupId',
+        jsonEncode(dataWithLocation),
+      );
 
-      return Right(ItineraryGroupDto.fromJson(response).toEntity());
+      return Right(ItineraryGroupDto.fromJson(dataWithLocation).toEntity());
     } catch (e) {
       // Try cache
       try {
@@ -69,9 +91,10 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('cached_itinerary_$groupId', jsonEncode(data));
 
-      final items = data
-          .map((json) => ItineraryItemDto.fromJson(json).toEntity())
-          .toList();
+      final items =
+          data
+              .map((json) => ItineraryItemDto.fromJson(json).toEntity())
+              .toList();
 
       return Right(items);
     } catch (e) {
@@ -81,9 +104,10 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
         final cached = prefs.getString('cached_itinerary_$groupId');
         if (cached != null) {
           final List<dynamic> data = jsonDecode(cached);
-          final items = data
-              .map((json) => ItineraryItemDto.fromJson(json).toEntity())
-              .toList();
+          final items =
+              data
+                  .map((json) => ItineraryItemDto.fromJson(json).toEntity())
+                  .toList();
           return Right(items);
         }
       } catch (cacheError) {
@@ -232,11 +256,12 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return Left(Exception('Usuário não autenticado'));
 
-      final response = await _supabaseClient
-          .from('gruposParticipantes')
-          .select('grupo_id')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final response =
+          await _supabaseClient
+              .from('gruposParticipantes')
+              .select('grupo_id')
+              .eq('user_id', userId)
+              .maybeSingle();
 
       String? groupId;
       if (response != null) {
@@ -281,13 +306,14 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
           .eq('status', 'PENDENTE');
 
       final List<dynamic> data = response as List<dynamic>;
-      final docTypes = data.map((doc) {
-        final type = doc['tipo']?.toString();
-        if (type != null && type.isNotEmpty) {
-          return type[0].toUpperCase() + type.substring(1).toLowerCase();
-        }
-        return doc['nome_documento']?.toString() ?? 'Documento';
-      }).toList();
+      final docTypes =
+          data.map((doc) {
+            final type = doc['tipo']?.toString();
+            if (type != null && type.isNotEmpty) {
+              return type[0].toUpperCase() + type.substring(1).toLowerCase();
+            }
+            return doc['nome_documento']?.toString() ?? 'Documento';
+          }).toList();
 
       await _savePendingDocsToCache(docTypes);
 
@@ -354,11 +380,12 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
         );
       }
 
-      final countryRes = await _supabaseClient
-          .from('paises')
-          .select('id, pais')
-          .or('pais.ilike.%$countryName%')
-          .maybeSingle();
+      final countryRes =
+          await _supabaseClient
+              .from('paises')
+              .select('id, pais')
+              .or('pais.ilike.%$countryName%')
+              .maybeSingle();
 
       int? paisId;
       String matchedCountry = countryName;
@@ -383,11 +410,12 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
         );
       }
 
-      final emergencyRes = await _supabaseClient
-          .from('chamada_emergencia')
-          .select()
-          .eq('pais_id', paisId)
-          .maybeSingle();
+      final emergencyRes =
+          await _supabaseClient
+              .from('chamada_emergencia')
+              .select()
+              .eq('pais_id', paisId)
+              .maybeSingle();
 
       if (emergencyRes == null) {
         final cached = await _getEmergencyContactsFromCache();
@@ -419,6 +447,136 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
         return Right(cached);
       }
       return Left(Exception('Erro ao buscar contatos de emergência: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<GuideMission>>> getGuideMissions() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Usuário não autenticado.'));
+
+      final response = await _supabaseClient
+          .from('missoes')
+          .select('*, grupos(*)')
+          .isFilter('deleted_at', null)
+          .order('data_inicio', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final List<GuideMission> guideMissions = [];
+
+      for (var missionJson in data) {
+        final mission = MissionEntity(
+          id: missionJson['id'].toString(),
+          name: missionJson['nome'] ?? 'Sem nome',
+          logo: missionJson['logo'],
+          location:
+              missionJson['continente'] ??
+              (missionJson['paises'] is List &&
+                      (missionJson['paises'] as List).isNotEmpty
+                  ? (missionJson['paises'] as List).first
+                  : null),
+          startDate:
+              missionJson['data_inicio'] != null
+                  ? DateTime.tryParse(missionJson['data_inicio'])
+                  : null,
+          endDate:
+              missionJson['data_fim'] != null
+                  ? DateTime.tryParse(missionJson['data_fim'])
+                  : null,
+        );
+
+        final List<dynamic> groupsJson = missionJson['grupos'] ?? [];
+        final groups =
+            groupsJson
+                .where((g) => g['deleted_at'] == null)
+                .map((g) => ItineraryGroupDto.fromJson(g).toEntity())
+                .toList();
+
+        // Only add missions that have at least one valid group
+        if (groups.isNotEmpty) {
+          guideMissions.add(GuideMission(mission: mission, groups: groups));
+        }
+      }
+
+      return Right(guideMissions);
+    } catch (e) {
+      debugPrint('Erro ao buscar todas as missões: $e');
+      return Left(Exception('Erro ao buscar missões: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<Map<String, dynamic>>>> getGroupParticipants(
+    String groupId,
+  ) async {
+    try {
+      final response = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('id, users(id, nome, foto, cargo)')
+          .eq('grupo_id', groupId);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final List<Map<String, dynamic>> participants =
+          data.map((item) {
+            final user = item['users'] as Map<String, dynamic>?;
+            return {
+              'id': item['id'],
+              'userId': user?['id'],
+              'name': user?['nome'] ?? 'Usuário sem nome',
+              'avatar': user?['foto'],
+              'role': user?['cargo'] ?? 'Viajante',
+              'isChecked': false,
+            };
+          }).toList();
+
+      return Right(participants);
+    } catch (e) {
+      debugPrint('Erro ao buscar participantes do grupo: $e');
+      return Left(Exception('Erro ao buscar participantes: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<String>>> getEventAttendance(
+    String eventId,
+  ) async {
+    try {
+      final response = await _supabaseClient
+          .from('eventos_presenca')
+          .select('user_id')
+          .eq('evento_id', eventId)
+          .eq('presente', true);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final List<String> presentUserIds =
+          data.map((item) => item['user_id'].toString()).toList();
+
+      return Right(presentUserIds);
+    } catch (e) {
+      debugPrint('Erro ao buscar presença do evento: $e');
+      return Left(Exception('Erro ao buscar presença: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, void>> updateAttendance(
+    String eventId,
+    String userId,
+    bool isPresent,
+  ) async {
+    try {
+      await _supabaseClient.from('eventos_presenca').upsert({
+        'evento_id': eventId,
+        'user_id': userId,
+        'presente': isPresent,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'evento_id, user_id');
+
+      return const Right(null);
+    } catch (e) {
+      debugPrint('Erro ao atualizar presença: $e');
+      return Left(Exception('Erro ao atualizar presença: $e'));
     }
   }
 }

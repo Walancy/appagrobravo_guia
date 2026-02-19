@@ -29,6 +29,8 @@ import 'package:agrobravo/features/home/presentation/widgets/itinerary_microcard
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
 import 'package:agrobravo/features/home/presentation/widgets/mission_alert_dialog.dart';
 import 'package:agrobravo/features/itinerary/presentation/widgets/emergency_modal.dart';
+import 'package:agrobravo/features/home/presentation/pages/guide_home_page.dart';
+import 'package:agrobravo/features/home/presentation/pages/guide_dashboard_page.dart';
 import 'package:agrobravo/core/components/feed_shimmer.dart';
 import 'dart:async';
 
@@ -41,6 +43,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  String? _selectedGroupId;
   @override
   void initState() {
     super.initState();
@@ -74,19 +77,20 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => MissionAlertDialog(
-        mission: mission,
-        onDismiss: (permanently) {
-          context.read<FeedCubit>().acknowledgeMissionAlert(
-            mission.id,
-            permanently: permanently,
-          );
-        },
-        onDocumentsTap: () {
-          Navigator.pop(dialogContext);
-          context.push('/documents');
-        },
-      ),
+      builder:
+          (dialogContext) => MissionAlertDialog(
+            mission: mission,
+            onDismiss: (permanently) {
+              context.read<FeedCubit>().acknowledgeMissionAlert(
+                mission.id,
+                permanently: permanently,
+              );
+            },
+            onDocumentsTap: () {
+              Navigator.pop(dialogContext);
+              context.push('/documents');
+            },
+          ),
     );
   }
 
@@ -111,12 +115,12 @@ class _HomePageState extends State<HomePage> {
             systemNavigationBarColor: Colors.transparent,
             statusBarIconBrightness:
                 Theme.of(context).brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
+                    ? Brightness.light
+                    : Brightness.dark,
             systemNavigationBarIconBrightness:
                 Theme.of(context).brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
+                    ? Brightness.light
+                    : Brightness.dark,
             systemNavigationBarDividerColor: Colors.transparent,
             systemNavigationBarContrastEnforced: false,
           ),
@@ -124,7 +128,10 @@ class _HomePageState extends State<HomePage> {
             extendBodyBehindAppBar: true,
             appBar: _buildHeader(context),
             body: _buildBody(),
-            bottomNavigationBar: _buildBottomNav(),
+            bottomNavigationBar:
+                (_selectedIndex == 0 && _selectedGroupId == null)
+                    ? null
+                    : _buildBottomNav(),
           ),
         ),
       ),
@@ -136,7 +143,7 @@ class _HomePageState extends State<HomePage> {
       mode: HeaderMode.home,
       logo: SvgPicture.asset(Assets.images.logoColorida, height: 32),
       actions: [
-        if (_selectedIndex == 0)
+        if (_selectedIndex == 3)
           BlocBuilder<FeedCubit, FeedState>(
             builder: (context, state) {
               final canPost = state.maybeWhen(
@@ -149,14 +156,15 @@ class _HomePageState extends State<HomePage> {
                 icon: Icon(
                   Icons.add_circle_outline_rounded,
                   size: 28,
-                  color: canPost
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Colors.grey,
+                  color:
+                      canPost
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.grey,
                 ),
               );
             },
           ),
-        if (_selectedIndex == 3)
+        if (_selectedIndex == 4)
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {
               final hasPending = state.hasPendingAction;
@@ -222,7 +230,7 @@ class _HomePageState extends State<HomePage> {
             );
           },
         ),
-        if (_selectedIndex == 2)
+        if (_selectedIndex == 1)
           IconButton(
             onPressed: () => _showEmergencyModal(context),
             icon: const Icon(
@@ -245,15 +253,47 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBody() {
+    if (_selectedIndex == 0) {
+      if (_selectedGroupId != null) {
+        return GuideDashboardPage(
+          groupId: _selectedGroupId!,
+          onSwitchGroup: () {
+            setState(() {
+              _selectedGroupId = null;
+            });
+          },
+        );
+      }
+      return GuideHomePage(
+        onGroupSelected: (groupId) {
+          setState(() {
+            _selectedGroupId = groupId;
+            _selectedIndex = 0; // Stay on home but show dashboard
+          });
+        },
+      );
+    }
     if (_selectedIndex == 1) {
+      return ItineraryTab(
+        key: ValueKey(_selectedGroupId),
+        groupId: _selectedGroupId,
+        onSwitchGroup: () {
+          setState(() {
+            _selectedGroupId = null;
+            _selectedIndex = 0;
+          });
+        },
+        onGroupChanged: (groupId) {
+          setState(() {
+            _selectedGroupId = groupId;
+          });
+        },
+      );
+    }
+    if (_selectedIndex == 2) {
       return const ChatPage();
     }
-
-    if (_selectedIndex == 2) {
-      return const ItineraryTab();
-    }
-
-    if (_selectedIndex == 3) {
+    if (_selectedIndex == 4) {
       return const ProfileTab();
     }
 
@@ -273,7 +313,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const HeaderSpacer(),
                     ItineraryMicrocards(
-                      onSeeAll: () => setState(() => _selectedIndex = 2),
+                      onSeeAll: () => setState(() => _selectedIndex = 1),
                     ),
                     Center(
                       child: Text(
@@ -300,8 +340,8 @@ class _HomePageState extends State<HomePage> {
                   }
 
                   final post = posts[index - 2];
-                  final currentUserId = getIt<FeedRepository>()
-                      .getCurrentUserId();
+                  final currentUserId =
+                      getIt<FeedRepository>().getCurrentUserId();
                   final isOwner = post.userId == currentUserId;
 
                   return PostCard(
@@ -315,8 +355,8 @@ class _HomePageState extends State<HomePage> {
                       final result = await context.push<bool>(
                         '/create-post',
                         extra: {
-                          'initialImages': post
-                              .images, // Not really used for edit as we pass the whole post, but signature requires list
+                          'initialImages':
+                              post.images, // Not really used for edit as we pass the whole post, but signature requires list
                           'postToEdit': post,
                         },
                       );
@@ -341,10 +381,11 @@ class _HomePageState extends State<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CommentsBottomSheet(
-        postId: postId,
-        onCommentChanged: () => feedCubit.loadFeed(),
-      ),
+      builder:
+          (context) => CommentsBottomSheet(
+            postId: postId,
+            onCommentChanged: () => feedCubit.loadFeed(),
+          ),
     );
   }
 
@@ -353,9 +394,10 @@ class _HomePageState extends State<HomePage> {
     final isCamera = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => NewPostBottomSheet(
-        onSourceSelected: (camera) => Navigator.pop(context, camera),
-      ),
+      builder:
+          (context) => NewPostBottomSheet(
+            onSourceSelected: (camera) => Navigator.pop(context, camera),
+          ),
     );
 
     if (isCamera != null) {
@@ -391,24 +433,27 @@ class _HomePageState extends State<HomePage> {
     final feedCubit = context.read<FeedCubit>();
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Excluir Publicação'),
-        content: const Text('Tem certeza que deseja excluir esta publicação?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Excluir Publicação'),
+            content: const Text(
+              'Tem certeza que deseja excluir esta publicação?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  feedCubit.deletePost(postId);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Excluir'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              feedCubit.deletePost(postId);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -437,20 +482,26 @@ class _HomePageState extends State<HomePage> {
           _buildNavItem(0, Icons.home_outlined, Icons.home_outlined, 'Inicio'),
           _buildNavItem(
             1,
-            Icons.chat_bubble_outline_rounded,
-            Icons.chat_bubble_outline_rounded,
-            'Chat',
-          ),
-          _buildNavItem(
-            2,
             Icons.explore_outlined,
             Icons.explore_outlined,
             'Itinerário',
           ),
+          _buildNavItem(
+            2,
+            Icons.chat_bubble_outline_rounded,
+            Icons.chat_bubble_outline_rounded,
+            'Chats',
+          ),
+          _buildNavItem(
+            3,
+            Icons.dynamic_feed_outlined,
+            Icons.dynamic_feed_outlined,
+            'Feed',
+          ),
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {
               return _buildNavItem(
-                3,
+                4,
                 Icons.person_outline_rounded,
                 Icons.person_outline_rounded,
                 'Perfil',
@@ -471,9 +522,10 @@ class _HomePageState extends State<HomePage> {
     bool hasBadge = false,
   }) {
     final isSelected = _selectedIndex == index;
-    final color = isSelected
-        ? AppColors.primary
-        : Theme.of(context).colorScheme.onSurface;
+    final color =
+        isSelected
+            ? AppColors.primary
+            : Theme.of(context).colorScheme.onSurface;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),

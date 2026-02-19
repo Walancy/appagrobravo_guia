@@ -13,11 +13,14 @@ import 'package:agrobravo/features/notifications/presentation/cubit/notification
 import 'package:agrobravo/features/itinerary/presentation/cubit/itinerary_cubit.dart';
 import 'package:agrobravo/core/cubits/global_alert_cubit.dart';
 import 'package:agrobravo/core/cubits/theme_cubit.dart';
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  print("Loading env from assets/env...");
+  await dotenv.load(fileName: "assets/env");
 
   await initializeDateFormatting('pt_BR', null);
 
@@ -31,7 +34,9 @@ void main() async {
   // Configurações de UI do Sistema (Edge-to-Edge)
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  runApp(const AgroBravoApp());
+  runApp(
+    DevicePreview(enabled: kIsWeb, builder: (context) => const AgroBravoApp()),
+  );
 }
 
 class AgroBravoApp extends StatelessWidget {
@@ -88,6 +93,8 @@ class AgroBravoApp extends StatelessWidget {
                 color: AppColors.backgroundLightDark,
               ),
             ),
+            locale: DevicePreview.locale(context),
+            builder: DevicePreview.appBuilder,
             routerConfig: appRouter,
           );
         },

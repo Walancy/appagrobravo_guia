@@ -20,6 +20,7 @@ import 'package:agrobravo/features/profile/presentation/pages/account_data_page.
 import 'package:agrobravo/features/profile/presentation/pages/privacy_policy_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/about_us_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/profile_tab.dart';
+import 'package:agrobravo/features/home/presentation/pages/member_details_page.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
 
 final appRouter = GoRouter(
@@ -27,19 +28,20 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: LoginPage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: LoginPage()),
     ),
     GoRoute(
       path: '/reset-password',
-      pageBuilder: (context, state) => const NoTransitionPage(
-        child: LoginPage(initialAuthMode: AuthMode.resetPassword),
-      ),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(
+            child: LoginPage(initialAuthMode: AuthMode.resetPassword),
+          ),
     ),
     GoRoute(
       path: '/home',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: HomePage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: HomePage()),
     ),
     GoRoute(
       path: '/create-post',
@@ -90,33 +92,37 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/notifications',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: NotificationsPage()),
+      pageBuilder:
+          (context, state) =>
+              const NoTransitionPage(child: NotificationsPage()),
     ),
     GoRoute(
       path: '/settings',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: SettingsPage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: SettingsPage()),
     ),
     GoRoute(
       path: '/documents',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: DocumentsPage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: DocumentsPage()),
     ),
     GoRoute(
       path: '/food-preferences',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: FoodPreferencesPage()),
+      pageBuilder:
+          (context, state) =>
+              const NoTransitionPage(child: FoodPreferencesPage()),
     ),
     GoRoute(
       path: '/medical-restrictions',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: MedicalRestrictionsPage()),
+      pageBuilder:
+          (context, state) =>
+              const NoTransitionPage(child: MedicalRestrictionsPage()),
     ),
     GoRoute(
       path: '/notification-preferences',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: NotificationPreferencesPage()),
+      pageBuilder:
+          (context, state) =>
+              const NoTransitionPage(child: NotificationPreferencesPage()),
     ),
     GoRoute(
       path: '/document-details',
@@ -133,13 +139,14 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/account-data',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: AccountDataPage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: AccountDataPage()),
     ),
     GoRoute(
       path: '/privacy-policy',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: PrivacyPolicyPage()),
+      pageBuilder:
+          (context, state) =>
+              const NoTransitionPage(child: PrivacyPolicyPage()),
     ),
     GoRoute(
       path: '/profile/:userId',
@@ -150,8 +157,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/about-us',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: AboutUsPage()),
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: AboutUsPage()),
+    ),
+    GoRoute(
+      path: '/member-details',
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return NoTransitionPage(child: MemberDetailsPage(memberData: extra));
+      },
     ),
   ],
 );

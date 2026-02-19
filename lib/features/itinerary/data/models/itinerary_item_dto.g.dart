@@ -15,9 +15,10 @@ _ItineraryItemDto _$ItineraryItemDtoFromJson(Map<String, dynamic> json) =>
       dateString: json['data'] as String?,
       timeString: json['hora_inicio'] as String?,
       endTimeString: json['hora_fim'] as String?,
-      startDateTimeOld: json['hora_inicio2'] == null
-          ? null
-          : DateTime.parse(json['hora_inicio2'] as String),
+      startDateTimeOld:
+          json['hora_inicio2'] == null
+              ? null
+              : DateTime.parse(json['hora_inicio2'] as String),
       description: json['descricao'] as String?,
       location: json['localizacao'] as String?,
       imageUrl: json['imagem'] as String?,
@@ -28,9 +29,10 @@ _ItineraryItemDto _$ItineraryItemDtoFromJson(Map<String, dynamic> json) =>
       driverName: json['motorista'] as String?,
       durationString: json['duracao'] as String?,
       travelTime: json['tempo_deslocamento'] as String?,
-      connections: (json['conexoes'] as List<dynamic>?)
-          ?.map((e) => e as Map<String, dynamic>)
-          .toList(),
+      connections:
+          (json['conexoes'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>)
+              .toList(),
     );
 
 Map<String, dynamic> _$ItineraryItemDtoToJson(_ItineraryItemDto instance) =>

@@ -4,19 +4,27 @@ import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_item.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'checklist_bottom_sheet.dart';
 
 class GenericEventCard extends StatelessWidget {
   final ItineraryItemEntity item;
-  const GenericEventCard({super.key, required this.item});
+  final String groupId;
+
+  const GenericEventCard({
+    super.key,
+    required this.item,
+    required this.groupId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF2F4F7),
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
@@ -102,38 +110,76 @@ class GenericEventCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: () async {
-                if (item.location != null && item.location!.isNotEmpty) {
-                  final query = Uri.encodeComponent(item.location!);
-                  final googleMapsUrl = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=$query',
-                  );
+          Row(
+            children: [
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: () async {
+                    if (item.location != null && item.location!.isNotEmpty) {
+                      final query = Uri.encodeComponent(item.location!);
+                      final googleMapsUrl = Uri.parse(
+                        'https://www.google.com/maps/search/?api=1&query=$query',
+                      );
 
-                  if (await canLaunchUrl(googleMapsUrl)) {
-                    await launchUrl(
-                      googleMapsUrl,
-                      mode: LaunchMode.externalApplication,
-                    );
-                  }
-                }
-              },
-              icon: const Icon(Icons.location_on_outlined, size: 16),
-              label: const Text('Ver no Mapa'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                backgroundColor: AppColors.primary.withOpacity(0.05),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                textStyle: AppTextStyles.bodySmall.copyWith(
-                  fontWeight: FontWeight.w500,
+                      if (await canLaunchUrl(googleMapsUrl)) {
+                        await launchUrl(
+                          googleMapsUrl,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.location_on_outlined, size: 16),
+                  label: const Text('Ver no Mapa'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary.withOpacity(0.05),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    textStyle: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder:
+                          (context) => ChecklistBottomSheet(
+                            eventName: item.name,
+                            eventLocation: item.location,
+                            eventIcon: _getIconForType(item.type),
+                            groupId: groupId,
+                            eventId: item.id,
+                          ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.checklist_rtl_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  tooltip: 'Checklist',
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 36,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -194,21 +240,23 @@ class FlightCard extends StatelessWidget {
     final hasConnections = connections.isNotEmpty;
 
     // Filter relevant docs for flight
-    final relevantDocs = pendingDocs.where((doc) {
-      final d = doc.toLowerCase();
-      return d.contains('passaporte') ||
-          d.contains('visto') ||
-          d.contains('vacina') ||
-          d.contains('menores');
-    }).toList();
+    final relevantDocs =
+        pendingDocs.where((doc) {
+          final d = doc.toLowerCase();
+          return d.contains('passaporte') ||
+              d.contains('visto') ||
+              d.contains('vacina') ||
+              d.contains('menores');
+        }).toList();
 
     return Container(
       padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 8),
       margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF2F4F7),
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
@@ -221,14 +269,16 @@ class FlightCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.orange.shade900.withValues(alpha: 0.2)
-                    : Colors.orange.shade50,
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.orange.shade900.withValues(alpha: 0.2)
+                        : Colors.orange.shade50,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.orange.shade700.withValues(alpha: 0.5)
-                      : Colors.orange.shade200,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Colors.orange.shade700.withValues(alpha: 0.5)
+                          : Colors.orange.shade200,
                 ),
               ),
               child: Row(
@@ -400,9 +450,10 @@ class FlightCard extends StatelessWidget {
                         ).format(item.endDateTime!);
                       } else if (hasConnections) {
                         final lastConn = connections.last;
-                        final destMap = lastConn['destination'] is Map
-                            ? lastConn['destination']
-                            : null;
+                        final destMap =
+                            lastConn['destination'] is Map
+                                ? lastConn['destination']
+                                : null;
                         timeText =
                             destMap?['time']?.toString() ??
                             lastConn['hora_chegada']?.toString() ??
@@ -469,9 +520,10 @@ class FlightCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                children: connections
-                    .map((conn) => _buildConnectionItem(context, conn))
-                    .toList(),
+                children:
+                    connections
+                        .map((conn) => _buildConnectionItem(context, conn))
+                        .toList(),
               ),
             )
           else
@@ -556,9 +608,10 @@ class FlightCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.grey.shade50,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
@@ -756,9 +809,10 @@ class TransferCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF2F4F7),
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
@@ -858,9 +912,10 @@ class TravelTimeWidget extends StatelessWidget {
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
                 fontSize: 12,
-                color: hasDuration
-                    ? Theme.of(context).colorScheme.onSurface
-                    : AppColors.error,
+                color:
+                    hasDuration
+                        ? Theme.of(context).colorScheme.onSurface
+                        : AppColors.error,
               ),
             ),
           ),

@@ -3,14 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 
-import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
-import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
-import 'package:agrobravo/core/components/scrolling_alert.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-
-import 'package:agrobravo/core/cubits/global_alert_cubit.dart';
-
 enum HeaderMode { home, back }
 
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -33,70 +25,32 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DocumentsCubit, DocumentsState>(
-      builder: (context, docState) {
-        return BlocBuilder<GlobalAlertCubit, bool>(
-          builder: (context, isDismissed) {
-            final hasPending = docState.hasPendingAction;
-            final isVisible = hasPending && !isDismissed;
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      height: 90,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surface.withValues(alpha: 0.7),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.1),
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: SafeArea(
-                        bottom: false,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.md,
-                            0,
-                            AppSpacing.md,
-                            10,
-                          ),
-                          child: _buildContent(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (isVisible)
-                  Hero(
-                    tag: 'document_scrolling_alert',
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: ScrollingAlert(
-                        text:
-                            '⚠️ ATENÇÃO: VOCÊ POSSUI DOCUMENTOS PENDENTES PARA A VIAGEM. CLIQUE AQUI PARA REGULARIZAR.',
-                        onTap: () => context.push('/documents'),
-                        onClose: () =>
-                            context.read<GlobalAlertCubit>().dismiss(),
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
-        );
-      },
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _buildContent(context),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -154,7 +108,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(90); // Constant base size
+  Size get preferredSize => const Size.fromHeight(51);
 }
 
 class HeaderSpacer extends StatelessWidget {
@@ -162,16 +116,7 @@ class HeaderSpacer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DocumentsCubit, DocumentsState>(
-      builder: (context, docState) {
-        return BlocBuilder<GlobalAlertCubit, bool>(
-          builder: (context, isDismissed) {
-            final hasPending = docState.hasPendingAction;
-            final isVisible = hasPending && !isDismissed;
-            return SizedBox(height: isVisible ? 120 : 90);
-          },
-        );
-      },
-    );
+    final topPadding = MediaQuery.of(context).padding.top;
+    return SizedBox(height: topPadding + 10);
   }
 }

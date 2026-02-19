@@ -13,12 +13,14 @@ class ItineraryList extends StatelessWidget {
   final DateTime? selectedDate;
   final ItineraryFilters? filters;
   final List<String> pendingDocs;
+  final String groupId;
 
   const ItineraryList({
     super.key,
     required this.items,
     required this.travelTimes,
     required this.selectedDate,
+    required this.groupId,
     this.filters,
     this.pendingDocs = const [],
   });
@@ -26,29 +28,30 @@ class ItineraryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Filter items
-    final displayedItemsFull = items.where((item) {
-      // 1. Filter by Date (Priority to filter.date, fallback to selectedDate)
-      final filterDate = filters?.date ?? selectedDate;
-      if (filterDate != null && item.startDateTime != null) {
-        if (!_isSameDay(item.startDateTime!, filterDate)) return false;
-      }
+    final displayedItemsFull =
+        items.where((item) {
+          // 1. Filter by Date (Priority to filter.date, fallback to selectedDate)
+          final filterDate = filters?.date ?? selectedDate;
+          if (filterDate != null && item.startDateTime != null) {
+            if (!_isSameDay(item.startDateTime!, filterDate)) return false;
+          }
 
-      // 2. Filter by Type
-      if (filters != null && filters!.types.isNotEmpty) {
-        if (!filters!.types.contains(item.type)) return false;
-      }
+          // 2. Filter by Type
+          if (filters != null && filters!.types.isNotEmpty) {
+            if (!filters!.types.contains(item.type)) return false;
+          }
 
-      // 3. Filter by Time
-      if (filters?.startTime != null && item.startDateTime != null) {
-        final itemTime = TimeOfDay.fromDateTime(item.startDateTime!);
-        if (itemTime.hour < filters!.startTime!.hour) return false;
-        if (itemTime.hour == filters!.startTime!.hour &&
-            itemTime.minute < filters!.startTime!.minute)
-          return false;
-      }
+          // 3. Filter by Time
+          if (filters?.startTime != null && item.startDateTime != null) {
+            final itemTime = TimeOfDay.fromDateTime(item.startDateTime!);
+            if (itemTime.hour < filters!.startTime!.hour) return false;
+            if (itemTime.hour == filters!.startTime!.hour &&
+                itemTime.minute < filters!.startTime!.minute)
+              return false;
+          }
 
-      return true;
-    }).toList();
+          return true;
+        }).toList();
 
     // 1. Sort the FULL filtered list
     final displayedItems = List<ItineraryItemEntity>.from(displayedItemsFull);
@@ -131,7 +134,7 @@ class ItineraryList extends StatelessWidget {
           } else if (item.type == ItineraryType.transfer) {
             card = TransferCard(item: item, showNextDayTag: showNextDayTag);
           } else {
-            card = GenericEventCard(item: item);
+            card = GenericEventCard(item: item, groupId: groupId);
           }
 
           if (statusLabel != null) {
@@ -171,8 +174,8 @@ class ItineraryList extends StatelessWidget {
           if (item.type == ItineraryType.transfer) {
             travelDuration =
                 (item.travelTime != null && item.travelTime!.isNotEmpty)
-                ? item.travelTime
-                : item.durationString;
+                    ? item.travelTime
+                    : item.durationString;
           } else {
             final bool nextIsTransfer =
                 !isLast &&
@@ -257,10 +260,11 @@ class DashedLineVerticalPainter extends CustomPainter {
   DashedLineVerticalPainter({required this.color});
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke;
 
     double startY = 0;
     while (startY < size.height) {

@@ -6,38 +6,60 @@ import '../../domain/entities/itinerary_group.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_item.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import '../cubit/itinerary_cubit.dart';
-import '../widgets/day_slider.dart';
 import '../widgets/itinerary_list.dart';
+import '../widgets/itinerary_header_card.dart';
 import '../widgets/itinerary_filter_modal.dart';
+import '../widgets/group_switch_modal.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/components/itinerary_shimmer.dart';
 
 /// Standalone Widget to be used as a Tab
 class ItineraryTab extends StatelessWidget {
-  const ItineraryTab({super.key});
+  final String? groupId;
+  final VoidCallback?
+  onSwitchGroup; // Keep for backward compatibility if needed, or remove
+  final Function(String)? onGroupChanged;
+
+  const ItineraryTab({
+    super.key,
+    this.groupId,
+    this.onSwitchGroup,
+    this.onGroupChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetIt.I<ItineraryCubit>()..loadUserItinerary(),
+      create: (context) {
+        final cubit = GetIt.I<ItineraryCubit>();
+        if (groupId != null) {
+          cubit.loadItinerary(groupId!);
+        } else {
+          cubit.loadUserItinerary();
+        }
+        return cubit;
+      },
       child: Scaffold(
         // Inner scaffold to handle background and body
         body: BlocBuilder<ItineraryCubit, ItineraryState>(
           builder: (context, state) {
             return state.maybeWhen(
               loading: () => const ItineraryShimmer(),
-              error: (msg) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text('Erro: $msg', textAlign: TextAlign.center),
-                ),
-              ),
+              error:
+                  (msg) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text('Erro: $msg', textAlign: TextAlign.center),
+                    ),
+                  ),
               loaded: (group, items, travelTimes, pendingDocs) {
                 return ItineraryContent(
                   group: group,
                   items: items,
                   travelTimes: travelTimes,
                   pendingDocs: pendingDocs,
+                  onSwitchGroup: onSwitchGroup ?? () {},
+                  onGroupChanged: onGroupChanged ?? (_) {},
                 );
               },
               orElse: () => const SizedBox.shrink(),
@@ -54,6 +76,8 @@ class ItineraryContent extends StatefulWidget {
   final List<ItineraryItemEntity> items;
   final List<Map<String, dynamic>> travelTimes;
   final List<String> pendingDocs;
+  final VoidCallback onSwitchGroup;
+  final Function(String) onGroupChanged;
 
   const ItineraryContent({
     super.key,
@@ -61,6 +85,8 @@ class ItineraryContent extends StatefulWidget {
     required this.items,
     required this.travelTimes,
     required this.pendingDocs,
+    required this.onSwitchGroup,
+    required this.onGroupChanged,
   });
 
   @override
@@ -107,15 +133,21 @@ class _ItineraryContentState extends State<ItineraryContent> {
 
     final result = await showDialog<ItineraryFilters>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: ItineraryFilterModal(
-          initialFilters: _filters,
-          availableDates: availableDates,
-        ),
-      ),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: ItineraryFilterModal(
+              initialFilters: _filters,
+              availableDates: availableDates,
+            ),
+          ),
     );
 
     if (result != null) {
@@ -133,20 +165,32 @@ class _ItineraryContentState extends State<ItineraryContent> {
     }
   }
 
+  void _showSwitchModal() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => GroupSwitchModal(
+            onGroupSelected: (groupId) {
+              Navigator.pop(context);
+              widget.onGroupChanged(groupId);
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surface, // Theme-aware background
+      color: const Color(0xFFF2F4F7), // Match home background
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const HeaderSpacer(),
-          const SizedBox(height: 10),
+          //removed sizedbox height 4 to stick to header spacer if needed, but header card has margin top
 
-          // Day Slider
-          DaySlider(
-            startDate: widget.group.startDate,
-            endDate: widget.group.endDate,
+          // Header Card with Group Info and Day Slider
+          ItineraryHeaderCard(
+            group: widget.group,
             selectedDate: _selectedDate,
             onDateSelected: (date) {
               setState(() {
@@ -159,6 +203,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                 }
               });
             },
+            onTrocar: _showSwitchModal,
           ),
 
           const SizedBox(height: 16),
@@ -174,14 +219,14 @@ class _ItineraryContentState extends State<ItineraryContent> {
                       ? '${_filters.count} filtros aplicados'
                       : 'Sem filtros aplicados',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: _filters.isActive
-                        ? AppColors.primary
-                        : Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: _filters.isActive
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    color:
+                        _filters.isActive
+                            ? AppColors.primary
+                            : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight:
+                        _filters.isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 GestureDetector(
@@ -192,16 +237,20 @@ class _ItineraryContentState extends State<ItineraryContent> {
                       vertical: 10, // Increased for better tap area
                     ),
                     decoration: BoxDecoration(
-                      color: _filters.isActive
-                          ? AppColors.primary.withOpacity(0.1)
-                          : (Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF1E1E1E)
-                                : const Color(0xFFF2F4F7)),
+                      color:
+                          _filters.isActive
+                              ? AppColors.primary.withOpacity(0.1)
+                              : (Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFF2F4F7)),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _filters.isActive
-                            ? AppColors.primary
-                            : Theme.of(context).dividerColor.withOpacity(0.1),
+                        color:
+                            _filters.isActive
+                                ? AppColors.primary
+                                : Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.1),
                       ),
                     ),
                     child: Row(
@@ -209,20 +258,22 @@ class _ItineraryContentState extends State<ItineraryContent> {
                         Icon(
                           Icons.filter_list,
                           size: 16,
-                          color: _filters.isActive
-                              ? AppColors.primary
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.6),
+                          color:
+                              _filters.isActive
+                                  ? AppColors.primary
+                                  : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Filtrar',
                           style: AppTextStyles.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: _filters.isActive
-                                ? AppColors.primary
-                                : Theme.of(context).colorScheme.onSurface,
+                            color:
+                                _filters.isActive
+                                    ? AppColors.primary
+                                    : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -241,6 +292,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
               items: widget.items,
               travelTimes: widget.travelTimes,
               selectedDate: _selectedDate,
+              groupId: widget.group.id,
               filters: _filters,
               pendingDocs: widget.pendingDocs,
             ),

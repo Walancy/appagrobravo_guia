@@ -11,6 +11,8 @@ abstract class ItineraryGroupDto with _$ItineraryGroupDto {
     @JsonKey(name: 'nome') required String name,
     @JsonKey(name: 'data_inicio') required DateTime startDate,
     @JsonKey(name: 'data_fim') required DateTime endDate,
+    String? logo,
+    @JsonKey(name: 'missao_localizacao') String? missionLocation,
   }) = _ItineraryGroupDto;
 
   const ItineraryGroupDto._();
@@ -24,6 +26,8 @@ abstract class ItineraryGroupDto with _$ItineraryGroupDto {
       name: name,
       startDate: startDate,
       endDate: endDate,
+      logo: logo,
+      missionLocation: missionLocation,
     );
   }
 }

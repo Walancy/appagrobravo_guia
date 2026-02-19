@@ -6,7 +6,7 @@ import '../../../../core/tokens/app_text_styles.dart';
 import '../../domain/entities/itinerary_group.dart';
 import '../../domain/entities/itinerary_item.dart';
 import '../cubit/itinerary_cubit.dart';
-import '../widgets/day_slider.dart';
+import '../widgets/itinerary_header_card.dart';
 import '../widgets/itinerary_list.dart';
 
 class ItineraryPage extends StatelessWidget {
@@ -19,7 +19,7 @@ class ItineraryPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => GetIt.I<ItineraryCubit>()..loadItinerary(groupId),
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: const Color(0xFFF2F4F7), // Match home background
         appBar: AppBar(
           title: Text(
             'Itinerário',
@@ -127,13 +127,13 @@ class _ItineraryContentState extends State<_ItineraryContent> {
               ],
             ),
           ),
-        DaySlider(
-          startDate: widget.group.startDate,
-          endDate: widget.group.endDate,
+        ItineraryHeaderCard(
+          group: widget.group,
           selectedDate: _selectedDate,
           onDateSelected: (date) {
             setState(() => _selectedDate = date);
           },
+          onTrocar: () => Navigator.of(context).pop(), // Goes back to Dashboard
         ),
         Expanded(
           child: ItineraryList(
@@ -141,6 +141,7 @@ class _ItineraryContentState extends State<_ItineraryContent> {
             travelTimes: widget.travelTimes,
             selectedDate: _selectedDate,
             pendingDocs: widget.pendingDocs,
+            groupId: widget.group.id,
           ),
         ),
       ],

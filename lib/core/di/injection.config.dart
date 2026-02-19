@@ -39,6 +39,8 @@ import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart
     as _i1016;
 import 'package:agrobravo/features/home/presentation/cubit/feed_cubit.dart'
     as _i700;
+import 'package:agrobravo/features/home/presentation/cubit/guide_home_cubit.dart'
+    as _i679;
 import 'package:agrobravo/features/itinerary/data/repositories/itinerary_repository_impl.dart'
     as _i758;
 import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repository.dart'
@@ -97,6 +99,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i889.ItineraryRepository>(
       () => _i758.ItineraryRepositoryImpl(gh<_i454.SupabaseClient>()),
+    );
+    gh.factory<_i679.GuideHomeCubit>(
+      () => _i679.GuideHomeCubit(gh<_i889.ItineraryRepository>()),
     );
     gh.factory<_i934.ItineraryCubit>(
       () => _i934.ItineraryCubit(gh<_i889.ItineraryRepository>()),
