@@ -20,70 +20,73 @@ class ItineraryMicrocards extends StatelessWidget {
           loaded: (group, items, _, __) {
             final now = DateTime.now();
             // Filter events from today onwards, or recently passed (last 2 hours)
-            final upcomingItems = items
-                .where(
-                  (item) =>
-                      item.startDateTime != null &&
-                      item.startDateTime!.year == now.year &&
-                      item.startDateTime!.month == now.month &&
-                      item.startDateTime!.day == now.day &&
-                      item.startDateTime!.isAfter(
-                        now.subtract(const Duration(hours: 2)),
-                      ),
-                )
-                .take(5) // Show only the next 5
-                .toList();
+            final upcomingItems =
+                items
+                    .where(
+                      (item) =>
+                          item.startDateTime != null &&
+                          item.startDateTime!.year == now.year &&
+                          item.startDateTime!.month == now.month &&
+                          item.startDateTime!.day == now.day &&
+                          item.startDateTime!.isAfter(
+                            now.subtract(const Duration(hours: 2)),
+                          ),
+                    )
+                    .take(5) // Show only the next 5
+                    .toList();
 
             if (upcomingItems.isEmpty) return const SizedBox.shrink();
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: AppSpacing.md),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Próximos eventos',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: onSeeAll,
-                        child: Text(
-                          'Itinerário completo',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 140, // Reduced height for more compact look
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.none, // Correctly shows shadows
+            return Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
-                      vertical: 12, // Space for shadows
                     ),
-                    itemCount: upcomingItems.length,
-                    itemBuilder: (context, index) {
-                      final item = upcomingItems[index];
-                      return _buildMicrocard(context, item);
-                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Próximos eventos',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: onSeeAll,
+                          child: Text(
+                            'Itinerário completo',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 140, // Reduced height for more compact look
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none, // Correctly shows shadows
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: 12, // Space for shadows
+                      ),
+                      itemCount: upcomingItems.length,
+                      itemBuilder: (context, index) {
+                        final item = upcomingItems[index];
+                        return _buildMicrocard(context, item);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           },
           orElse: () => const SizedBox.shrink(),
@@ -130,9 +133,10 @@ class ItineraryMicrocards extends StatelessWidget {
         typeLabel = 'Evento';
     }
 
-    final time = item.startDateTime != null
-        ? DateFormat.Hm().format(item.startDateTime!)
-        : '--:--';
+    final time =
+        item.startDateTime != null
+            ? DateFormat.Hm().format(item.startDateTime!)
+            : '--:--';
 
     return GestureDetector(
       onTap: onSeeAll,
@@ -142,16 +146,18 @@ class ItineraryMicrocards extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.all(10), // Reduced internal padding
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1E1E1E)
-              : Theme.of(context).colorScheme.surface,
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E1E)
+                  : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(
-                alpha: Theme.of(context).brightness == Brightness.dark
-                    ? 0.2
-                    : 0.04,
+                alpha:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? 0.2
+                        : 0.04,
               ),
               blurRadius: 10,
               offset: const Offset(0, 4),

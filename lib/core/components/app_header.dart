@@ -108,15 +108,22 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(51);
+  Size get preferredSize {
+    // Must include the device top inset (status bar) so Scaffold allocates the correct space.
+    // We don't have BuildContext here, so we use a fixed 51 — the SafeArea inside handles
+    // the actual top padding at render time. Scaffold reads this value to offset the body.
+    return const Size.fromHeight(51);
+  }
 }
 
 class HeaderSpacer extends StatelessWidget {
-  const HeaderSpacer({super.key});
+  final double extraHeight;
+
+  const HeaderSpacer({super.key, this.extraHeight = 20});
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return SizedBox(height: topPadding + 50);
+    return SizedBox(height: topPadding + extraHeight);
   }
 }

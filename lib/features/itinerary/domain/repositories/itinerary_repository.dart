@@ -3,6 +3,7 @@ import '../entities/itinerary_item.dart';
 import '../entities/itinerary_group.dart';
 import '../entities/emergency_contacts.dart';
 import '../entities/guide_mission.dart';
+import '../entities/menu_item.dart';
 
 abstract class ItineraryRepository {
   Future<Either<Exception, List<GuideMission>>> getGuideMissions();
@@ -12,6 +13,7 @@ abstract class ItineraryRepository {
   Future<Either<Exception, List<ItineraryItemEntity>>> getItinerary(
     String groupId,
   );
+  Future<Either<Exception, List<MenuItemEntity>>> getMenu(String eventId);
   Future<Either<Exception, List<Map<String, dynamic>>>> getTravelTimes(
     String groupId,
   );

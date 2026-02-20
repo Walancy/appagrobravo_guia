@@ -44,6 +44,9 @@ class $AssetsImagesGen {
   /// File path: assets/images/logo_colorida.svg
   String get logoColorida => 'assets/images/logo_colorida.svg';
 
+  /// File path: assets/images/whatsapp.svg
+  String get whatsapp => 'assets/images/whatsapp.svg';
+
   /// List of all assets
   List<dynamic> get values => [
     appIconPng,
@@ -55,17 +58,18 @@ class $AssetsImagesGen {
     googleLogo,
     logoBranca,
     logoColorida,
+    whatsapp,
   ];
 }
 
 class Assets {
   const Assets._();
 
-  static const String aEnv = '.env';
+  static const String env = 'assets/env';
   static const $AssetsImagesGen images = $AssetsImagesGen();
 
   /// List of all assets
-  static List<String> get values => [aEnv];
+  static List<String> get values => [env];
 }
 
 class AssetGenImage {

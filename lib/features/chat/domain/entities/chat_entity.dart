@@ -58,3 +58,49 @@ abstract class GroupDetailEntity with _$GroupDetailEntity {
     required List<String> mediaUrls,
   }) = _GroupDetailEntity;
 }
+
+/// Plain (non-freezed) traveler info used in the Viajantes chat tab.
+class TravelerInfo {
+  final String id;
+  final String name;
+  final String? avatarUrl;
+  final String? role;
+  final String groupId;
+  final String groupName;
+  final String missionId;
+  final String missionName;
+  final String? missionLogo;
+
+  const TravelerInfo({
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+    this.role,
+    required this.groupId,
+    required this.groupName,
+    required this.missionId,
+    required this.missionName,
+    this.missionLogo,
+  });
+}
+
+/// Plain (non-freezed) guide info used in the Guias chat tab.
+class GuideInfo {
+  final String id;
+  final String name;
+  final String? avatarUrl;
+  final String role;
+  final List<String> groupNames;
+  final List<String> groupIds;
+  final Set<String> missionNames;
+
+  const GuideInfo({
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+    required this.role,
+    this.groupNames = const [],
+    this.groupIds = const [],
+    this.missionNames = const {},
+  });
+}

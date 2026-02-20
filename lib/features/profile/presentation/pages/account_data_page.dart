@@ -29,7 +29,6 @@ class _AccountDataPageState extends State<AccountDataPage> {
   final _complementController = TextEditingController();
   final _nationalityController = TextEditingController();
   final _passportController = TextEditingController();
-  final _companyController = TextEditingController();
   DateTime? _birthDate;
 
   bool _initialized = false;
@@ -49,7 +48,6 @@ class _AccountDataPageState extends State<AccountDataPage> {
     _complementController.dispose();
     _nationalityController.dispose();
     _passportController.dispose();
-    _companyController.dispose();
     super.dispose();
   }
 
@@ -68,7 +66,6 @@ class _AccountDataPageState extends State<AccountDataPage> {
     _complementController.text = profile.complement ?? '';
     _nationalityController.text = profile.nationality ?? '';
     _passportController.text = profile.passport ?? '';
-    _companyController.text = profile.company ?? '';
     _birthDate = profile.birthDate;
     _initialized = true;
   }
@@ -127,7 +124,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         'Telefone',
                         keyboardType: TextInputType.phone,
                       ),
-                      _buildTextField(context, _companyController, 'Empresa'),
+
                       Row(
                         children: [
                           Expanded(
@@ -239,7 +236,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               'phone': _phoneController.text,
                               'cpf': _cpfController.text,
                               'ssn': _ssnController.text,
-                              'company': _companyController.text,
+
                               'zipCode': _zipCodeController.text,
                               'state': _stateController.text,
                               'city': _cityController.text,
@@ -318,9 +315,10 @@ class _AccountDataPageState extends State<AccountDataPage> {
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Theme.of(context).brightness == Brightness.dark
-                  ? Theme.of(context).colorScheme.surface
-                  : const Color(0xFFFAFAFA),
+              fillColor:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surface
+                      : const Color(0xFFFAFAFA),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Theme.of(context).dividerColor),
@@ -363,9 +361,10 @@ class _AccountDataPageState extends State<AccountDataPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).colorScheme.surface
-                    : const Color(0xFFFAFAFA),
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.surface
+                        : const Color(0xFFFAFAFA),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Theme.of(context).dividerColor),
               ),

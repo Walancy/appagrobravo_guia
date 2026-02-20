@@ -29,6 +29,12 @@ _ItineraryItemDto _$ItineraryItemDtoFromJson(Map<String, dynamic> json) =>
       driverName: json['motorista'] as String?,
       durationString: json['duracao'] as String?,
       travelTime: json['tempo_deslocamento'] as String?,
+      menuUrl: json['cardapio'] as String?,
+      menuUrlAlt: json['cardapio_url'] as String?,
+      attachments:
+          (json['anexos'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      singleAttachment: json['anexo'] as String?,
+      dataAdditional: json['dados'] as Map<String, dynamic>?,
       connections:
           (json['conexoes'] as List<dynamic>?)
               ?.map((e) => e as Map<String, dynamic>)
@@ -55,5 +61,10 @@ Map<String, dynamic> _$ItineraryItemDtoToJson(_ItineraryItemDto instance) =>
       'motorista': instance.driverName,
       'duracao': instance.durationString,
       'tempo_deslocamento': instance.travelTime,
+      'cardapio': instance.menuUrl,
+      'cardapio_url': instance.menuUrlAlt,
+      'anexos': instance.attachments,
+      'anexo': instance.singleAttachment,
+      'dados': instance.dataAdditional,
       'conexoes': instance.connections,
     };

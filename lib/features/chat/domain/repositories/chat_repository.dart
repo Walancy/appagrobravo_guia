@@ -16,4 +16,19 @@ abstract class ChatRepository {
   Future<void> editMessage(String messageId, String newText);
   Future<void> deleteMessages(List<String> messageIds);
   Future<Either<Exception, GroupDetailEntity>> getGroupDetails(String groupId);
+
+  /// DMs received from travelers (eu sou o guia)
+  Future<Either<Exception, List<GuideEntity>>> getTravelerDMs();
+
+  /// Other guides — with their group names for display
+  Future<Either<Exception, List<GuideEntity>>> getGuideContacts();
+
+  /// All guides with group name tags
+  Future<Either<Exception, List<GuideInfo>>> getGuideInfos();
+
+  /// All groups across all missions with mission name
+  Future<Either<Exception, List<ChatEntity>>> getAllGroups();
+
+  /// All travelers (participants) from all groups where I'm a guide
+  Future<Either<Exception, List<TravelerInfo>>> getAllTravelers();
 }

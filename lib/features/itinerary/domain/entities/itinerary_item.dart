@@ -33,6 +33,8 @@ abstract class ItineraryItemEntity with _$ItineraryItemEntity {
     String? driverName,
     String? durationString,
     String? travelTime,
+    String? menuUrl,
+    List<String>? attachments,
     List<Map<String, dynamic>>? connections,
   }) = _ItineraryItemEntity;
 

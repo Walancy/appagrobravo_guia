@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dartz/dartz.dart';
@@ -37,9 +39,10 @@ class ChatRepositoryImpl implements ChatRepository {
       };
 
       final json = {
-        'currentMission': data.currentMission != null
-            ? chatToJson(data.currentMission!)
-            : null,
+        'currentMission':
+            data.currentMission != null
+                ? chatToJson(data.currentMission!)
+                : null,
         'guides': data.guides.map(guideToJson).toList(),
         'history': data.history.map(chatToJson).toList(),
         'lastMessages': data.lastMessages,
@@ -73,24 +76,23 @@ class ChatRepositoryImpl implements ChatRepository {
           title: map['title'],
           subtitle: map['subtitle'],
           imageUrl: map['imageUrl'],
-          startDate: map['startDate'] != null
-              ? DateTime.parse(map['startDate'])
-              : null,
-          endDate: map['endDate'] != null
-              ? DateTime.parse(map['endDate'])
-              : null,
+          startDate:
+              map['startDate'] != null
+                  ? DateTime.parse(map['startDate'])
+                  : null,
+          endDate:
+              map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
           memberCount: map['memberCount'] ?? 0,
         );
 
-        final current = json['currentMission'] != null
-            ? chatFromJson(json['currentMission'])
-            : null;
-        final guides = (json['guides'] as List)
-            .map((e) => guideFromJson(e))
-            .toList();
-        final history = (json['history'] as List)
-            .map((e) => chatFromJson(e))
-            .toList();
+        final current =
+            json['currentMission'] != null
+                ? chatFromJson(json['currentMission'])
+                : null;
+        final guides =
+            (json['guides'] as List).map((e) => guideFromJson(e)).toList();
+        final history =
+            (json['history'] as List).map((e) => chatFromJson(e)).toList();
 
         final lastMessages =
             (json['lastMessages'] as Map<String, dynamic>?)?.map(
@@ -144,11 +146,12 @@ class ChatRepositoryImpl implements ChatRepository {
         } catch (_) {}
       }
 
-      final groupIds = (groupsResponse as List)
-          .map((e) => e['grupo_id'] as String?)
-          .where((e) => e != null)
-          .cast<String>()
-          .toList();
+      final groupIds =
+          (groupsResponse as List)
+              .map((e) => e['grupo_id'] as String?)
+              .where((e) => e != null)
+              .cast<String>()
+              .toList();
 
       if (groupIds.isEmpty) {
         return const Right(ChatData());
@@ -260,10 +263,11 @@ class ChatRepositoryImpl implements ChatRepository {
             .select('lider_id')
             .eq('grupo_id', currentGroupId);
 
-        final leaderIds = (leadersResponse as List)
-            .map((l) => l['lider_id'] as String)
-            .toSet()
-            .toList();
+        final leaderIds =
+            (leadersResponse as List)
+                .map((l) => l['lider_id'] as String)
+                .toSet()
+                .toList();
 
         if (leaderIds.isNotEmpty) {
           final usersResponse = await _supabaseClient
@@ -297,13 +301,14 @@ class ChatRepositoryImpl implements ChatRepository {
           final chatId = await _resolveChatId(identifier, isGroup);
           if (chatId == null) return;
 
-          final response = await _supabaseClient
-              .from('mensagens')
-              .select('mensagem, created_at')
-              .eq('batepapo_id', chatId)
-              .order('created_at', ascending: false)
-              .limit(1)
-              .maybeSingle();
+          final response =
+              await _supabaseClient
+                  .from('mensagens')
+                  .select('mensagem, created_at')
+                  .eq('batepapo_id', chatId)
+                  .order('created_at', ascending: false)
+                  .limit(1)
+                  .maybeSingle();
 
           if (response != null) {
             lastMessages[identifier] =
@@ -347,24 +352,25 @@ class ChatRepositoryImpl implements ChatRepository {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonList = messages
-          .map(
-            (m) => {
-              'id': m.id,
-              'text': m.text,
-              'timestamp': m.timestamp.toIso8601String(),
-              'typeIndex': m.type.index,
-              'userName': m.userName,
-              'userAvatarUrl': m.userAvatarUrl,
-              'guideRole': m.guideRole,
-              'attachmentUrl': m.attachmentUrl,
-              // serialize partial repliedToMessage if needed, simplistic version here:
-              'repliedToId': m.repliedToMessage?.id,
-              'isEdited': m.isEdited,
-              'isDeleted': m.isDeleted,
-            },
-          )
-          .toList();
+      final jsonList =
+          messages
+              .map(
+                (m) => {
+                  'id': m.id,
+                  'text': m.text,
+                  'timestamp': m.timestamp.toIso8601String(),
+                  'typeIndex': m.type.index,
+                  'userName': m.userName,
+                  'userAvatarUrl': m.userAvatarUrl,
+                  'guideRole': m.guideRole,
+                  'attachmentUrl': m.attachmentUrl,
+                  // serialize partial repliedToMessage if needed, simplistic version here:
+                  'repliedToId': m.repliedToMessage?.id,
+                  'isEdited': m.isEdited,
+                  'isDeleted': m.isDeleted,
+                },
+              )
+              .toList();
 
       await prefs.setString(
         'cached_messages_$identifier',
@@ -392,16 +398,17 @@ class ChatRepositoryImpl implements ChatRepository {
             userAvatarUrl: json['userAvatarUrl'],
             guideRole: json['guideRole'],
             attachmentUrl: json['attachmentUrl'],
-            repliedToMessage: json['repliedToId'] != null
-                ? MessageEntity(
-                    id: json['repliedToId'],
-                    text: 'Carregando...',
-                    timestamp: DateTime.now(),
-                    type: MessageType.other,
-                    isEdited: false,
-                    isDeleted: false,
-                  )
-                : null, // Full reconstruction of reply not supported in simple cache
+            repliedToMessage:
+                json['repliedToId'] != null
+                    ? MessageEntity(
+                      id: json['repliedToId'],
+                      text: 'Carregando...',
+                      timestamp: DateTime.now(),
+                      type: MessageType.other,
+                      isEdited: false,
+                      isDeleted: false,
+                    )
+                    : null, // Full reconstruction of reply not supported in simple cache
             isEdited: json['isEdited'] ?? false,
             isDeleted: json['isDeleted'] ?? false,
           );
@@ -420,19 +427,17 @@ class ChatRepositoryImpl implements ChatRepository {
   }) async* {
     final cacheKey = isGroup ? 'group_$chatId' : 'dm_$chatId';
 
-    // 1. Yield details from cache immediately
+    // 1. Yield from cache immediately
     final cachedMsgs = await _getMessagesFromCache(cacheKey);
     if (cachedMsgs.isNotEmpty) {
       yield cachedMsgs;
     }
 
-    // 2. Try online
+    // 2. Resolve the real batepapo_id
     String? realChatId;
     try {
       realChatId = await _resolveChatId(chatId, isGroup);
     } catch (e) {
-      // If offline, _resolveChatId fails. We stop here if we couldn't resolve ID.
-      // If we yielded cached data, the user at least sees that.
       return;
     }
 
@@ -441,61 +446,55 @@ class ChatRepositoryImpl implements ChatRepository {
       return;
     }
 
-    try {
-      yield* _supabaseClient
-          .from('mensagens')
-          .stream(primaryKey: ['id'])
-          .eq('batepapo_id', realChatId)
-          .order('created_at', ascending: true)
-          .asyncMap((data) async {
-            final messages = <MessageEntity>[];
-            final currentUser = _supabaseClient.auth.currentUser;
+    // 3. Helper to build MessageEntity list from raw rows
+    Future<List<MessageEntity>> _buildMessages(
+      List<dynamic> rows,
+      List<MessageEntity> existing,
+    ) async {
+      final currentUser = _supabaseClient.auth.currentUser;
+      final userIds = rows.map((e) => e['user_id'] as String).toSet();
+      Map<String, Map<String, dynamic>> userMap = {};
 
-            // Collect unique user IDs from messages to fetch them in batch (optimization)
-            final userIds = data.map((e) => e['user_id'] as String).toSet();
-            Map<String, Map<String, dynamic>> userMap = {};
+      if (userIds.isNotEmpty) {
+        try {
+          final usersResponse = await _supabaseClient
+              .from('users')
+              .select('id, nome, foto, cargo')
+              .inFilter('id', userIds.toList());
+          for (var u in usersResponse as List) {
+            userMap[u['id']] = u as Map<String, dynamic>;
+          }
+        } catch (_) {}
+      }
 
-            if (userIds.isNotEmpty) {
-              try {
-                final usersResponse = await _supabaseClient
-                    .from('users')
-                    .select('id, nome, foto, cargo')
-                    .inFilter('id', userIds.toList());
+      final messages = <MessageEntity>[];
+      for (final msg in rows) {
+        final userId = msg['user_id'] as String;
+        final userData = userMap[userId];
+        final isMe = currentUser?.id == userId;
+        final role = userData?['cargo'] as String?;
+        final isGuide = role?.toLowerCase().contains('guia') ?? false;
+        final type =
+            isMe
+                ? MessageType.me
+                : (isGuide ? MessageType.guide : MessageType.other);
 
-                for (var u in usersResponse as List) {
-                  userMap[u['id']] = u as Map<String, dynamic>;
-                }
-              } catch (e) {
-                // Offline or error fetching users
-              }
-            }
-
-            for (final msg in data) {
-              final userId = msg['user_id'] as String;
-              final userData = userMap[userId];
-
-              final isMe = currentUser?.id == userId;
-              final role = userData?['cargo'] as String?;
-              final isGuide = role?.toLowerCase().contains('guia') ?? false;
-
-              MessageType type = isMe
-                  ? MessageType.me
-                  : (isGuide ? MessageType.guide : MessageType.other);
-
-              messages.add(
-                MessageEntity(
-                  id: msg['id'],
-                  text: msg['mensagem'] ?? '',
-                  timestamp: DateTime.parse(msg['created_at']),
-                  type: type,
-                  userName: userData?['nome'],
-                  userAvatarUrl: userData?['foto'],
-                  guideRole: role,
-                  attachmentUrl: msg['imagem'],
-                  repliedToMessage: msg['id_mensagem_respondida'] != null
-                      ? messages.firstWhere(
-                          (m) => m.id == msg['id_mensagem_respondida'],
-                          orElse: () => MessageEntity(
+        messages.add(
+          MessageEntity(
+            id: msg['id'],
+            text: msg['mensagem'] ?? '',
+            timestamp: DateTime.parse(msg['created_at']),
+            type: type,
+            userName: userData?['nome'],
+            userAvatarUrl: userData?['foto'],
+            guideRole: role,
+            attachmentUrl: msg['imagem'],
+            repliedToMessage:
+                msg['id_mensagem_respondida'] != null
+                    ? messages.firstWhere(
+                      (m) => m.id == msg['id_mensagem_respondida'],
+                      orElse:
+                          () => MessageEntity(
                             id: 'deleted',
                             text: 'Mensagem não encontrada',
                             timestamp: DateTime.fromMicrosecondsSinceEpoch(0),
@@ -503,23 +502,109 @@ class ChatRepositoryImpl implements ChatRepository {
                             isEdited: false,
                             isDeleted: true,
                           ),
-                        )
-                      : null,
-                  isEdited: msg['editado'] ?? false,
-                  isDeleted: msg['deletado'] ?? false,
-                ),
-              );
-            }
+                    )
+                    : null,
+            isEdited: msg['editado'] ?? false,
+            isDeleted: msg['deletado'] ?? false,
+          ),
+        );
+      }
+      return messages;
+    }
 
-            // Side-effect: Update cache
-            _saveMessagesToCache(cacheKey, messages);
+    // 4. Initial load via RPC (server-side filtered — no leakage)
+    List<MessageEntity> currentMessages = [];
+    try {
+      final initialData =
+          await _supabaseClient.rpc(
+                'get_mensagens_batepapo',
+                params: {'p_batepapo_id': realChatId},
+              )
+              as List<dynamic>;
 
-            return messages;
-          });
+      currentMessages = await _buildMessages(initialData, []);
+      _saveMessagesToCache(cacheKey, currentMessages);
+      yield currentMessages;
     } catch (e) {
-      // If stream fails (shouldn't throw easily as Supabase handles reconnects, but if initial conn fails...),
-      // We rely on the initial yield.
-      print('Error in stream: $e');
+      debugPrint('Error on initial messages load: $e');
+      if (cachedMsgs.isEmpty) yield [];
+    }
+
+    // 5. Realtime subscription — filtered to this batepapo_id only
+    final controller = StreamController<List<MessageEntity>>();
+
+    final channel =
+        _supabaseClient
+            .channel('messages_$realChatId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.insert,
+              schema: 'public',
+              table: 'mensagens',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'batepapo_id',
+                value: realChatId,
+              ),
+              callback: (payload) async {
+                try {
+                  final newRow = payload.newRecord;
+                  // Extra safety: verify batepapo_id matches
+                  if (newRow['batepapo_id'] != realChatId) return;
+
+                  final newMessages = await _buildMessages([
+                    newRow,
+                  ], currentMessages);
+                  // Merge: keep existing + append new
+                  final merged = List<MessageEntity>.from(currentMessages);
+                  for (final nm in newMessages) {
+                    if (!merged.any((m) => m.id == nm.id)) {
+                      merged.add(nm);
+                    }
+                  }
+                  currentMessages = merged;
+                  _saveMessagesToCache(cacheKey, currentMessages);
+                  if (!controller.isClosed) controller.add(currentMessages);
+                } catch (e) {
+                  debugPrint('Error processing realtime message: $e');
+                }
+              },
+            )
+            .onPostgresChanges(
+              event: PostgresChangeEvent.update,
+              schema: 'public',
+              table: 'mensagens',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'batepapo_id',
+                value: realChatId,
+              ),
+              callback: (payload) async {
+                try {
+                  final updatedRow = payload.newRecord;
+                  if (updatedRow['batepapo_id'] != realChatId) return;
+
+                  // Re-fetch all to refresh edited/deleted state
+                  final refreshed =
+                      await _supabaseClient.rpc(
+                            'get_mensagens_batepapo',
+                            params: {'p_batepapo_id': realChatId},
+                          )
+                          as List<dynamic>;
+                  currentMessages = await _buildMessages(refreshed, []);
+                  _saveMessagesToCache(cacheKey, currentMessages);
+                  if (!controller.isClosed) controller.add(currentMessages);
+                } catch (e) {
+                  debugPrint('Error processing realtime update: $e');
+                }
+              },
+            )
+            .subscribe();
+
+    try {
+      yield* controller.stream;
+    } finally {
+      await channel.unsubscribe();
+      await controller.close();
     }
   }
 
@@ -579,7 +664,6 @@ class ChatRepositoryImpl implements ChatRepository {
       'mensagem': text,
       'imagem': imageUrl,
       'id_mensagem_respondida': replyToId,
-      'created_at': DateTime.now().toIso8601String(),
     });
   }
 
@@ -590,19 +674,20 @@ class ChatRepositoryImpl implements ChatRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final membersJson = details.members
-          .map(
-            (m) => {
-              'id': m.id,
-              'name': m.name,
-              'role': m.role,
-              'isGuide': m.isGuide,
-              'isMe': m.isMe,
-              'avatarUrl': m.avatarUrl,
-              'connectionStatus': m.connectionStatus.index,
-            },
-          )
-          .toList();
+      final membersJson =
+          details.members
+              .map(
+                (m) => {
+                  'id': m.id,
+                  'name': m.name,
+                  'role': m.role,
+                  'isGuide': m.isGuide,
+                  'isMe': m.isMe,
+                  'avatarUrl': m.avatarUrl,
+                  'connectionStatus': m.connectionStatus.index,
+                },
+              )
+              .toList();
 
       final json = {'members': membersJson, 'mediaUrls': details.mediaUrls};
 
@@ -619,20 +704,21 @@ class ChatRepositoryImpl implements ChatRepository {
 
       if (jsonString != null) {
         final json = jsonDecode(jsonString);
-        final members = (json['members'] as List)
-            .map(
-              (m) => GroupMemberEntity(
-                id: m['id'],
-                name: m['name'],
-                role: m['role'],
-                isGuide: m['isGuide'],
-                isMe: m['isMe'],
-                avatarUrl: m['avatarUrl'],
-                connectionStatus:
-                    ConnectionStatus.values[m['connectionStatus'] ?? 0],
-              ),
-            )
-            .toList();
+        final members =
+            (json['members'] as List)
+                .map(
+                  (m) => GroupMemberEntity(
+                    id: m['id'],
+                    name: m['name'],
+                    role: m['role'],
+                    isGuide: m['isGuide'],
+                    isMe: m['isMe'],
+                    avatarUrl: m['avatarUrl'],
+                    connectionStatus:
+                        ConnectionStatus.values[m['connectionStatus'] ?? 0],
+                  ),
+                )
+                .toList();
 
         final mediaUrls = (json['mediaUrls'] as List).cast<String>();
 
@@ -662,9 +748,10 @@ class ChatRepositoryImpl implements ChatRepository {
             .not('imagem', 'is', null)
             .order('created_at', ascending: false);
 
-        mediaUrls = (messagesResponse as List)
-            .map((m) => m['imagem'] as String)
-            .toList();
+        mediaUrls =
+            (messagesResponse as List)
+                .map((m) => m['imagem'] as String)
+                .toList();
       }
 
       // 3. Fetch Participants (Normal Users)
@@ -673,11 +760,12 @@ class ChatRepositoryImpl implements ChatRepository {
           .select('user_id')
           .eq('grupo_id', groupId);
 
-      final participantUserIds = (participantsResponse as List)
-          .map((p) => p['user_id'] as String?)
-          .where((id) => id != null)
-          .cast<String>()
-          .toSet();
+      final participantUserIds =
+          (participantsResponse as List)
+              .map((p) => p['user_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toSet();
 
       // 4. Fetch Leaders (Guides)
       final leadersResponse = await _supabaseClient
@@ -685,9 +773,8 @@ class ChatRepositoryImpl implements ChatRepository {
           .select('lider_id')
           .eq('grupo_id', groupId);
 
-      final leaderIds = (leadersResponse as List)
-          .map((l) => l['lider_id'] as String)
-          .toSet();
+      final leaderIds =
+          (leadersResponse as List).map((l) => l['lider_id'] as String).toSet();
 
       final allUserIds = {...participantUserIds, ...leaderIds};
       final currentUserId = _supabaseClient.auth.currentUser?.id;
@@ -714,9 +801,8 @@ class ChatRepositoryImpl implements ChatRepository {
             final seguidoId = c['seguido_id'];
             final aprovou = c['aprovou'] as bool;
 
-            final otherId = seguidorId == currentUserId
-                ? seguidoId
-                : seguidorId;
+            final otherId =
+                seguidorId == currentUserId ? seguidoId : seguidorId;
 
             if (aprovou) {
               statuses[otherId] = ConnectionStatus.connected;
@@ -778,63 +864,592 @@ class ChatRepositoryImpl implements ChatRepository {
     if (isGroup) {
       // identifier is group_id
       try {
-        final response = await _supabaseClient
-            .from('batePapo')
-            .select('id')
-            .eq('grupo_id', identifier)
-            .maybeSingle();
+        final response =
+            await _supabaseClient
+                .from('batePapo')
+                .select('id')
+                .eq('grupo_id', identifier)
+                .maybeSingle();
 
         if (response != null) {
           return response['id'] as String;
         } else {
           // Create if not exists
-          final newChat = await _supabaseClient
-              .from('batePapo')
-              .insert({'grupo_id': identifier})
-              .select('id')
-              .single();
+          final newChat =
+              await _supabaseClient
+                  .from('batePapo')
+                  .insert({'grupo_id': identifier})
+                  .select('id')
+                  .single();
           return newChat['id'] as String;
         }
       } catch (e) {
         // Handle creation error (e.g. race condition/duplicate), default to search again
-        final response = await _supabaseClient
-            .from('batePapo')
-            .select('id')
-            .eq('grupo_id', identifier)
-            .maybeSingle();
+        final response =
+            await _supabaseClient
+                .from('batePapo')
+                .select('id')
+                .eq('grupo_id', identifier)
+                .maybeSingle();
         return response?['id'] as String?;
       }
     } else {
       // identifier is other user_id (Leader/Guide)
       try {
-        final response = await _supabaseClient
-            .from('batePapo')
-            .select('id')
-            .or(
-              'and(lider_id.eq.$identifier,user_id.eq.$userId),and(lider_id.eq.$userId,user_id.eq.$identifier)',
-            )
-            .maybeSingle();
+        final response =
+            await _supabaseClient
+                .from('batePapo')
+                .select('id')
+                .or(
+                  'and(lider_id.eq.$identifier,user_id.eq.$userId,grupo_id.is.null),and(lider_id.eq.$userId,user_id.eq.$identifier,grupo_id.is.null)',
+                )
+                .maybeSingle();
 
         if (response != null) {
           return response['id'] as String;
         } else {
-          final newChat = await _supabaseClient
-              .from('batePapo')
-              .insert({'lider_id': identifier, 'user_id': userId})
-              .select('id')
-              .single();
+          final newChat =
+              await _supabaseClient
+                  .from('batePapo')
+                  .insert({'lider_id': identifier, 'user_id': userId})
+                  .select('id')
+                  .single();
           return newChat['id'] as String;
         }
       } catch (e) {
-        final response = await _supabaseClient
-            .from('batePapo')
-            .select('id')
-            .or(
-              'and(lider_id.eq.$identifier,user_id.eq.$userId),and(lider_id.eq.$userId,user_id.eq.$identifier)',
-            )
-            .maybeSingle();
+        final response =
+            await _supabaseClient
+                .from('batePapo')
+                .select('id')
+                .or(
+                  'and(lider_id.eq.$identifier,user_id.eq.$userId,grupo_id.is.null),and(lider_id.eq.$userId,user_id.eq.$identifier,grupo_id.is.null)',
+                )
+                .maybeSingle();
         return response?['id'] as String?;
       }
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<GuideEntity>>> getTravelerDMs() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Não autenticado'));
+
+      // Find all DMs where I am the guide (lider_id = me)
+      final dms = await _supabaseClient
+          .from('batePapo')
+          .select('id, user_id')
+          .eq('lider_id', userId)
+          .not('user_id', 'is', null);
+
+      final travelerIds =
+          (dms as List)
+              .map((d) => d['user_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toSet()
+              .toList();
+
+      if (travelerIds.isEmpty) return const Right([]);
+
+      final users = await _supabaseClient
+          .from('users')
+          .select('id, nome, foto, cargo')
+          .inFilter('id', travelerIds);
+
+      final result =
+          (users as List)
+              .map(
+                (u) => GuideEntity(
+                  id: u['id'],
+                  name: u['nome'] ?? 'Viajante',
+                  role: u['cargo'] ?? 'Produtor',
+                  avatarUrl: u['foto'],
+                ),
+              )
+              .toList();
+
+      return Right(result);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar viajantes: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<GuideEntity>>> getGuideContacts() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Não autenticado'));
+
+      // Fetch all users that are guides (cargo contains 'guia', case-insensitive)
+      // Also include guides from groups I'm part of (lideresGrupo)
+      final guideIds = <String>{};
+
+      // 1. From groups I participate in or lead
+      final myGroupsAsParticipant = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('grupo_id')
+          .eq('user_id', userId);
+
+      final myGroupsAsLeader = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
+
+      final myGroupIds = <String>{
+        ...(myGroupsAsParticipant as List)
+            .map((g) => g['grupo_id'] as String?)
+            .where((id) => id != null)
+            .cast<String>(),
+        ...(myGroupsAsLeader as List)
+            .map((g) => g['grupo_id'] as String?)
+            .where((id) => id != null)
+            .cast<String>(),
+      };
+
+      if (myGroupIds.isNotEmpty) {
+        final leadersRes = await _supabaseClient
+            .from('lideresGrupo')
+            .select('lider_id')
+            .inFilter('grupo_id', myGroupIds.toList());
+
+        for (final l in leadersRes as List) {
+          final lid = l['lider_id'] as String?;
+          if (lid != null && lid != userId) guideIds.add(lid);
+        }
+      }
+
+      // 2. All users with guide-like cargo (broad search)
+      final allGuidesRes = await _supabaseClient
+          .from('users')
+          .select('id, nome, foto, cargo')
+          .ilike('cargo', '%guia%')
+          .neq('id', userId);
+
+      final List<GuideEntity> result = [];
+      final seenIds = <String>{};
+
+      // First add guides from my groups (they appear first)
+      if (guideIds.isNotEmpty) {
+        final myGuideUsersRes = await _supabaseClient
+            .from('users')
+            .select('id, nome, foto, cargo')
+            .inFilter('id', guideIds.toList());
+
+        for (final u in myGuideUsersRes as List) {
+          final id = u['id'] as String;
+          if (seenIds.add(id)) {
+            result.add(
+              GuideEntity(
+                id: id,
+                name: u['nome'] ?? 'Guia',
+                role: u['cargo'] ?? 'Guia',
+                avatarUrl: u['foto'],
+              ),
+            );
+          }
+        }
+      }
+
+      // Then add remaining guides from the broad search
+      for (final u in allGuidesRes as List) {
+        final id = u['id'] as String;
+        if (seenIds.add(id)) {
+          result.add(
+            GuideEntity(
+              id: id,
+              name: u['nome'] ?? 'Guia',
+              role: u['cargo'] ?? 'Guia',
+              avatarUrl: u['foto'],
+            ),
+          );
+        }
+      }
+
+      // Sort by name
+      result.sort((a, b) => a.name.compareTo(b.name));
+
+      return Right(result);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar guias: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<GuideInfo>>> getGuideInfos() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Não autenticado'));
+
+      // All groups I'm in (as participant or leader)
+      final myGroupsAsParticipant = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('grupo_id')
+          .eq('user_id', userId);
+      final myGroupsAsLeader = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
+
+      final myGroupIds = <String>{
+        ...(myGroupsAsParticipant as List)
+            .map((g) => g['grupo_id'] as String?)
+            .where((id) => id != null)
+            .cast<String>(),
+        ...(myGroupsAsLeader as List)
+            .map((g) => g['grupo_id'] as String?)
+            .where((id) => id != null)
+            .cast<String>(),
+      };
+
+      // Map guide_id → group names/ids/mission names
+      final Map<String, List<String>> guideGroupNames = {};
+      final Map<String, List<String>> guideGroupIds = {};
+      final Map<String, Set<String>> guideMissionNames = {};
+
+      if (myGroupIds.isNotEmpty) {
+        final leadersRes = await _supabaseClient
+            .from('lideresGrupo')
+            .select('lider_id, grupo_id')
+            .inFilter('grupo_id', myGroupIds.toList());
+
+        final allGroupIds =
+            (leadersRes as List)
+                .map((l) => l['grupo_id'] as String)
+                .toSet()
+                .toList();
+
+        final groupsData = await _supabaseClient
+            .from('grupos')
+            .select('id, nome, missao_id')
+            .inFilter('id', allGroupIds);
+
+        final groupMap = {
+          for (final g in groupsData as List) g['id'] as String: g,
+        };
+
+        // Fetch mission names
+        final missionIds =
+            groupsData
+                .map((g) => g['missao_id'] as String?)
+                .whereType<String>()
+                .toSet()
+                .toList();
+        final Map<String, String> missionNameMap = {};
+        if (missionIds.isNotEmpty) {
+          final missionsRes = await _supabaseClient
+              .from('missoes')
+              .select('id, nome')
+              .inFilter('id', missionIds);
+          for (final m in missionsRes as List) {
+            missionNameMap[m['id']] = m['nome'] ?? '';
+          }
+        }
+
+        for (final l in leadersRes) {
+          final lid = l['lider_id'] as String?;
+          final gid = l['grupo_id'] as String?;
+          if (lid == null || gid == null || lid == userId) continue;
+          final group = groupMap[gid];
+          if (group != null) {
+            guideGroupNames
+                .putIfAbsent(lid, () => [])
+                .add(group['nome'] as String? ?? 'Grupo');
+            guideGroupIds.putIfAbsent(lid, () => []).add(gid);
+            final mId = group['missao_id'] as String?;
+            final mName = mId != null ? missionNameMap[mId] : null;
+            if (mName != null && mName.isNotEmpty) {
+              guideMissionNames.putIfAbsent(lid, () => {}).add(mName);
+            }
+          }
+        }
+      }
+
+      // All users with guide cargo + those from my groups
+      final allGuideIds = {...guideGroupNames.keys};
+      final allGuidesRes = await _supabaseClient
+          .from('users')
+          .select('id, nome, foto, cargo')
+          .ilike('cargo', '%guia%')
+          .neq('id', userId);
+
+      final result = <GuideInfo>[];
+      final seenIds = <String>{};
+
+      // Priority: guides from my groups first
+      if (allGuideIds.isNotEmpty) {
+        final myGuideUsersRes = await _supabaseClient
+            .from('users')
+            .select('id, nome, foto, cargo')
+            .inFilter('id', allGuideIds.toList());
+        for (final u in myGuideUsersRes as List) {
+          final id = u['id'] as String;
+          if (seenIds.add(id)) {
+            result.add(
+              GuideInfo(
+                id: id,
+                name: u['nome'] ?? 'Guia',
+                avatarUrl: u['foto'],
+                role: u['cargo'] ?? 'Guia',
+                groupNames: guideGroupNames[id] ?? [],
+                groupIds: guideGroupIds[id] ?? [],
+                missionNames: guideMissionNames[id] ?? {},
+              ),
+            );
+          }
+        }
+      }
+
+      // Then all other guides from broad search
+      for (final u in allGuidesRes as List) {
+        final id = u['id'] as String;
+        if (seenIds.add(id)) {
+          result.add(
+            GuideInfo(
+              id: id,
+              name: u['nome'] ?? 'Guia',
+              avatarUrl: u['foto'],
+              role: u['cargo'] ?? 'Guia',
+              groupNames: guideGroupNames[id] ?? [],
+              groupIds: guideGroupIds[id] ?? [],
+              missionNames: guideMissionNames[id] ?? {},
+            ),
+          );
+        }
+      }
+
+      result.sort((a, b) => a.name.compareTo(b.name));
+      return Right(result);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar guias com grupos: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<ChatEntity>>> getAllGroups() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Não autenticado'));
+
+      final userEmail = _supabaseClient.auth.currentUser?.email;
+
+      final groupsRes = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('grupo_id')
+          .eq('user_id', userId);
+
+      var groupIds =
+          (groupsRes as List)
+              .map((g) => g['grupo_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toSet();
+
+      // Fallback: also look up by email (some participants registered via email)
+      if (userEmail != null) {
+        try {
+          final groupsByEmail = await _supabaseClient
+              .from('gruposParticipantes')
+              .select('grupo_id')
+              .eq('email', userEmail);
+          for (final g in groupsByEmail as List) {
+            final id = g['grupo_id'] as String?;
+            if (id != null) groupIds.add(id);
+          }
+        } catch (_) {}
+      }
+
+      // Also groups where I'm a leader
+      final leaderGroupsRes = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
+
+      final leaderGroupIds =
+          (leaderGroupsRes as List)
+              .map((g) => g['grupo_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toList();
+
+      groupIds = {...groupIds, ...leaderGroupIds};
+
+      if (groupIds.isEmpty) return const Right([]);
+
+      final groupsData = await _supabaseClient
+          .from('grupos')
+          .select('id, nome, missao_id, logo, data_inicio, data_fim')
+          .inFilter('id', groupIds.toList());
+
+      final missionIds =
+          (groupsData as List)
+              .map((g) => g['missao_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toSet()
+              .toList();
+
+      Map<String, dynamic> missionMap = {};
+      if (missionIds.isNotEmpty) {
+        final missionsRes = await _supabaseClient
+            .from('missoes')
+            .select('id, nome, logo')
+            .inFilter('id', missionIds);
+        missionMap = {
+          for (final m in missionsRes as List) m['id'] as String: m,
+        };
+      }
+
+      final result =
+          (groupsData as List).map((g) {
+            final mId = g['missao_id'] as String?;
+            final mission = mId != null ? missionMap[mId] : null;
+            return ChatEntity(
+              id: g['id'],
+              title: g['nome'] ?? 'Grupo',
+              subtitle: mission?['nome'] ?? '',
+              imageUrl: g['logo'] ?? mission?['logo'],
+              startDate:
+                  g['data_inicio'] != null
+                      ? DateTime.tryParse(g['data_inicio'])
+                      : null,
+              endDate:
+                  g['data_fim'] != null
+                      ? DateTime.tryParse(g['data_fim'])
+                      : null,
+            );
+          }).toList();
+
+      // Sort by endDate descending
+      result.sort((a, b) {
+        final aDate = a.endDate ?? DateTime(2000);
+        final bDate = b.endDate ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      return Right(result);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar grupos: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<TravelerInfo>>> getAllTravelers() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Não autenticado'));
+
+      // All groups where I'm a guide/leader
+      final leaderGroupsRes = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
+
+      final leaderGroupIds =
+          (leaderGroupsRes as List)
+              .map((g) => g['grupo_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toList();
+
+      if (leaderGroupIds.isEmpty) return const Right([]);
+
+      // Get group details with mission reference
+      final groupsData = await _supabaseClient
+          .from('grupos')
+          .select('id, nome, missao_id')
+          .inFilter('id', leaderGroupIds);
+
+      final missionIds =
+          (groupsData as List)
+              .map((g) => g['missao_id'] as String?)
+              .where((id) => id != null)
+              .cast<String>()
+              .toSet()
+              .toList();
+
+      Map<String, dynamic> missionMap = {};
+      if (missionIds.isNotEmpty) {
+        final missionsRes = await _supabaseClient
+            .from('missoes')
+            .select('id, nome, logo')
+            .inFilter('id', missionIds);
+        missionMap = {
+          for (final m in missionsRes as List) m['id'] as String: m,
+        };
+      }
+
+      // Collect all unique participant ids across all leader groups
+      final groupParticipantMap = <String, Set<String>>{};
+      for (final g in groupsData as List) {
+        final groupId = g['id'] as String;
+        final participantsRes = await _supabaseClient
+            .from('gruposParticipantes')
+            .select('user_id')
+            .eq('grupo_id', groupId)
+            .not('user_id', 'is', null);
+
+        final ids =
+            (participantsRes as List)
+                .map((p) => p['user_id'] as String?)
+                .where((id) => id != null && id != userId)
+                .cast<String>()
+                .toSet();
+
+        if (ids.isNotEmpty) {
+          groupParticipantMap[groupId] = ids;
+        }
+      }
+
+      // Batch fetch all user profiles
+      final allIds =
+          groupParticipantMap.values.expand((s) => s).toSet().toList();
+      if (allIds.isEmpty) return const Right([]);
+
+      final usersRes = await _supabaseClient
+          .from('users')
+          .select('id, nome, foto, cargo')
+          .inFilter('id', allIds);
+
+      final userMap = {for (final u in usersRes as List) u['id'] as String: u};
+
+      // Build TravelerInfo list — one entry per (traveler × group) pair
+      final travelers = <TravelerInfo>[];
+      for (final g in groupsData as List) {
+        final groupId = g['id'] as String;
+        final groupName = g['nome'] as String? ?? 'Grupo';
+        final mId = g['missao_id'] as String?;
+        final mission = mId != null ? missionMap[mId] : null;
+        final missionName = mission?['nome'] as String? ?? '';
+        final missionLogo = mission?['logo'] as String?;
+
+        final participantIds = groupParticipantMap[groupId] ?? {};
+        for (final pid in participantIds) {
+          final user = userMap[pid];
+          if (user == null) continue;
+          travelers.add(
+            TravelerInfo(
+              id: pid,
+              name: user['nome'] ?? 'Viajante',
+              avatarUrl: user['foto'],
+              role: user['cargo'],
+              groupId: groupId,
+              groupName: groupName,
+              missionId: mId ?? '',
+              missionName: missionName,
+              missionLogo: missionLogo,
+            ),
+          );
+        }
+      }
+
+      // Sort by name
+      travelers.sort((a, b) => a.name.compareTo(b.name));
+
+      return Right(travelers);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar viajantes: $e'));
     }
   }
 }

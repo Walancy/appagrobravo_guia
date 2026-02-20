@@ -73,9 +73,10 @@ class SettingsPage extends StatelessWidget {
                       builder: (context, mode) {
                         return _buildOption(
                           context,
-                          icon: mode == ThemeMode.dark
-                              ? Icons.dark_mode
-                              : Icons.light_mode,
+                          icon:
+                              mode == ThemeMode.dark
+                                  ? Icons.dark_mode
+                                  : Icons.light_mode,
                           title: 'Modo Escuro',
                           trailing: Switch(
                             value: mode == ThemeMode.dark,
@@ -148,23 +149,31 @@ class SettingsPage extends StatelessWidget {
                   height: 90,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : AppColors.backgroundLight,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : AppColors.backgroundLight,
                   ),
-                  child: profile.avatarUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: profile.avatarUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              const CircularProgressIndicator(),
-                          errorWidget: (context, url, error) => const Icon(
+                  child:
+                      profile.avatarUrl != null
+                          ? CachedNetworkImage(
+                            imageUrl: profile.avatarUrl!,
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (context, url) =>
+                                    const CircularProgressIndicator(),
+                            errorWidget:
+                                (context, url, error) => const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                          )
+                          : const Icon(
                             Icons.person,
                             size: 50,
                             color: Colors.grey,
                           ),
-                        )
-                      : const Icon(Icons.person, size: 50, color: Colors.grey),
                 ),
               ),
               Positioned(
@@ -203,7 +212,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${profile.missionName ?? ''}${profile.missionName != null && profile.groupName != null ? ' - ' : ''}${profile.groupName ?? ''}',
+                  profile.missionName ?? '',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(
                       context,
@@ -255,9 +264,10 @@ class SettingsPage extends StatelessWidget {
           ),
           leading: Icon(
             icon,
-            color: isDestructive
-                ? AppColors.error
-                : Theme.of(context).colorScheme.onSurface,
+            color:
+                isDestructive
+                    ? AppColors.error
+                    : Theme.of(context).colorScheme.onSurface,
             size: 24,
           ),
           title: Row(
@@ -265,9 +275,10 @@ class SettingsPage extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: isDestructive
-                      ? AppColors.error
-                      : Theme.of(context).colorScheme.onSurface,
+                  color:
+                      isDestructive
+                          ? AppColors.error
+                          : Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),

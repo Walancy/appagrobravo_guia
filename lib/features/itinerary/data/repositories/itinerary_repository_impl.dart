@@ -14,6 +14,8 @@ import '../models/itinerary_group_dto.dart';
 import '../models/itinerary_item_dto.dart';
 import '../../domain/entities/guide_mission.dart';
 import '../../../home/domain/entities/mission_entity.dart';
+import '../../domain/entities/menu_item.dart';
+import '../models/menu_item_dto.dart';
 
 @LazySingleton(as: ItineraryRepository)
 class ItineraryRepositoryImpl implements ItineraryRepository {
@@ -92,9 +94,13 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       await prefs.setString('cached_itinerary_$groupId', jsonEncode(data));
 
       final items =
-          data
-              .map((json) => ItineraryItemDto.fromJson(json).toEntity())
-              .toList();
+          data.map((json) {
+            final dto = ItineraryItemDto.fromJson(json);
+            debugPrint(
+              'Evento: ${dto.title ?? dto.oldName} | Cardapio: ${json['cardapio'] ?? json['cardapio_url']} | Anexos: ${json['anexos'] ?? json['anexo']}',
+            );
+            return dto.toEntity();
+          }).toList();
 
       return Right(items);
     } catch (e) {
@@ -113,6 +119,31 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       } catch (cacheError) {
         debugPrint('Erro ao ler cache de itinerário: $cacheError');
       }
+      return Left(Exception(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<MenuItemEntity>>> getMenu(
+    String eventId,
+  ) async {
+    try {
+      final response = await _supabaseClient.rpc(
+        'buscar_cardapio_por_evento',
+        params: {'p_evento_id': eventId},
+      );
+
+      final List<dynamic> data = response as List<dynamic>;
+
+      final items =
+          data.map((json) {
+            final dto = MenuItemDto.fromJson(json);
+            return dto.toEntity();
+          }).toList();
+
+      return Right(items);
+    } catch (e) {
+      debugPrint('Erro ao buscar cardapio: $e');
       return Left(Exception(e.toString()));
     }
   }

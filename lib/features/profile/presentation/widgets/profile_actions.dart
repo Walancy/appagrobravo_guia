@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -107,8 +108,16 @@ class ProfileActions extends StatelessWidget {
             children: [
               Expanded(
                 child: _ProfileActionButton(
-                  label: '',
-                  icon: Icons.chat_bubble,
+                  label: 'WhatsApp',
+                  customIcon: SvgPicture.asset(
+                    'assets/images/whatsapp.svg',
+                    width: 16,
+                    height: 16,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                   backgroundColor: const Color(0xFF25D366),
                   onPressed: () async {
                     final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
@@ -150,14 +159,16 @@ class ProfileActions extends StatelessWidget {
 
 class _ProfileActionButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? customIcon;
   final VoidCallback onPressed;
   final Color? backgroundColor;
   final Color? foregroundColor;
 
   const _ProfileActionButton({
     required this.label,
-    required this.icon,
+    this.icon,
+    this.customIcon,
     required this.onPressed,
     this.backgroundColor,
     this.foregroundColor,
@@ -181,15 +192,21 @@ class _ProfileActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: AppTextStyles.button.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            if (customIcon != null) ...[
+              customIcon!,
+              if (label.isNotEmpty) const SizedBox(width: 8),
+            ] else if (icon != null) ...[
+              Icon(icon, size: 16),
+              if (label.isNotEmpty) const SizedBox(width: 8),
+            ],
+            if (label.isNotEmpty)
+              Text(
+                label,
+                style: AppTextStyles.button.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Icon(icon, size: 16),
           ],
         ),
       ),

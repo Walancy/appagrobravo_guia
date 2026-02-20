@@ -20,7 +20,7 @@ class ItineraryHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       padding: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,

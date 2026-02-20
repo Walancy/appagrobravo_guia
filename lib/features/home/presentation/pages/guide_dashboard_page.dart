@@ -15,8 +15,6 @@ import 'package:go_router/go_router.dart';
 import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
-import 'package:agrobravo/features/chat/presentation/pages/individual_chat_page.dart';
-import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
 
 class GuideDashboardPage extends StatefulWidget {
   final String groupId;
@@ -256,55 +254,6 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
     });
   }
 
-  Future<void> _openBackofficeChat(BuildContext context) async {
-    try {
-      final supabase = getIt<SupabaseClient>();
-
-      // Search for the Backoffice/Support user
-      // You might want to adjust the query based on how the backoffice user is identified
-      // e.g., by email, specific ID, or role.
-      final response =
-          await supabase
-              .from('users')
-              .select()
-              .ilike(
-                'nome',
-                '%Suporte%',
-              ) // Assuming name contains 'Suporte' or similar
-              .limit(1)
-              .maybeSingle();
-
-      if (response != null) {
-        final guide = GuideEntity(
-          id: response['id'],
-          name: response['nome'] ?? 'Suporte AgroBravo',
-          role: 'Suporte',
-          avatarUrl: response['foto'],
-        );
-
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => IndividualChatPage(guide: guide),
-            ),
-          );
-        }
-      } else {
-        // Fallback to Chat Tab if user not found
-        widget.onTabChange?.call(2);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Contato de suporte não encontrado.')),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error opening backoffice chat: $e');
-      widget.onTabChange?.call(2);
-    }
-  }
-
   IconData _getIconForType(ItineraryType type) {
     switch (type) {
       case ItineraryType.food:
@@ -460,7 +409,10 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       ),
                       Text(
                         _group?.name ?? 'Grupo sem nome',
-                        style: AppTextStyles.h3.copyWith(fontSize: 18),
+                        style: AppTextStyles.h3.copyWith(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -516,8 +468,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                           locale: 'pt_BR',
                         ).format(_groupBalance),
                         style: AppTextStyles.h2.copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
@@ -609,24 +562,29 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Ações rápidas',
-            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.grey[600],
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildActionItem(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildActionItem(
                   context,
                   'Itinerário',
                   Icons.explore_outlined,
                   AppColors.primary,
                   () => widget.onTabChange?.call(1),
                 ),
-                _buildActionItem(
+              ),
+              Expanded(
+                child: _buildActionItem(
                   context,
                   'Lembrete',
                   Icons.notifications_active_outlined,
@@ -637,7 +595,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                         (context) => ReminderModal(groupId: widget.groupId),
                   ),
                 ),
-                _buildActionItem(
+              ),
+              Expanded(
+                child: _buildActionItem(
                   context,
                   'Relatório',
                   Icons.assignment_outlined,
@@ -647,7 +607,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     builder: (context) => const ReportModal(),
                   ),
                 ),
-                _buildActionItem(
+              ),
+              Expanded(
+                child: _buildActionItem(
                   context,
                   'Incidente',
                   Icons.warning_amber_rounded,
@@ -657,15 +619,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     builder: (context) => const IncidentModal(),
                   ),
                 ),
-                _buildActionItem(
-                  context,
-                  'Backoffice',
-                  Icons.chat_bubble_outline_rounded,
-                  AppColors.primary,
-                  () => _openBackofficeChat(context),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -681,30 +636,28 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   ) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade100),
-              ),
-              child: Icon(icon, color: color, size: 24),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade100),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+              fontSize: 12,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -717,7 +670,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Próximos eventos',
-            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.grey[600],
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -793,9 +750,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   Text(
                     time,
                     style: AppTextStyles.h3.copyWith(
-                      fontSize: 18,
+                      fontSize: 17,
                       color: const Color(0xFF00B289),
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -827,9 +784,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           Text(
             title,
             style: AppTextStyles.h3.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -876,7 +833,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           children: [
             Text(
               'Integrantes',
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.grey[600],
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -905,8 +866,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     labelColor: AppColors.textPrimary,
                     unselectedLabelColor: AppColors.textPrimary,
                     labelStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
                     ),
                     unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w400,

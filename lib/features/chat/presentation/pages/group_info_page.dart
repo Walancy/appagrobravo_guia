@@ -42,17 +42,19 @@ class _GroupInfoView extends StatelessWidget {
               state.when(
                 initial: () => const SizedBox.shrink(),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (msg) => Center(
-                  child: Text(
-                    'Erro: $msg',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
+                error:
+                    (msg) => Center(
+                      child: Text(
+                        'Erro: $msg',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
                 loaded: (details) {
                   final members = details.members;
                   final media = details.mediaUrls;
 
                   return SingleChildScrollView(
+                    padding: EdgeInsets.zero,
                     child: Column(
                       children: [
                         const HeaderSpacer(),
@@ -73,25 +75,27 @@ class _GroupInfoView extends StatelessWidget {
                                   shape: BoxShape.circle,
                                   color:
                                       Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade200,
-                                  image: chat.imageUrl != null
-                                      ? DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            chat.imageUrl!,
-                                          ),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
+                                              Brightness.dark
+                                          ? Colors.grey.shade800
+                                          : Colors.grey.shade200,
+                                  image:
+                                      chat.imageUrl != null
+                                          ? DecorationImage(
+                                            image: CachedNetworkImageProvider(
+                                              chat.imageUrl!,
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                          : null,
                                 ),
-                                child: chat.imageUrl == null
-                                    ? const Icon(
-                                        Icons.group,
-                                        size: 50,
-                                        color: Colors.grey,
-                                      )
-                                    : null,
+                                child:
+                                    chat.imageUrl == null
+                                        ? const Icon(
+                                          Icons.group,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        )
+                                        : null,
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -173,11 +177,10 @@ class _GroupInfoView extends StatelessWidget {
                                   height: 100,
                                   child: ListView.separated(
                                     scrollDirection: Axis.horizontal,
-                                    itemCount: media.length > 6
-                                        ? 6
-                                        : media.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(width: 8),
+                                    itemCount:
+                                        media.length > 6 ? 6 : media.length,
+                                    separatorBuilder:
+                                        (_, __) => const SizedBox(width: 8),
                                     itemBuilder: (context, index) {
                                       if (index == 5 && media.length > 6) {
                                         return GestureDetector(
@@ -185,10 +188,11 @@ class _GroupInfoView extends StatelessWidget {
                                             Navigator.push(
                                               context,
                                               PageRouteBuilder(
-                                                pageBuilder: (_, __, ___) =>
-                                                    GroupMediaPage(
-                                                      mediaUrls: media,
-                                                    ),
+                                                pageBuilder:
+                                                    (_, __, ___) =>
+                                                        GroupMediaPage(
+                                                          mediaUrls: media,
+                                                        ),
                                                 transitionDuration:
                                                     Duration.zero,
                                                 reverseTransitionDuration:
@@ -235,10 +239,11 @@ class _GroupInfoView extends StatelessWidget {
                                           Navigator.push(
                                             context,
                                             PageRouteBuilder(
-                                              pageBuilder: (_, __, ___) =>
-                                                  FullScreenMediaPage(
-                                                    imageUrl: media[index],
-                                                  ),
+                                              pageBuilder:
+                                                  (_, __, ___) =>
+                                                      FullScreenMediaPage(
+                                                        imageUrl: media[index],
+                                                      ),
                                               transitionDuration: Duration.zero,
                                               reverseTransitionDuration:
                                                   Duration.zero,
@@ -303,26 +308,28 @@ class _GroupInfoView extends StatelessWidget {
                                         shape: BoxShape.circle,
                                         color:
                                             Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey.shade800
-                                            : Colors.grey.shade200,
-                                        image: member.avatarUrl != null
-                                            ? DecorationImage(
-                                                image:
-                                                    CachedNetworkImageProvider(
-                                                      member.avatarUrl!,
-                                                    ),
-                                                fit: BoxFit.cover,
-                                                onError: (_, __) => {},
-                                              )
-                                            : null,
+                                                    Brightness.dark
+                                                ? Colors.grey.shade800
+                                                : Colors.grey.shade200,
+                                        image:
+                                            member.avatarUrl != null
+                                                ? DecorationImage(
+                                                  image:
+                                                      CachedNetworkImageProvider(
+                                                        member.avatarUrl!,
+                                                      ),
+                                                  fit: BoxFit.cover,
+                                                  onError: (_, __) => {},
+                                                )
+                                                : null,
                                       ),
-                                      child: member.avatarUrl == null
-                                          ? const Icon(
-                                              Icons.person,
-                                              color: Colors.grey,
-                                            )
-                                          : null,
+                                      child:
+                                          member.avatarUrl == null
+                                              ? const Icon(
+                                                Icons.person,
+                                                color: Colors.grey,
+                                              )
+                                              : null,
                                     ),
                                     title: Row(
                                       children: [
@@ -372,13 +379,14 @@ class _GroupInfoView extends StatelessWidget {
                                         color: Colors.grey,
                                       ),
                                     ),
-                                    trailing: (member.isMe || member.isGuide)
-                                        ? null
-                                        : _buildConnectionButton(
-                                            context,
-                                            member,
-                                            chat.id,
-                                          ),
+                                    trailing:
+                                        (member.isMe || member.isGuide)
+                                            ? null
+                                            : _buildConnectionButton(
+                                              context,
+                                              member,
+                                              chat.id,
+                                            ),
                                     onTap: () {
                                       if (member.isGuide) {
                                         final guide = GuideEntity(

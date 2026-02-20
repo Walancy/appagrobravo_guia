@@ -25,6 +25,11 @@ abstract class ItineraryItemDto with _$ItineraryItemDto {
     @JsonKey(name: 'motorista') String? driverName,
     @JsonKey(name: 'duracao') String? durationString,
     @JsonKey(name: 'tempo_deslocamento') String? travelTime,
+    @JsonKey(name: 'cardapio') String? menuUrl,
+    @JsonKey(name: 'cardapio_url') String? menuUrlAlt,
+    @JsonKey(name: 'anexos') List<String>? attachments,
+    @JsonKey(name: 'anexo') String? singleAttachment,
+    @JsonKey(name: 'dados') Map<String, dynamic>? dataAdditional,
     @JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections,
   }) = _ItineraryItemDto;
 
@@ -130,6 +135,37 @@ abstract class ItineraryItemDto with _$ItineraryItemDto {
       } catch (_) {}
     }
 
+    List<String> parsedAttachments = [];
+    if (attachments != null) parsedAttachments.addAll(attachments!);
+    if (singleAttachment != null && singleAttachment!.isNotEmpty) {
+      parsedAttachments.add(singleAttachment!);
+    }
+
+    if (dataAdditional != null && dataAdditional!['attachments'] != null) {
+      final dynAttachments = dataAdditional!['attachments'];
+      if (dynAttachments is List) {
+        for (var att in dynAttachments) {
+          if (att is String) {
+            parsedAttachments.add(att);
+          } else if (att is Map && att['url'] != null) {
+            parsedAttachments.add(att['url'].toString());
+          }
+        }
+      }
+    }
+
+    String? finalMenuUrl =
+        (menuUrl != null && menuUrl!.isNotEmpty) ? menuUrl : menuUrlAlt;
+    if (finalMenuUrl == null || finalMenuUrl.isEmpty) {
+      if (dataAdditional != null) {
+        if (dataAdditional!['menuUrl'] != null) {
+          finalMenuUrl = dataAdditional!['menuUrl'].toString();
+        } else if (dataAdditional!['cardapio'] != null) {
+          finalMenuUrl = dataAdditional!['cardapio'].toString();
+        }
+      }
+    }
+
     return ItineraryItemEntity(
       id: id,
       name: title ?? oldName ?? 'Evento sem nome',
@@ -146,6 +182,8 @@ abstract class ItineraryItemDto with _$ItineraryItemDto {
       driverName: driverName,
       durationString: durationString,
       travelTime: travelTime,
+      menuUrl: finalMenuUrl,
+      attachments: parsedAttachments.isNotEmpty ? parsedAttachments : null,
       connections: connections,
     );
   }

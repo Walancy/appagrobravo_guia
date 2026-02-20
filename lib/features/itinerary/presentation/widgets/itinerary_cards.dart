@@ -5,6 +5,8 @@ import '../../../../core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_item.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'checklist_bottom_sheet.dart';
+import 'event_attachments_bottom_sheet.dart';
+import 'event_menu_bottom_sheet.dart';
 
 class GenericEventCard extends StatelessWidget {
   final ItineraryItemEntity item;
@@ -106,6 +108,118 @@ class GenericEventCard extends StatelessWidget {
               style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ],
+          if (item.type == ItineraryType.food) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) => EventMenuBottomSheet(
+                        eventId: item.id,
+                        eventName: item.name,
+                        eventIcon: _getIconForType(item.type),
+                      ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.restaurant_menu,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ver Cardápio',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (item.menuUrl != null && item.menuUrl!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) => EventAttachmentsBottomSheet(
+                        eventName: item.name,
+                        menuUrl: item.menuUrl,
+                        attachments: null,
+                        eventIcon: _getIconForType(item.type),
+                      ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.description_outlined,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ver Cardápio',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (item.attachments != null && item.attachments!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) => EventAttachmentsBottomSheet(
+                        eventName: item.name,
+                        menuUrl: null,
+                        attachments: item.attachments,
+                        eventIcon: _getIconForType(item.type),
+                      ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.description_outlined,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ver Anexos',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -542,6 +656,46 @@ class FlightCard extends StatelessWidget {
                 ],
               ),
             ),
+          if ((item.menuUrl != null && item.menuUrl!.isNotEmpty) ||
+              (item.attachments != null && item.attachments!.isNotEmpty))
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: InkWell(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder:
+                        (context) => EventAttachmentsBottomSheet(
+                          eventName: item.name,
+                          menuUrl: item.menuUrl,
+                          attachments: item.attachments,
+                          eventIcon: Icons.flight_takeoff_outlined,
+                        ),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ver Anexos',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -880,6 +1034,49 @@ class TransferCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
+                if ((item.menuUrl != null && item.menuUrl!.isNotEmpty) ||
+                    (item.attachments != null &&
+                        item.attachments!.isNotEmpty)) ...[
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder:
+                            (context) => EventAttachmentsBottomSheet(
+                              eventName: item.name,
+                              menuUrl: item.menuUrl,
+                              attachments: item.attachments,
+                              eventIcon:
+                                  item.type == ItineraryType.returnType
+                                      ? Icons.keyboard_return
+                                      : Icons.directions_bus_outlined,
+                            ),
+                      );
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ver Anexos',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

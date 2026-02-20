@@ -61,16 +61,16 @@ class ChatBubble extends StatelessWidget {
 
     final bool useGreen = isMe;
 
-    final bgColor = useGreen
-        ? const Color(0xFF00AA6C)
-        : (Theme.of(context).brightness == Brightness.dark
-              ? Theme.of(context)
+    final bgColor =
+        useGreen
+            ? const Color(0xFF00AA6C)
+            : (Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context)
                     .colorScheme
                     .surfaceContainerHigh // Lighter surface for dark mode
-              : Theme.of(context).colorScheme.surface);
-    final textColor = useGreen
-        ? Colors.white
-        : Theme.of(context).colorScheme.onSurface;
+                : Theme.of(context).colorScheme.surface);
+    final textColor =
+        useGreen ? Colors.white : Theme.of(context).colorScheme.onSurface;
 
     final align = isMe ? MainAxisAlignment.end : MainAxisAlignment.start;
     final borderRadius = BorderRadius.only(
@@ -86,9 +86,10 @@ class ChatBubble extends StatelessWidget {
         onLongPress: onLongPress,
         onTap: onTap,
         child: Container(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
+          color:
+              isSelected
+                  ? AppColors.primary.withOpacity(0.1)
+                  : Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
           child: Row(
             mainAxisAlignment: align,
@@ -113,9 +114,10 @@ class ChatBubble extends StatelessWidget {
                     maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
                   child: Column(
-                    crossAxisAlignment: isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
                     children: [
                       Container(
                         clipBehavior: Clip.antiAlias,
@@ -127,9 +129,9 @@ class ChatBubble extends StatelessWidget {
                               color: Colors.black.withValues(
                                 alpha:
                                     Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? 0.2
-                                    : 0.05,
+                                            Brightness.dark
+                                        ? 0.2
+                                        : 0.05,
                               ),
                               blurRadius: 2,
                               offset: const Offset(0, 1),
@@ -167,7 +169,7 @@ class ChatBubble extends StatelessWidget {
                                 ),
                               )
                             else ...[
-                              if (!isMe)
+                              if (!isMe && isGroupChat)
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(
                                     12,
@@ -201,25 +203,29 @@ class ChatBubble extends StatelessWidget {
                                           fit: BoxFit.cover,
                                           width: double.infinity,
                                           height: 200,
-                                          placeholder: (context, url) => Container(
-                                            height: 200,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? Colors.grey[800]
-                                                : Colors.grey[200],
-                                            child: const Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(AppColors.primary),
+                                          placeholder:
+                                              (context, url) => Container(
+                                                height: 200,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.dark
+                                                        ? Colors.grey[800]
+                                                        : Colors.grey[200],
+                                                child: const Center(
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(AppColors.primary),
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          errorWidget: (context, url, error) =>
-                                              const SizedBox.shrink(),
+                                          errorWidget:
+                                              (context, url, error) =>
+                                                  const SizedBox.shrink(),
                                         ),
                                       ),
                                     ),
@@ -239,19 +245,17 @@ class ChatBubble extends StatelessWidget {
                                     ),
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color:
-                                          (isMe
-                                                  ? Colors.white
-                                                  : Theme.of(
-                                                      context,
-                                                    ).dividerColor)
-                                              .withValues(alpha: 0.1),
+                                      color: (isMe
+                                              ? Colors.white
+                                              : Theme.of(context).dividerColor)
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border(
                                         left: BorderSide(
-                                          color: isMe
-                                              ? Colors.white
-                                              : const Color(0xFF00AA6C),
+                                          color:
+                                              isMe
+                                                  ? Colors.white
+                                                  : const Color(0xFF00AA6C),
                                           width: 4,
                                         ),
                                       ),
@@ -264,9 +268,12 @@ class ChatBubble extends StatelessWidget {
                                           repliedUserName ?? 'Usuário',
                                           style: AppTextStyles.bodySmall
                                               .copyWith(
-                                                color: isMe
-                                                    ? Colors.white
-                                                    : const Color(0xFF00AA6C),
+                                                color:
+                                                    isMe
+                                                        ? Colors.white
+                                                        : const Color(
+                                                          0xFF00AA6C,
+                                                        ),
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 12,
                                               ),
@@ -479,36 +486,41 @@ class ChatBubble extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[800]
-            : Colors.grey[300],
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[300],
         shape: BoxShape.circle,
       ),
       clipBehavior: Clip.antiAlias,
-      child: userAvatarUrl != null
-          ? CachedNetworkImage(
-              imageUrl: userAvatarUrl!,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.grey[300],
-              ),
-              errorWidget: (_, __, ___) => Icon(
+      child:
+          userAvatarUrl != null
+              ? CachedNetworkImage(
+                imageUrl: userAvatarUrl!,
+                fit: BoxFit.cover,
+                placeholder:
+                    (_, __) => Container(
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[800]
+                              : Colors.grey[300],
+                    ),
+                errorWidget:
+                    (_, __, ___) => Icon(
+                      Icons.person,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
+              )
+              : Icon(
                 Icons.person,
                 color: Theme.of(
                   context,
                 ).colorScheme.onSurface.withValues(alpha: 0.5),
                 size: 20,
               ),
-            )
-          : Icon(
-              Icons.person,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
-              size: 20,
-            ),
     );
   }
 

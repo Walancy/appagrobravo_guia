@@ -57,6 +57,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_dotenv: ^6.0.0
   device_preview: ^1.2.0
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:
@@ -130,7 +131,7 @@ flutter:
 
   assets:
     - assets/images/
-    - .env
+    - assets/env
 
 flutter_gen:
   output: lib/core/tokens/

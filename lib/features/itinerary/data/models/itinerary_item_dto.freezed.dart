@@ -17,7 +17,7 @@ mixin _$ItineraryItemDto {
 
 @JsonKey(name: 'id') String get id;@JsonKey(name: 'titulo') String? get title;// Mapped from 'titulo'
 @JsonKey(name: 'nome') String? get oldName;// Backwards compat
-@JsonKey(name: 'tipo') String get typeString;@JsonKey(name: 'data') String? get dateString;@JsonKey(name: 'hora_inicio') String? get timeString;@JsonKey(name: 'hora_fim') String? get endTimeString;@JsonKey(name: 'hora_inicio2') DateTime? get startDateTimeOld;@JsonKey(name: 'descricao') String? get description;@JsonKey(name: 'localizacao') String? get location;@JsonKey(name: 'imagem') String? get imageUrl;@JsonKey(name: 'codigo_de') String? get fromCode;@JsonKey(name: 'codigo_para') String? get toCode;@JsonKey(name: 'de') String? get fromCity;@JsonKey(name: 'para') String? get toCity;@JsonKey(name: 'motorista') String? get driverName;@JsonKey(name: 'duracao') String? get durationString;@JsonKey(name: 'tempo_deslocamento') String? get travelTime;@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? get connections;
+@JsonKey(name: 'tipo') String get typeString;@JsonKey(name: 'data') String? get dateString;@JsonKey(name: 'hora_inicio') String? get timeString;@JsonKey(name: 'hora_fim') String? get endTimeString;@JsonKey(name: 'hora_inicio2') DateTime? get startDateTimeOld;@JsonKey(name: 'descricao') String? get description;@JsonKey(name: 'localizacao') String? get location;@JsonKey(name: 'imagem') String? get imageUrl;@JsonKey(name: 'codigo_de') String? get fromCode;@JsonKey(name: 'codigo_para') String? get toCode;@JsonKey(name: 'de') String? get fromCity;@JsonKey(name: 'para') String? get toCity;@JsonKey(name: 'motorista') String? get driverName;@JsonKey(name: 'duracao') String? get durationString;@JsonKey(name: 'tempo_deslocamento') String? get travelTime;@JsonKey(name: 'cardapio') String? get menuUrl;@JsonKey(name: 'cardapio_url') String? get menuUrlAlt;@JsonKey(name: 'anexos') List<String>? get attachments;@JsonKey(name: 'anexo') String? get singleAttachment;@JsonKey(name: 'dados') Map<String, dynamic>? get dataAdditional;@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? get connections;
 /// Create a copy of ItineraryItemDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +30,16 @@ $ItineraryItemDtoCopyWith<ItineraryItemDto> get copyWith => _$ItineraryItemDtoCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.oldName, oldName) || other.oldName == oldName)&&(identical(other.typeString, typeString) || other.typeString == typeString)&&(identical(other.dateString, dateString) || other.dateString == dateString)&&(identical(other.timeString, timeString) || other.timeString == timeString)&&(identical(other.endTimeString, endTimeString) || other.endTimeString == endTimeString)&&(identical(other.startDateTimeOld, startDateTimeOld) || other.startDateTimeOld == startDateTimeOld)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&const DeepCollectionEquality().equals(other.connections, connections));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.oldName, oldName) || other.oldName == oldName)&&(identical(other.typeString, typeString) || other.typeString == typeString)&&(identical(other.dateString, dateString) || other.dateString == dateString)&&(identical(other.timeString, timeString) || other.timeString == timeString)&&(identical(other.endTimeString, endTimeString) || other.endTimeString == endTimeString)&&(identical(other.startDateTimeOld, startDateTimeOld) || other.startDateTimeOld == startDateTimeOld)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&(identical(other.menuUrl, menuUrl) || other.menuUrl == menuUrl)&&(identical(other.menuUrlAlt, menuUrlAlt) || other.menuUrlAlt == menuUrlAlt)&&const DeepCollectionEquality().equals(other.attachments, attachments)&&(identical(other.singleAttachment, singleAttachment) || other.singleAttachment == singleAttachment)&&const DeepCollectionEquality().equals(other.dataAdditional, dataAdditional)&&const DeepCollectionEquality().equals(other.connections, connections));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,oldName,typeString,dateString,timeString,endTimeString,startDateTimeOld,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,const DeepCollectionEquality().hash(connections)]);
+int get hashCode => Object.hashAll([runtimeType,id,title,oldName,typeString,dateString,timeString,endTimeString,startDateTimeOld,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,menuUrl,menuUrlAlt,const DeepCollectionEquality().hash(attachments),singleAttachment,const DeepCollectionEquality().hash(dataAdditional),const DeepCollectionEquality().hash(connections)]);
 
 @override
 String toString() {
-  return 'ItineraryItemDto(id: $id, title: $title, oldName: $oldName, typeString: $typeString, dateString: $dateString, timeString: $timeString, endTimeString: $endTimeString, startDateTimeOld: $startDateTimeOld, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, connections: $connections)';
+  return 'ItineraryItemDto(id: $id, title: $title, oldName: $oldName, typeString: $typeString, dateString: $dateString, timeString: $timeString, endTimeString: $endTimeString, startDateTimeOld: $startDateTimeOld, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, menuUrl: $menuUrl, menuUrlAlt: $menuUrlAlt, attachments: $attachments, singleAttachment: $singleAttachment, dataAdditional: $dataAdditional, connections: $connections)';
 }
 
 
@@ -50,7 +50,7 @@ abstract mixin class $ItineraryItemDtoCopyWith<$Res>  {
   factory $ItineraryItemDtoCopyWith(ItineraryItemDto value, $Res Function(ItineraryItemDto) _then) = _$ItineraryItemDtoCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'id') String id,@JsonKey(name: 'titulo') String? title,@JsonKey(name: 'nome') String? oldName,@JsonKey(name: 'tipo') String typeString,@JsonKey(name: 'data') String? dateString,@JsonKey(name: 'hora_inicio') String? timeString,@JsonKey(name: 'hora_fim') String? endTimeString,@JsonKey(name: 'hora_inicio2') DateTime? startDateTimeOld,@JsonKey(name: 'descricao') String? description,@JsonKey(name: 'localizacao') String? location,@JsonKey(name: 'imagem') String? imageUrl,@JsonKey(name: 'codigo_de') String? fromCode,@JsonKey(name: 'codigo_para') String? toCode,@JsonKey(name: 'de') String? fromCity,@JsonKey(name: 'para') String? toCity,@JsonKey(name: 'motorista') String? driverName,@JsonKey(name: 'duracao') String? durationString,@JsonKey(name: 'tempo_deslocamento') String? travelTime,@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections
+@JsonKey(name: 'id') String id,@JsonKey(name: 'titulo') String? title,@JsonKey(name: 'nome') String? oldName,@JsonKey(name: 'tipo') String typeString,@JsonKey(name: 'data') String? dateString,@JsonKey(name: 'hora_inicio') String? timeString,@JsonKey(name: 'hora_fim') String? endTimeString,@JsonKey(name: 'hora_inicio2') DateTime? startDateTimeOld,@JsonKey(name: 'descricao') String? description,@JsonKey(name: 'localizacao') String? location,@JsonKey(name: 'imagem') String? imageUrl,@JsonKey(name: 'codigo_de') String? fromCode,@JsonKey(name: 'codigo_para') String? toCode,@JsonKey(name: 'de') String? fromCity,@JsonKey(name: 'para') String? toCity,@JsonKey(name: 'motorista') String? driverName,@JsonKey(name: 'duracao') String? durationString,@JsonKey(name: 'tempo_deslocamento') String? travelTime,@JsonKey(name: 'cardapio') String? menuUrl,@JsonKey(name: 'cardapio_url') String? menuUrlAlt,@JsonKey(name: 'anexos') List<String>? attachments,@JsonKey(name: 'anexo') String? singleAttachment,@JsonKey(name: 'dados') Map<String, dynamic>? dataAdditional,@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections
 });
 
 
@@ -67,7 +67,7 @@ class _$ItineraryItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryItemDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? oldName = freezed,Object? typeString = null,Object? dateString = freezed,Object? timeString = freezed,Object? endTimeString = freezed,Object? startDateTimeOld = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? connections = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? oldName = freezed,Object? typeString = null,Object? dateString = freezed,Object? timeString = freezed,Object? endTimeString = freezed,Object? startDateTimeOld = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? menuUrl = freezed,Object? menuUrlAlt = freezed,Object? attachments = freezed,Object? singleAttachment = freezed,Object? dataAdditional = freezed,Object? connections = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -87,7 +87,12 @@ as String?,toCity: freezed == toCity ? _self.toCity : toCity // ignore: cast_nul
 as String?,driverName: freezed == driverName ? _self.driverName : driverName // ignore: cast_nullable_to_non_nullable
 as String?,durationString: freezed == durationString ? _self.durationString : durationString // ignore: cast_nullable_to_non_nullable
 as String?,travelTime: freezed == travelTime ? _self.travelTime : travelTime // ignore: cast_nullable_to_non_nullable
-as String?,connections: freezed == connections ? _self.connections : connections // ignore: cast_nullable_to_non_nullable
+as String?,menuUrl: freezed == menuUrl ? _self.menuUrl : menuUrl // ignore: cast_nullable_to_non_nullable
+as String?,menuUrlAlt: freezed == menuUrlAlt ? _self.menuUrlAlt : menuUrlAlt // ignore: cast_nullable_to_non_nullable
+as String?,attachments: freezed == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<String>?,singleAttachment: freezed == singleAttachment ? _self.singleAttachment : singleAttachment // ignore: cast_nullable_to_non_nullable
+as String?,dataAdditional: freezed == dataAdditional ? _self.dataAdditional : dataAdditional // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,connections: freezed == connections ? _self.connections : connections // ignore: cast_nullable_to_non_nullable
 as List<Map<String, dynamic>>?,
   ));
 }
@@ -173,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'cardapio')  String? menuUrl, @JsonKey(name: 'cardapio_url')  String? menuUrlAlt, @JsonKey(name: 'anexos')  List<String>? attachments, @JsonKey(name: 'anexo')  String? singleAttachment, @JsonKey(name: 'dados')  Map<String, dynamic>? dataAdditional, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ItineraryItemDto() when $default != null:
-return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.menuUrlAlt,_that.attachments,_that.singleAttachment,_that.dataAdditional,_that.connections);case _:
   return orElse();
 
 }
@@ -194,10 +199,10 @@ return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'cardapio')  String? menuUrl, @JsonKey(name: 'cardapio_url')  String? menuUrlAlt, @JsonKey(name: 'anexos')  List<String>? attachments, @JsonKey(name: 'anexo')  String? singleAttachment, @JsonKey(name: 'dados')  Map<String, dynamic>? dataAdditional, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryItemDto():
-return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.menuUrlAlt,_that.attachments,_that.singleAttachment,_that.dataAdditional,_that.connections);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +219,10 @@ return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'id')  String id, @JsonKey(name: 'titulo')  String? title, @JsonKey(name: 'nome')  String? oldName, @JsonKey(name: 'tipo')  String typeString, @JsonKey(name: 'data')  String? dateString, @JsonKey(name: 'hora_inicio')  String? timeString, @JsonKey(name: 'hora_fim')  String? endTimeString, @JsonKey(name: 'hora_inicio2')  DateTime? startDateTimeOld, @JsonKey(name: 'descricao')  String? description, @JsonKey(name: 'localizacao')  String? location, @JsonKey(name: 'imagem')  String? imageUrl, @JsonKey(name: 'codigo_de')  String? fromCode, @JsonKey(name: 'codigo_para')  String? toCode, @JsonKey(name: 'de')  String? fromCity, @JsonKey(name: 'para')  String? toCity, @JsonKey(name: 'motorista')  String? driverName, @JsonKey(name: 'duracao')  String? durationString, @JsonKey(name: 'tempo_deslocamento')  String? travelTime, @JsonKey(name: 'cardapio')  String? menuUrl, @JsonKey(name: 'cardapio_url')  String? menuUrlAlt, @JsonKey(name: 'anexos')  List<String>? attachments, @JsonKey(name: 'anexo')  String? singleAttachment, @JsonKey(name: 'dados')  Map<String, dynamic>? dataAdditional, @JsonKey(name: 'conexoes')  List<Map<String, dynamic>>? connections)?  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryItemDto() when $default != null:
-return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateString,_that.timeString,_that.endTimeString,_that.startDateTimeOld,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.menuUrlAlt,_that.attachments,_that.singleAttachment,_that.dataAdditional,_that.connections);case _:
   return null;
 
 }
@@ -229,7 +234,7 @@ return $default(_that.id,_that.title,_that.oldName,_that.typeString,_that.dateSt
 @JsonSerializable()
 
 class _ItineraryItemDto extends ItineraryItemDto {
-  const _ItineraryItemDto({@JsonKey(name: 'id') required this.id, @JsonKey(name: 'titulo') this.title, @JsonKey(name: 'nome') this.oldName, @JsonKey(name: 'tipo') required this.typeString, @JsonKey(name: 'data') this.dateString, @JsonKey(name: 'hora_inicio') this.timeString, @JsonKey(name: 'hora_fim') this.endTimeString, @JsonKey(name: 'hora_inicio2') this.startDateTimeOld, @JsonKey(name: 'descricao') this.description, @JsonKey(name: 'localizacao') this.location, @JsonKey(name: 'imagem') this.imageUrl, @JsonKey(name: 'codigo_de') this.fromCode, @JsonKey(name: 'codigo_para') this.toCode, @JsonKey(name: 'de') this.fromCity, @JsonKey(name: 'para') this.toCity, @JsonKey(name: 'motorista') this.driverName, @JsonKey(name: 'duracao') this.durationString, @JsonKey(name: 'tempo_deslocamento') this.travelTime, @JsonKey(name: 'conexoes') final  List<Map<String, dynamic>>? connections}): _connections = connections,super._();
+  const _ItineraryItemDto({@JsonKey(name: 'id') required this.id, @JsonKey(name: 'titulo') this.title, @JsonKey(name: 'nome') this.oldName, @JsonKey(name: 'tipo') required this.typeString, @JsonKey(name: 'data') this.dateString, @JsonKey(name: 'hora_inicio') this.timeString, @JsonKey(name: 'hora_fim') this.endTimeString, @JsonKey(name: 'hora_inicio2') this.startDateTimeOld, @JsonKey(name: 'descricao') this.description, @JsonKey(name: 'localizacao') this.location, @JsonKey(name: 'imagem') this.imageUrl, @JsonKey(name: 'codigo_de') this.fromCode, @JsonKey(name: 'codigo_para') this.toCode, @JsonKey(name: 'de') this.fromCity, @JsonKey(name: 'para') this.toCity, @JsonKey(name: 'motorista') this.driverName, @JsonKey(name: 'duracao') this.durationString, @JsonKey(name: 'tempo_deslocamento') this.travelTime, @JsonKey(name: 'cardapio') this.menuUrl, @JsonKey(name: 'cardapio_url') this.menuUrlAlt, @JsonKey(name: 'anexos') final  List<String>? attachments, @JsonKey(name: 'anexo') this.singleAttachment, @JsonKey(name: 'dados') final  Map<String, dynamic>? dataAdditional, @JsonKey(name: 'conexoes') final  List<Map<String, dynamic>>? connections}): _attachments = attachments,_dataAdditional = dataAdditional,_connections = connections,super._();
   factory _ItineraryItemDto.fromJson(Map<String, dynamic> json) => _$ItineraryItemDtoFromJson(json);
 
 @override@JsonKey(name: 'id') final  String id;
@@ -252,6 +257,27 @@ class _ItineraryItemDto extends ItineraryItemDto {
 @override@JsonKey(name: 'motorista') final  String? driverName;
 @override@JsonKey(name: 'duracao') final  String? durationString;
 @override@JsonKey(name: 'tempo_deslocamento') final  String? travelTime;
+@override@JsonKey(name: 'cardapio') final  String? menuUrl;
+@override@JsonKey(name: 'cardapio_url') final  String? menuUrlAlt;
+ final  List<String>? _attachments;
+@override@JsonKey(name: 'anexos') List<String>? get attachments {
+  final value = _attachments;
+  if (value == null) return null;
+  if (_attachments is EqualUnmodifiableListView) return _attachments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+@override@JsonKey(name: 'anexo') final  String? singleAttachment;
+ final  Map<String, dynamic>? _dataAdditional;
+@override@JsonKey(name: 'dados') Map<String, dynamic>? get dataAdditional {
+  final value = _dataAdditional;
+  if (value == null) return null;
+  if (_dataAdditional is EqualUnmodifiableMapView) return _dataAdditional;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
  final  List<Map<String, dynamic>>? _connections;
 @override@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? get connections {
   final value = _connections;
@@ -275,16 +301,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.oldName, oldName) || other.oldName == oldName)&&(identical(other.typeString, typeString) || other.typeString == typeString)&&(identical(other.dateString, dateString) || other.dateString == dateString)&&(identical(other.timeString, timeString) || other.timeString == timeString)&&(identical(other.endTimeString, endTimeString) || other.endTimeString == endTimeString)&&(identical(other.startDateTimeOld, startDateTimeOld) || other.startDateTimeOld == startDateTimeOld)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&const DeepCollectionEquality().equals(other._connections, _connections));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.oldName, oldName) || other.oldName == oldName)&&(identical(other.typeString, typeString) || other.typeString == typeString)&&(identical(other.dateString, dateString) || other.dateString == dateString)&&(identical(other.timeString, timeString) || other.timeString == timeString)&&(identical(other.endTimeString, endTimeString) || other.endTimeString == endTimeString)&&(identical(other.startDateTimeOld, startDateTimeOld) || other.startDateTimeOld == startDateTimeOld)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&(identical(other.menuUrl, menuUrl) || other.menuUrl == menuUrl)&&(identical(other.menuUrlAlt, menuUrlAlt) || other.menuUrlAlt == menuUrlAlt)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&(identical(other.singleAttachment, singleAttachment) || other.singleAttachment == singleAttachment)&&const DeepCollectionEquality().equals(other._dataAdditional, _dataAdditional)&&const DeepCollectionEquality().equals(other._connections, _connections));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,oldName,typeString,dateString,timeString,endTimeString,startDateTimeOld,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,const DeepCollectionEquality().hash(_connections)]);
+int get hashCode => Object.hashAll([runtimeType,id,title,oldName,typeString,dateString,timeString,endTimeString,startDateTimeOld,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,menuUrl,menuUrlAlt,const DeepCollectionEquality().hash(_attachments),singleAttachment,const DeepCollectionEquality().hash(_dataAdditional),const DeepCollectionEquality().hash(_connections)]);
 
 @override
 String toString() {
-  return 'ItineraryItemDto(id: $id, title: $title, oldName: $oldName, typeString: $typeString, dateString: $dateString, timeString: $timeString, endTimeString: $endTimeString, startDateTimeOld: $startDateTimeOld, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, connections: $connections)';
+  return 'ItineraryItemDto(id: $id, title: $title, oldName: $oldName, typeString: $typeString, dateString: $dateString, timeString: $timeString, endTimeString: $endTimeString, startDateTimeOld: $startDateTimeOld, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, menuUrl: $menuUrl, menuUrlAlt: $menuUrlAlt, attachments: $attachments, singleAttachment: $singleAttachment, dataAdditional: $dataAdditional, connections: $connections)';
 }
 
 
@@ -295,7 +321,7 @@ abstract mixin class _$ItineraryItemDtoCopyWith<$Res> implements $ItineraryItemD
   factory _$ItineraryItemDtoCopyWith(_ItineraryItemDto value, $Res Function(_ItineraryItemDto) _then) = __$ItineraryItemDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'id') String id,@JsonKey(name: 'titulo') String? title,@JsonKey(name: 'nome') String? oldName,@JsonKey(name: 'tipo') String typeString,@JsonKey(name: 'data') String? dateString,@JsonKey(name: 'hora_inicio') String? timeString,@JsonKey(name: 'hora_fim') String? endTimeString,@JsonKey(name: 'hora_inicio2') DateTime? startDateTimeOld,@JsonKey(name: 'descricao') String? description,@JsonKey(name: 'localizacao') String? location,@JsonKey(name: 'imagem') String? imageUrl,@JsonKey(name: 'codigo_de') String? fromCode,@JsonKey(name: 'codigo_para') String? toCode,@JsonKey(name: 'de') String? fromCity,@JsonKey(name: 'para') String? toCity,@JsonKey(name: 'motorista') String? driverName,@JsonKey(name: 'duracao') String? durationString,@JsonKey(name: 'tempo_deslocamento') String? travelTime,@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections
+@JsonKey(name: 'id') String id,@JsonKey(name: 'titulo') String? title,@JsonKey(name: 'nome') String? oldName,@JsonKey(name: 'tipo') String typeString,@JsonKey(name: 'data') String? dateString,@JsonKey(name: 'hora_inicio') String? timeString,@JsonKey(name: 'hora_fim') String? endTimeString,@JsonKey(name: 'hora_inicio2') DateTime? startDateTimeOld,@JsonKey(name: 'descricao') String? description,@JsonKey(name: 'localizacao') String? location,@JsonKey(name: 'imagem') String? imageUrl,@JsonKey(name: 'codigo_de') String? fromCode,@JsonKey(name: 'codigo_para') String? toCode,@JsonKey(name: 'de') String? fromCity,@JsonKey(name: 'para') String? toCity,@JsonKey(name: 'motorista') String? driverName,@JsonKey(name: 'duracao') String? durationString,@JsonKey(name: 'tempo_deslocamento') String? travelTime,@JsonKey(name: 'cardapio') String? menuUrl,@JsonKey(name: 'cardapio_url') String? menuUrlAlt,@JsonKey(name: 'anexos') List<String>? attachments,@JsonKey(name: 'anexo') String? singleAttachment,@JsonKey(name: 'dados') Map<String, dynamic>? dataAdditional,@JsonKey(name: 'conexoes') List<Map<String, dynamic>>? connections
 });
 
 
@@ -312,7 +338,7 @@ class __$ItineraryItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryItemDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? oldName = freezed,Object? typeString = null,Object? dateString = freezed,Object? timeString = freezed,Object? endTimeString = freezed,Object? startDateTimeOld = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? connections = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? oldName = freezed,Object? typeString = null,Object? dateString = freezed,Object? timeString = freezed,Object? endTimeString = freezed,Object? startDateTimeOld = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? menuUrl = freezed,Object? menuUrlAlt = freezed,Object? attachments = freezed,Object? singleAttachment = freezed,Object? dataAdditional = freezed,Object? connections = freezed,}) {
   return _then(_ItineraryItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -332,7 +358,12 @@ as String?,toCity: freezed == toCity ? _self.toCity : toCity // ignore: cast_nul
 as String?,driverName: freezed == driverName ? _self.driverName : driverName // ignore: cast_nullable_to_non_nullable
 as String?,durationString: freezed == durationString ? _self.durationString : durationString // ignore: cast_nullable_to_non_nullable
 as String?,travelTime: freezed == travelTime ? _self.travelTime : travelTime // ignore: cast_nullable_to_non_nullable
-as String?,connections: freezed == connections ? _self._connections : connections // ignore: cast_nullable_to_non_nullable
+as String?,menuUrl: freezed == menuUrl ? _self.menuUrl : menuUrl // ignore: cast_nullable_to_non_nullable
+as String?,menuUrlAlt: freezed == menuUrlAlt ? _self.menuUrlAlt : menuUrlAlt // ignore: cast_nullable_to_non_nullable
+as String?,attachments: freezed == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<String>?,singleAttachment: freezed == singleAttachment ? _self.singleAttachment : singleAttachment // ignore: cast_nullable_to_non_nullable
+as String?,dataAdditional: freezed == dataAdditional ? _self._dataAdditional : dataAdditional // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,connections: freezed == connections ? _self._connections : connections // ignore: cast_nullable_to_non_nullable
 as List<Map<String, dynamic>>?,
   ));
 }

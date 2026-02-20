@@ -10,6 +10,7 @@ import 'package:agrobravo/features/chat/presentation/cubit/chat_detail_cubit.dar
 import 'package:agrobravo/features/chat/presentation/cubit/chat_detail_state.dart';
 import 'package:agrobravo/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:agrobravo/features/chat/presentation/widgets/chat_input.dart';
+import 'package:go_router/go_router.dart';
 import 'package:agrobravo/core/di/injection.dart';
 
 class IndividualChatPage extends StatelessWidget {
@@ -21,8 +22,9 @@ class IndividualChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Assuming we can load by guide ID
     return BlocProvider(
-      create: (_) =>
-          getIt<ChatDetailCubit>()..loadMessages(guide.id, isGroup: false),
+      create:
+          (_) =>
+              getIt<ChatDetailCubit>()..loadMessages(guide.id, isGroup: false),
       child: _IndividualChatView(guide: guide),
     );
   }
@@ -101,54 +103,64 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.chatBackgroundDark
-          : AppColors.chatBackground,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.dark
+              ? AppColors.chatBackgroundDark
+              : AppColors.chatBackground,
       appBar: AppHeader(
         mode: HeaderMode.back,
         title: widget.guide.name,
         subtitle: widget.guide.role,
-        logo: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            shape: BoxShape.circle,
-            image: widget.guide.avatarUrl != null
-                ? DecorationImage(
-                    image: CachedNetworkImageProvider(widget.guide.avatarUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
+        onTitleTap: () => context.push('/profile/${widget.guide.id}'),
+        logo: GestureDetector(
+          onTap: () => context.push('/profile/${widget.guide.id}'),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              image:
+                  widget.guide.avatarUrl != null
+                      ? DecorationImage(
+                        image: CachedNetworkImageProvider(
+                          widget.guide.avatarUrl!,
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                      : null,
+            ),
+            child:
+                widget.guide.avatarUrl == null
+                    ? Icon(
+                      Icons.person,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    )
+                    : null,
           ),
-          child: widget.guide.avatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
-                )
-              : null,
         ),
       ),
       body: Stack(
         children: [
           Positioned.fill(
             child: Opacity(
-              opacity: Theme.of(context).brightness == Brightness.dark
-                  ? 0.05
-                  : 0.1,
+              opacity:
+                  Theme.of(context).brightness == Brightness.dark ? 0.05 : 0.1,
               child: Image.asset(
                 'assets/images/chat_pattern.png',
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : null,
-                colorBlendMode: Theme.of(context).brightness == Brightness.dark
-                    ? BlendMode.srcIn
-                    : null,
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : null,
+                colorBlendMode:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? BlendMode.srcIn
+                        : null,
               ),
             ),
           ),
@@ -241,14 +253,17 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                       builder: (context, state) {
                         return state.when(
                           initial: () => const SizedBox.shrink(),
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (msg) => Center(
-                            child: Text(
-                              'Erro: $msg',
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
+                          loading:
+                              () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                          error:
+                              (msg) => Center(
+                                child: Text(
+                                  'Erro: $msg',
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
                           loaded: (messages) {
                             if (messages.isEmpty) {
                               return const Center(child: Text('Sem mensagens'));
@@ -278,29 +293,29 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                                   isSelected: isSelected,
                                   onLongPress:
                                       msg.type == MessageType.me &&
-                                          !msg.isDeleted
-                                      ? () {
-                                          setState(() {
-                                            _selectedMessageIds.add(msg.id);
-                                          });
-                                        }
-                                      : null,
+                                              !msg.isDeleted
+                                          ? () {
+                                            setState(() {
+                                              _selectedMessageIds.add(msg.id);
+                                            });
+                                          }
+                                          : null,
                                   onTap:
                                       _selectedMessageIds.isNotEmpty &&
-                                          msg.type == MessageType.me &&
-                                          !msg.isDeleted
-                                      ? () {
-                                          setState(() {
-                                            if (isSelected) {
-                                              _selectedMessageIds.remove(
-                                                msg.id,
-                                              );
-                                            } else {
-                                              _selectedMessageIds.add(msg.id);
-                                            }
-                                          });
-                                        }
-                                      : null,
+                                              msg.type == MessageType.me &&
+                                              !msg.isDeleted
+                                          ? () {
+                                            setState(() {
+                                              if (isSelected) {
+                                                _selectedMessageIds.remove(
+                                                  msg.id,
+                                                );
+                                              } else {
+                                                _selectedMessageIds.add(msg.id);
+                                              }
+                                            });
+                                          }
+                                          : null,
                                 );
                               },
                             );

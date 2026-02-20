@@ -218,6 +218,7 @@ class _HomePageState extends State<HomePage> {
                         height: 10,
                         decoration: BoxDecoration(
                           color: Colors.redAccent,
+                          shape: BoxShape.circle,
                           border: Border.all(
                             color: Theme.of(context).colorScheme.surface,
                             width: 1.5,
@@ -316,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    const HeaderSpacer(),
+                    const HeaderSpacer(extraHeight: 0),
                     ItineraryMicrocards(
                       onSeeAll: () => setState(() => _selectedIndex = 1),
                     ),
@@ -337,7 +338,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.zero,
                 itemCount: posts.length + 2,
                 itemBuilder: (context, index) {
-                  if (index == 0) return const HeaderSpacer();
+                  if (index == 0) return const HeaderSpacer(extraHeight: 0);
                   if (index == 1) {
                     return ItineraryMicrocards(
                       onSeeAll: () => setState(() => _selectedIndex = 2),
@@ -499,8 +500,8 @@ class _HomePageState extends State<HomePage> {
           ),
           _buildNavItem(
             3,
-            Icons.newspaper_outlined,
-            Icons.newspaper_outlined,
+            Icons.dynamic_feed_outlined,
+            Icons.dynamic_feed,
             'Feed',
           ),
           BlocBuilder<DocumentsCubit, DocumentsState>(

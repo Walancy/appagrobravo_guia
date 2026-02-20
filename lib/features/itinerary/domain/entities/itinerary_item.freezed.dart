@@ -16,7 +16,7 @@ mixin _$ItineraryItemEntity {
 
  String get id; String get name; ItineraryType get type; DateTime? get startDateTime; DateTime? get endDateTime; String? get description; String? get location; String? get imageUrl;// Flight specific
  String? get fromCode; String? get toCode; String? get fromCity; String? get toCity;// Transfer specific
- String? get driverName; String? get durationString; String? get travelTime; List<Map<String, dynamic>>? get connections;
+ String? get driverName; String? get durationString; String? get travelTime; String? get menuUrl; List<String>? get attachments; List<Map<String, dynamic>>? get connections;
 /// Create a copy of ItineraryItemEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,16 +27,16 @@ $ItineraryItemEntityCopyWith<ItineraryItemEntity> get copyWith => _$ItineraryIte
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryItemEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDateTime, startDateTime) || other.startDateTime == startDateTime)&&(identical(other.endDateTime, endDateTime) || other.endDateTime == endDateTime)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&const DeepCollectionEquality().equals(other.connections, connections));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryItemEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDateTime, startDateTime) || other.startDateTime == startDateTime)&&(identical(other.endDateTime, endDateTime) || other.endDateTime == endDateTime)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&(identical(other.menuUrl, menuUrl) || other.menuUrl == menuUrl)&&const DeepCollectionEquality().equals(other.attachments, attachments)&&const DeepCollectionEquality().equals(other.connections, connections));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,startDateTime,endDateTime,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,const DeepCollectionEquality().hash(connections));
+int get hashCode => Object.hash(runtimeType,id,name,type,startDateTime,endDateTime,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,menuUrl,const DeepCollectionEquality().hash(attachments),const DeepCollectionEquality().hash(connections));
 
 @override
 String toString() {
-  return 'ItineraryItemEntity(id: $id, name: $name, type: $type, startDateTime: $startDateTime, endDateTime: $endDateTime, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, connections: $connections)';
+  return 'ItineraryItemEntity(id: $id, name: $name, type: $type, startDateTime: $startDateTime, endDateTime: $endDateTime, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, menuUrl: $menuUrl, attachments: $attachments, connections: $connections)';
 }
 
 
@@ -47,7 +47,7 @@ abstract mixin class $ItineraryItemEntityCopyWith<$Res>  {
   factory $ItineraryItemEntityCopyWith(ItineraryItemEntity value, $Res Function(ItineraryItemEntity) _then) = _$ItineraryItemEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, ItineraryType type, DateTime? startDateTime, DateTime? endDateTime, String? description, String? location, String? imageUrl, String? fromCode, String? toCode, String? fromCity, String? toCity, String? driverName, String? durationString, String? travelTime, List<Map<String, dynamic>>? connections
+ String id, String name, ItineraryType type, DateTime? startDateTime, DateTime? endDateTime, String? description, String? location, String? imageUrl, String? fromCode, String? toCode, String? fromCity, String? toCity, String? driverName, String? durationString, String? travelTime, String? menuUrl, List<String>? attachments, List<Map<String, dynamic>>? connections
 });
 
 
@@ -64,7 +64,7 @@ class _$ItineraryItemEntityCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryItemEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? startDateTime = freezed,Object? endDateTime = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? connections = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? startDateTime = freezed,Object? endDateTime = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? menuUrl = freezed,Object? attachments = freezed,Object? connections = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -81,7 +81,9 @@ as String?,toCity: freezed == toCity ? _self.toCity : toCity // ignore: cast_nul
 as String?,driverName: freezed == driverName ? _self.driverName : driverName // ignore: cast_nullable_to_non_nullable
 as String?,durationString: freezed == durationString ? _self.durationString : durationString // ignore: cast_nullable_to_non_nullable
 as String?,travelTime: freezed == travelTime ? _self.travelTime : travelTime // ignore: cast_nullable_to_non_nullable
-as String?,connections: freezed == connections ? _self.connections : connections // ignore: cast_nullable_to_non_nullable
+as String?,menuUrl: freezed == menuUrl ? _self.menuUrl : menuUrl // ignore: cast_nullable_to_non_nullable
+as String?,attachments: freezed == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<String>?,connections: freezed == connections ? _self.connections : connections // ignore: cast_nullable_to_non_nullable
 as List<Map<String, dynamic>>?,
   ));
 }
@@ -167,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  List<Map<String, dynamic>>? connections)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  String? menuUrl,  List<String>? attachments,  List<Map<String, dynamic>>? connections)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ItineraryItemEntity() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.attachments,_that.connections);case _:
   return orElse();
 
 }
@@ -188,10 +190,10 @@ return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  List<Map<String, dynamic>>? connections)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  String? menuUrl,  List<String>? attachments,  List<Map<String, dynamic>>? connections)  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryItemEntity():
-return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.attachments,_that.connections);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +210,10 @@ return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  List<Map<String, dynamic>>? connections)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  ItineraryType type,  DateTime? startDateTime,  DateTime? endDateTime,  String? description,  String? location,  String? imageUrl,  String? fromCode,  String? toCode,  String? fromCity,  String? toCity,  String? driverName,  String? durationString,  String? travelTime,  String? menuUrl,  List<String>? attachments,  List<Map<String, dynamic>>? connections)?  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryItemEntity() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.connections);case _:
+return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDateTime,_that.description,_that.location,_that.imageUrl,_that.fromCode,_that.toCode,_that.fromCity,_that.toCity,_that.driverName,_that.durationString,_that.travelTime,_that.menuUrl,_that.attachments,_that.connections);case _:
   return null;
 
 }
@@ -223,7 +225,7 @@ return $default(_that.id,_that.name,_that.type,_that.startDateTime,_that.endDate
 
 
 class _ItineraryItemEntity extends ItineraryItemEntity {
-  const _ItineraryItemEntity({required this.id, required this.name, required this.type, this.startDateTime, this.endDateTime, this.description, this.location, this.imageUrl, this.fromCode, this.toCode, this.fromCity, this.toCity, this.driverName, this.durationString, this.travelTime, final  List<Map<String, dynamic>>? connections}): _connections = connections,super._();
+  const _ItineraryItemEntity({required this.id, required this.name, required this.type, this.startDateTime, this.endDateTime, this.description, this.location, this.imageUrl, this.fromCode, this.toCode, this.fromCity, this.toCity, this.driverName, this.durationString, this.travelTime, this.menuUrl, final  List<String>? attachments, final  List<Map<String, dynamic>>? connections}): _attachments = attachments,_connections = connections,super._();
   
 
 @override final  String id;
@@ -243,6 +245,16 @@ class _ItineraryItemEntity extends ItineraryItemEntity {
 @override final  String? driverName;
 @override final  String? durationString;
 @override final  String? travelTime;
+@override final  String? menuUrl;
+ final  List<String>? _attachments;
+@override List<String>? get attachments {
+  final value = _attachments;
+  if (value == null) return null;
+  if (_attachments is EqualUnmodifiableListView) return _attachments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
  final  List<Map<String, dynamic>>? _connections;
 @override List<Map<String, dynamic>>? get connections {
   final value = _connections;
@@ -263,16 +275,16 @@ _$ItineraryItemEntityCopyWith<_ItineraryItemEntity> get copyWith => __$Itinerary
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryItemEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDateTime, startDateTime) || other.startDateTime == startDateTime)&&(identical(other.endDateTime, endDateTime) || other.endDateTime == endDateTime)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&const DeepCollectionEquality().equals(other._connections, _connections));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryItemEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDateTime, startDateTime) || other.startDateTime == startDateTime)&&(identical(other.endDateTime, endDateTime) || other.endDateTime == endDateTime)&&(identical(other.description, description) || other.description == description)&&(identical(other.location, location) || other.location == location)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.fromCode, fromCode) || other.fromCode == fromCode)&&(identical(other.toCode, toCode) || other.toCode == toCode)&&(identical(other.fromCity, fromCity) || other.fromCity == fromCity)&&(identical(other.toCity, toCity) || other.toCity == toCity)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.durationString, durationString) || other.durationString == durationString)&&(identical(other.travelTime, travelTime) || other.travelTime == travelTime)&&(identical(other.menuUrl, menuUrl) || other.menuUrl == menuUrl)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&const DeepCollectionEquality().equals(other._connections, _connections));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,startDateTime,endDateTime,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,const DeepCollectionEquality().hash(_connections));
+int get hashCode => Object.hash(runtimeType,id,name,type,startDateTime,endDateTime,description,location,imageUrl,fromCode,toCode,fromCity,toCity,driverName,durationString,travelTime,menuUrl,const DeepCollectionEquality().hash(_attachments),const DeepCollectionEquality().hash(_connections));
 
 @override
 String toString() {
-  return 'ItineraryItemEntity(id: $id, name: $name, type: $type, startDateTime: $startDateTime, endDateTime: $endDateTime, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, connections: $connections)';
+  return 'ItineraryItemEntity(id: $id, name: $name, type: $type, startDateTime: $startDateTime, endDateTime: $endDateTime, description: $description, location: $location, imageUrl: $imageUrl, fromCode: $fromCode, toCode: $toCode, fromCity: $fromCity, toCity: $toCity, driverName: $driverName, durationString: $durationString, travelTime: $travelTime, menuUrl: $menuUrl, attachments: $attachments, connections: $connections)';
 }
 
 
@@ -283,7 +295,7 @@ abstract mixin class _$ItineraryItemEntityCopyWith<$Res> implements $ItineraryIt
   factory _$ItineraryItemEntityCopyWith(_ItineraryItemEntity value, $Res Function(_ItineraryItemEntity) _then) = __$ItineraryItemEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, ItineraryType type, DateTime? startDateTime, DateTime? endDateTime, String? description, String? location, String? imageUrl, String? fromCode, String? toCode, String? fromCity, String? toCity, String? driverName, String? durationString, String? travelTime, List<Map<String, dynamic>>? connections
+ String id, String name, ItineraryType type, DateTime? startDateTime, DateTime? endDateTime, String? description, String? location, String? imageUrl, String? fromCode, String? toCode, String? fromCity, String? toCity, String? driverName, String? durationString, String? travelTime, String? menuUrl, List<String>? attachments, List<Map<String, dynamic>>? connections
 });
 
 
@@ -300,7 +312,7 @@ class __$ItineraryItemEntityCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryItemEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? startDateTime = freezed,Object? endDateTime = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? connections = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? startDateTime = freezed,Object? endDateTime = freezed,Object? description = freezed,Object? location = freezed,Object? imageUrl = freezed,Object? fromCode = freezed,Object? toCode = freezed,Object? fromCity = freezed,Object? toCity = freezed,Object? driverName = freezed,Object? durationString = freezed,Object? travelTime = freezed,Object? menuUrl = freezed,Object? attachments = freezed,Object? connections = freezed,}) {
   return _then(_ItineraryItemEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -317,7 +329,9 @@ as String?,toCity: freezed == toCity ? _self.toCity : toCity // ignore: cast_nul
 as String?,driverName: freezed == driverName ? _self.driverName : driverName // ignore: cast_nullable_to_non_nullable
 as String?,durationString: freezed == durationString ? _self.durationString : durationString // ignore: cast_nullable_to_non_nullable
 as String?,travelTime: freezed == travelTime ? _self.travelTime : travelTime // ignore: cast_nullable_to_non_nullable
-as String?,connections: freezed == connections ? _self._connections : connections // ignore: cast_nullable_to_non_nullable
+as String?,menuUrl: freezed == menuUrl ? _self.menuUrl : menuUrl // ignore: cast_nullable_to_non_nullable
+as String?,attachments: freezed == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<String>?,connections: freezed == connections ? _self._connections : connections // ignore: cast_nullable_to_non_nullable
 as List<Map<String, dynamic>>?,
   ));
 }

@@ -19,7 +19,11 @@ import 'package:flutter/foundation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: "assets/env");
+  } catch (e) {
+    debugPrint('Erro ao carregar o arquivo assets/env: $e');
+  }
 
   await initializeDateFormatting('pt_BR', null);
 

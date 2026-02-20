@@ -289,10 +289,11 @@ class _ProfileTabState extends State<ProfileTab> {
 
                 return SingleChildScrollView(
                   controller: _scrollController,
+                  padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const HeaderSpacer(),
+                      const HeaderSpacer(extraHeight: 0),
                       ProfileHeaderCover(
                         coverUrl: profile.coverUrl,
                         avatarUrl: profile.avatarUrl,
@@ -325,7 +326,6 @@ class _ProfileTabState extends State<ProfileTab> {
                               jobTitle: profile.jobTitle,
                               bio: profile.bio,
                               missionName: profile.missionName,
-                              groupName: profile.groupName,
                               isGuide: profile.isGuide,
                             ),
                           ],

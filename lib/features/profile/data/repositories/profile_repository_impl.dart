@@ -25,10 +25,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         'avatarUrl': profile.avatarUrl,
         'coverUrl': profile.coverUrl,
         'jobTitle': profile.jobTitle,
-        'company': profile.company,
         'bio': profile.bio,
         'missionName': profile.missionName,
-        'groupName': profile.groupName,
         'email': profile.email,
         'phone': profile.phone,
         'cpf': profile.cpf,
@@ -69,10 +67,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
           avatarUrl: json['avatarUrl'],
           coverUrl: json['coverUrl'],
           jobTitle: json['jobTitle'],
-          company: json['company'],
           bio: json['bio'],
           missionName: json['missionName'],
-          groupName: json['groupName'],
           email: json['email'],
           phone: json['phone'],
           cpf: json['cpf'],
@@ -114,7 +110,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           await _supabaseClient
               .from('users')
               .select(
-                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, empresa, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte',
+                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte',
               )
               .eq('id', userId)
               .single();
@@ -173,7 +169,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       // 6. Fetch Current Mission and Group
       String? missionName;
-      String? groupName;
 
       try {
         final missionRes =
@@ -189,7 +184,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         if (missionRes != null && missionRes['grupo'] != null) {
           final g = missionRes['grupo'];
           if (g is Map) {
-            groupName = g['nome'];
             final m = g['missao'];
             if (m is Map) {
               missionName = m['nome'];
@@ -208,12 +202,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
         jobTitle: userResponse['cargo'],
         bio: userResponse['observacoes'],
         missionName: missionName,
-        groupName: groupName,
         email: userResponse['email'],
         phone: userResponse['telefone'],
         cpf: userResponse['cpf'],
         ssn: userResponse['ssn'],
-        company: userResponse['empresa'],
         zipCode: userResponse['cep'],
         state: userResponse['estado'],
         city: userResponse['cidade'],
@@ -320,7 +312,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                   'avatarUrl': p.avatarUrl,
                   'coverUrl': p.coverUrl,
                   'jobTitle': p.jobTitle,
-                  'company': p.company,
                   'bio': p.bio,
                   'email': p.email,
                   'phone': p.phone,
@@ -353,7 +344,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 avatarUrl: json['avatarUrl'],
                 coverUrl: json['coverUrl'],
                 jobTitle: json['jobTitle'],
-                company: json['company'],
                 bio: json['bio'],
                 email: json['email'],
                 phone: json['phone'],
@@ -379,7 +369,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 foodPreferences: null,
                 medicalRestrictions: null,
                 missionName: null,
-                groupName: null,
               ),
             )
             .toList();
@@ -560,7 +549,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                   'avatarUrl': p.avatarUrl,
                   // Requests usually just show name/avatar
                   'jobTitle': p.jobTitle,
-                  'company': p.company,
                   'isGuide': p.isGuide,
                 },
               )
@@ -584,7 +572,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 name: json['name'],
                 avatarUrl: json['avatarUrl'],
                 jobTitle: json['jobTitle'],
-                company: json['company'],
                 // Defaults
                 coverUrl: null,
                 bio: null,
@@ -611,7 +598,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 foodPreferences: null,
                 medicalRestrictions: null,
                 missionName: null,
-                groupName: null,
               ),
             )
             .toList();
@@ -743,7 +729,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final usersResponse = await _supabaseClient
           .from('users')
           .select(
-            'id, nome, foto, cargo, empresa, capa_perfil, observacoes, email, telefone, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, restricoes_alimentares, restricoes_medicas',
+            'id, nome, foto, cargo, capa_perfil, observacoes, email, telefone, cpf, ssn, cep, estado, city:cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, restricoes_alimentares, restricoes_medicas',
           )
           .inFilter('id', userIds);
 
@@ -783,10 +769,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
               avatarUrl: u['foto'],
               coverUrl: u['capa_perfil'],
               jobTitle: u['cargo'],
-              company: u['empresa'],
               bio: u['observacoes'],
               missionName: null,
-              groupName: null,
               email: u['email'],
               phone: u['telefone'],
               cpf: u['cpf'],
@@ -883,7 +867,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final date = data['birthDate'] as DateTime;
         dbData['datanascimento'] = date.toIso8601String();
       }
-      if (data.containsKey('company')) dbData['empresa'] = data['company'];
       if (data.containsKey('nationality'))
         dbData['nacionalidade'] = data['nationality'];
       if (data.containsKey('passport'))
