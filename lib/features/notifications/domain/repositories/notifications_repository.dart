@@ -9,4 +9,9 @@ abstract class NotificationsRepository {
     String userId,
     bool accept,
   );
+  Future<Either<Exception, Unit>> sendGroupNotification({
+    required String groupId,
+    required String title,
+    required String message,
+  });
 }

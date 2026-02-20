@@ -16,24 +16,25 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<void> _saveNotificationsToCache(List<NotificationEntity> list) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonList = list
-          .map(
-            (e) => {
-              'id': e.id,
-              'userName': e.userName,
-              'userAvatar': e.userAvatar,
-              'typeIndex': e.type.index,
-              'postImage': e.postImage,
-              'postId': e.postId,
-              'solicitacaoUserId': e.solicitacaoUserId,
-              'docId': e.docId,
-              'postOwnerId': e.postOwnerId,
-              'message': e.message,
-              'createdAt': e.createdAt.toIso8601String(),
-              'isRead': e.isRead,
-            },
-          )
-          .toList();
+      final jsonList =
+          list
+              .map(
+                (e) => {
+                  'id': e.id,
+                  'userName': e.userName,
+                  'userAvatar': e.userAvatar,
+                  'typeIndex': e.type.index,
+                  'postImage': e.postImage,
+                  'postId': e.postId,
+                  'solicitacaoUserId': e.solicitacaoUserId,
+                  'docId': e.docId,
+                  'postOwnerId': e.postOwnerId,
+                  'message': e.message,
+                  'createdAt': e.createdAt.toIso8601String(),
+                  'isRead': e.isRead,
+                },
+              )
+              .toList();
       await prefs.setString('cached_notifications', jsonEncode(jsonList));
     } catch (e) {
       // ignore
@@ -85,11 +86,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       final List<dynamic> data = response as List;
 
       // Collect unique requester IDs to fetch their profiles
-      final requesterIds = data
-          .where((n) => n['solicitacao_user_id'] != null)
-          .map((n) => n['solicitacao_user_id'] as String)
-          .toSet()
-          .toList();
+      final requesterIds =
+          data
+              .where((n) => n['solicitacao_user_id'] != null)
+              .map((n) => n['solicitacao_user_id'] as String)
+              .toSet()
+              .toList();
 
       Map<String, dynamic> profilesMap = {};
       if (requesterIds.isNotEmpty) {
@@ -106,11 +108,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       }
 
       // Collect post IDs for thumbnails
-      final postIds = data
-          .where((n) => n['post_id'] != null)
-          .map((n) => n['post_id'] as String)
-          .toSet()
-          .toList();
+      final postIds =
+          data
+              .where((n) => n['post_id'] != null)
+              .map((n) => n['post_id'] as String)
+              .toSet()
+              .toList();
 
       Map<String, String> postThumbnails = {};
       Map<String, String> postOwners = {};
@@ -131,22 +134,26 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
         } catch (_) {}
       }
 
-      final notifications = data.map((json) {
-        final model = NotificationModel.fromJson(json);
-        final solicitanteId = json['solicitacao_user_id'] as String?;
-        final profile = solicitanteId != null
-            ? profilesMap[solicitanteId]
-            : null;
+      final notifications =
+          data.map((json) {
+            final model = NotificationModel.fromJson(json);
+            final solicitanteId = json['solicitacao_user_id'] as String?;
+            final profile =
+                solicitanteId != null ? profilesMap[solicitanteId] : null;
 
-        final postId = json['post_id'] as String?;
-        final postThumbnail = postId != null ? postThumbnails[postId] : null;
-        final postOwnerId = postId != null ? postOwners[postId] : null;
+            final postId = json['post_id'] as String?;
+            final postThumbnail =
+                postId != null ? postThumbnails[postId] : null;
+            final postOwnerId = postId != null ? postOwners[postId] : null;
 
-        return model
-            .copyWith(userName: profile?['nome'], userAvatar: profile?['foto'])
-            .toEntity()
-            .copyWith(postImage: postThumbnail, postOwnerId: postOwnerId);
-      }).toList();
+            return model
+                .copyWith(
+                  userName: profile?['nome'],
+                  userAvatar: profile?['foto'],
+                )
+                .toEntity()
+                .copyWith(postImage: postThumbnail, postOwnerId: postOwnerId);
+          }).toList();
 
       // Cache
       await _saveNotificationsToCache(notifications);
@@ -223,6 +230,76 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       return const Right(unit);
     } catch (e) {
       return Left(Exception('Erro ao responder solicitação: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Unit>> sendGroupNotification({
+    required String groupId,
+    required String title,
+    required String message,
+  }) async {
+    try {
+      final currentUserId = _supabaseClient.auth.currentUser?.id;
+      if (currentUserId == null) {
+        return Left(Exception('Usuário não autenticado'));
+      }
+
+      // 1. Fetch Participants
+      final participantsRes = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('user_id')
+          .eq('grupo_id', groupId);
+
+      final participantIds =
+          (participantsRes as List).map((e) => e['user_id'] as String).toSet();
+
+      // 2. Fetch Leaders
+      final leadersRes = await _supabaseClient
+          .from('lideresGrupo')
+          .select('lider_id')
+          .eq('grupo_id', groupId);
+
+      final leaderIds =
+          (leadersRes as List).map((e) => e['lider_id'] as String).toSet();
+
+      // Fetch Mission ID
+      final groupRes =
+          await _supabaseClient
+              .from('grupos')
+              .select('missao_id')
+              .eq('id', groupId)
+              .maybeSingle();
+
+      final missaoId = groupRes?['missao_id'] as String?;
+
+      // 3. Combine and remove current user
+      final allUserIds = {...participantIds, ...leaderIds};
+      allUserIds.remove(currentUserId);
+
+      if (allUserIds.isEmpty) {
+        return const Right(unit);
+      }
+
+      // 4. Create Notifications
+      final notifications =
+          allUserIds.map((userId) {
+            return {
+              'user_id': userId,
+              'grupo_id': groupId,
+              'missao_id': missaoId,
+              'assunto': title,
+              'mensagem': message,
+              'lido': false,
+              'created_at': DateTime.now().toIso8601String(),
+            };
+          }).toList();
+
+      await _supabaseClient.from('notificacoes').insert(notifications);
+
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao enviar notificação para o grupo: $e'));
     }
   }
 }

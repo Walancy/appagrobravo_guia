@@ -48,6 +48,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         'connectionsCount': profile.connectionsCount,
         'postsCount': profile.postsCount,
         'missionsCount': profile.missionsCount,
+        'isGuide': profile.isGuide,
         'connectionStatus': profile.connectionStatus.index,
       };
       await prefs.setString('cached_profile_${profile.id}', jsonEncode(json));
@@ -83,17 +84,19 @@ class ProfileRepositoryImpl implements ProfileRepository {
           number: json['number'],
           neighborhood: json['neighborhood'],
           complement: json['complement'],
-          birthDate: json['birthDate'] != null
-              ? DateTime.parse(json['birthDate'])
-              : null,
+          birthDate:
+              json['birthDate'] != null
+                  ? DateTime.parse(json['birthDate'])
+                  : null,
           nationality: json['nationality'],
           passport: json['passport'],
           foodPreferences: (json['foodPreferences'] as List?)?.cast<String>(),
-          medicalRestrictions: (json['medicalRestrictions'] as List?)
-              ?.cast<String>(),
+          medicalRestrictions:
+              (json['medicalRestrictions'] as List?)?.cast<String>(),
           connectionsCount: json['connectionsCount'] ?? 0,
           postsCount: json['postsCount'] ?? 0,
           missionsCount: json['missionsCount'] ?? 0,
+          isGuide: json['isGuide'] ?? false,
           connectionStatus:
               ConnectionStatus.values[json['connectionStatus'] ?? 0],
         );
@@ -107,13 +110,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Exception, ProfileEntity>> getProfile(String userId) async {
     try {
-      final userResponse = await _supabaseClient
-          .from('users')
-          .select(
-            'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, empresa, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte',
-          )
-          .eq('id', userId)
-          .single();
+      final userResponse =
+          await _supabaseClient
+              .from('users')
+              .select(
+                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, empresa, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte',
+              )
+              .eq('id', userId)
+              .single();
 
       // 2. Fetch Posts Count
       final postsResponse = await _supabaseClient
@@ -144,13 +148,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ConnectionStatus connectionStatus = ConnectionStatus.none;
       final currentUserId = _supabaseClient.auth.currentUser?.id;
       if (currentUserId != null && currentUserId != userId) {
-        final statusRes = await _supabaseClient
-            .from('conexoes')
-            .select('*')
-            .or(
-              'and(seguidor_id.eq.$currentUserId,seguido_id.eq.$userId),and(seguido_id.eq.$currentUserId,seguidor_id.eq.$userId)',
-            )
-            .maybeSingle();
+        final statusRes =
+            await _supabaseClient
+                .from('conexoes')
+                .select('*')
+                .or(
+                  'and(seguidor_id.eq.$currentUserId,seguido_id.eq.$userId),and(seguido_id.eq.$currentUserId,seguidor_id.eq.$userId)',
+                )
+                .maybeSingle();
 
         if (statusRes != null) {
           final isAprovou = statusRes['aprovou'] as bool;
@@ -171,14 +176,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
       String? groupName;
 
       try {
-        final missionRes = await _supabaseClient
-            .from('gruposParticipantes')
-            .select(
-              'grupo:grupos!fk_gruposparticipantes_grupos(nome, missao:missao_id(nome))',
-            )
-            .eq('user_id', userId)
-            .limit(1)
-            .maybeSingle();
+        final missionRes =
+            await _supabaseClient
+                .from('gruposParticipantes')
+                .select(
+                  'grupo:grupos!fk_gruposparticipantes_grupos(nome, missao:missao_id(nome))',
+                )
+                .eq('user_id', userId)
+                .limit(1)
+                .maybeSingle();
 
         if (missionRes != null && missionRes['grupo'] != null) {
           final g = missionRes['grupo'];
@@ -215,20 +221,26 @@ class ProfileRepositoryImpl implements ProfileRepository {
         number: userResponse['numero'],
         neighborhood: userResponse['bairro'],
         complement: userResponse['complemento'],
-        birthDate: userResponse['datanascimento'] != null
-            ? DateTime.tryParse(userResponse['datanascimento'])
-            : (userResponse['data_nascimento'] != null
-                  ? DateTime.tryParse(userResponse['data_nascimento'])
-                  : null),
+        birthDate:
+            userResponse['datanascimento'] != null
+                ? DateTime.tryParse(userResponse['datanascimento'])
+                : (userResponse['data_nascimento'] != null
+                    ? DateTime.tryParse(userResponse['data_nascimento'])
+                    : null),
         nationality: userResponse['nacionalidade'],
         passport: userResponse['n_passaporte'],
-        foodPreferences: (userResponse['restricoes_alimentares'] as List?)
-            ?.cast<String>(),
-        medicalRestrictions: (userResponse['restricoes_medicas'] as List?)
-            ?.cast<String>(),
+        foodPreferences:
+            (userResponse['restricoes_alimentares'] as List?)?.cast<String>(),
+        medicalRestrictions:
+            (userResponse['restricoes_medicas'] as List?)?.cast<String>(),
         connectionsCount: connectionsCount,
         postsCount: postsCount,
         missionsCount: missionsCount,
+        isGuide:
+            (userResponse['cargo'] as String?)?.toLowerCase().contains(
+              'guia',
+            ) ??
+            false,
         connectionStatus: connectionStatus,
       );
 
@@ -299,26 +311,28 @@ class ProfileRepositoryImpl implements ProfileRepository {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonList = list
-          .map(
-            (p) => {
-              'id': p.id,
-              'name': p.name,
-              'avatarUrl': p.avatarUrl,
-              'coverUrl': p.coverUrl,
-              'jobTitle': p.jobTitle,
-              'company': p.company,
-              'bio': p.bio,
-              'email': p.email,
-              'phone': p.phone,
-              'city': p.city,
-              'state': p.state,
-              // minimalistic cache for list view? or full?
-              // storing basic info needed for list usually
-              'connectionStatus': p.connectionStatus.index,
-            },
-          )
-          .toList();
+      final jsonList =
+          list
+              .map(
+                (p) => {
+                  'id': p.id,
+                  'name': p.name,
+                  'avatarUrl': p.avatarUrl,
+                  'coverUrl': p.coverUrl,
+                  'jobTitle': p.jobTitle,
+                  'company': p.company,
+                  'bio': p.bio,
+                  'email': p.email,
+                  'phone': p.phone,
+                  'city': p.city,
+                  'state': p.state,
+                  // minimalistic cache for list view? or full?
+                  // storing basic info needed for list usually
+                  'connectionStatus': p.connectionStatus.index,
+                  'isGuide': p.isGuide,
+                },
+              )
+              .toList();
       await prefs.setString('cached_connections_$userId', jsonEncode(jsonList));
     } catch (e) {
       debugPrint('Erro ao salvar conexões no cache: $e');
@@ -351,6 +365,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 connectionsCount: 0,
                 postsCount: 0,
                 missionsCount: 0,
+                isGuide: json['isGuide'] ?? false,
                 zipCode: null,
                 street: null,
                 number: null,
@@ -396,31 +411,32 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final List<dynamic> data = response as List;
       await _saveUserPostsToCache(userId, data);
 
-      final posts = data.map((postMap) {
-        final post = PostModel.fromJson(postMap);
-        final user = postMap['users'] as Map<String, dynamic>?;
-        final missao = postMap['missoes'] as Map<String, dynamic>?;
+      final posts =
+          data.map((postMap) {
+            final post = PostModel.fromJson(postMap);
+            final user = postMap['users'] as Map<String, dynamic>?;
+            final missao = postMap['missoes'] as Map<String, dynamic>?;
 
-        final curtidasList = postMap['curtidas'] as List?;
-        final commentsList = postMap['comentarios'] as List?;
+            final curtidasList = postMap['curtidas'] as List?;
+            final commentsList = postMap['comentarios'] as List?;
 
-        final likesCount = curtidasList?.length ?? 0;
-        final commentsCount = commentsList?.length ?? 0;
+            final likesCount = curtidasList?.length ?? 0;
+            final commentsCount = commentsList?.length ?? 0;
 
-        final isLiked =
-            currentUserId != null &&
-            curtidasList != null &&
-            curtidasList.any((c) => c['user_id'] == currentUserId);
+            final isLiked =
+                currentUserId != null &&
+                curtidasList != null &&
+                curtidasList.any((c) => c['user_id'] == currentUserId);
 
-        return post.toEntity().copyWith(
-          userName: user?['nome'] ?? 'Usuário',
-          userAvatar: user?['foto'],
-          missionName: missao?['nome'],
-          likesCount: likesCount,
-          commentsCount: commentsCount,
-          isLiked: isLiked,
-        );
-      }).toList();
+            return post.toEntity().copyWith(
+              userName: user?['nome'] ?? 'Usuário',
+              userAvatar: user?['foto'],
+              missionName: missao?['nome'],
+              likesCount: likesCount,
+              commentsCount: commentsCount,
+              isLiked: isLiked,
+            );
+          }).toList();
 
       return Right(posts);
     } catch (e) {
@@ -495,13 +511,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
           .or('seguidor_id.eq.$userId,seguido_id.eq.$userId')
           .eq('aprovou', true);
 
-      final connectionIds = (response as List)
-          .expand((c) {
-            return [c['seguidor_id'], c['seguido_id']];
-          })
-          .where((id) => id != userId)
-          .toSet()
-          .toList();
+      final connectionIds =
+          (response as List)
+              .expand((c) {
+                return [c['seguidor_id'], c['seguido_id']];
+              })
+              .where((id) => id != userId)
+              .toSet()
+              .toList();
 
       if (connectionIds.isEmpty) {
         await _saveConnectionsToCache(userId, []);
@@ -534,18 +551,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       // Reuse connection serialization logic or simplified one
-      final jsonList = list
-          .map(
-            (p) => {
-              'id': p.id,
-              'name': p.name,
-              'avatarUrl': p.avatarUrl,
-              // Requests usually just show name/avatar
-              'jobTitle': p.jobTitle,
-              'company': p.company,
-            },
-          )
-          .toList();
+      final jsonList =
+          list
+              .map(
+                (p) => {
+                  'id': p.id,
+                  'name': p.name,
+                  'avatarUrl': p.avatarUrl,
+                  // Requests usually just show name/avatar
+                  'jobTitle': p.jobTitle,
+                  'company': p.company,
+                  'isGuide': p.isGuide,
+                },
+              )
+              .toList();
       await prefs.setString('cached_requests_$userId', jsonEncode(jsonList));
     } catch (e) {
       debugPrint('Erro ao salvar solicitações no cache: $e');
@@ -578,6 +597,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
                 connectionsCount: 0,
                 postsCount: 0,
                 missionsCount: 0,
+                isGuide: json['isGuide'] ?? false,
                 zipCode: null,
                 street: null,
                 number: null,
@@ -613,9 +633,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
           .eq('seguido_id', userId)
           .eq('aprovou', false);
 
-      final requestIds = (response as List)
-          .map((c) => c['seguidor_id'])
-          .toList();
+      final requestIds =
+          (response as List).map((c) => c['seguidor_id']).toList();
 
       if (requestIds.isEmpty) {
         await _saveRequestsToCache(userId, []);
@@ -756,45 +775,50 @@ class ProfileRepositoryImpl implements ProfileRepository {
         }
       }
 
-      final profiles = (usersResponse as List).map((u) {
-        return ProfileEntity(
-          id: u['id'],
-          name: u['nome'] ?? 'Sem nome',
-          avatarUrl: u['foto'],
-          coverUrl: u['capa_perfil'],
-          jobTitle: u['cargo'],
-          company: u['empresa'],
-          bio: u['observacoes'],
-          missionName: null,
-          groupName: null,
-          email: u['email'],
-          phone: u['telefone'],
-          cpf: u['cpf'],
-          ssn: u['ssn'],
-          zipCode: u['cep'],
-          state: u['estado'],
-          city: u['cidade'],
-          street: u['rua'],
-          number: u['numero'],
-          neighborhood: u['bairro'],
-          complement: u['complemento'],
-          birthDate: u['datanascimento'] != null
-              ? DateTime.tryParse(u['datanascimento'])
-              : (u['data_nascimento'] != null
-                    ? DateTime.tryParse(u['data_nascimento'])
-                    : null),
-          nationality: u['nacionalidade'],
-          passport: u['n_passaporte'],
-          foodPreferences: (u['restricoes_alimentares'] as List?)
-              ?.cast<String>(),
-          medicalRestrictions: (u['restricoes_medicas'] as List?)
-              ?.cast<String>(),
-          connectionsCount: 0,
-          postsCount: 0,
-          missionsCount: 0,
-          connectionStatus: statuses[u['id']] ?? ConnectionStatus.none,
-        );
-      }).toList();
+      final profiles =
+          (usersResponse as List).map((u) {
+            return ProfileEntity(
+              id: u['id'],
+              name: u['nome'] ?? 'Sem nome',
+              avatarUrl: u['foto'],
+              coverUrl: u['capa_perfil'],
+              jobTitle: u['cargo'],
+              company: u['empresa'],
+              bio: u['observacoes'],
+              missionName: null,
+              groupName: null,
+              email: u['email'],
+              phone: u['telefone'],
+              cpf: u['cpf'],
+              ssn: u['ssn'],
+              zipCode: u['cep'],
+              state: u['estado'],
+              city: u['cidade'],
+              street: u['rua'],
+              number: u['numero'],
+              neighborhood: u['bairro'],
+              complement: u['complemento'],
+              birthDate:
+                  u['datanascimento'] != null
+                      ? DateTime.tryParse(u['datanascimento'])
+                      : (u['data_nascimento'] != null
+                          ? DateTime.tryParse(u['data_nascimento'])
+                          : null),
+              nationality: u['nacionalidade'],
+              passport: u['n_passaporte'],
+              foodPreferences:
+                  (u['restricoes_alimentares'] as List?)?.cast<String>(),
+              medicalRestrictions:
+                  (u['restricoes_medicas'] as List?)?.cast<String>(),
+              connectionsCount: 0,
+              postsCount: 0,
+              missionsCount: 0,
+              isGuide:
+                  (u['cargo'] as String?)?.toLowerCase().contains('guia') ??
+                  false,
+              connectionStatus: statuses[u['id']] ?? ConnectionStatus.none,
+            );
+          }).toList();
 
       return Right(profiles);
     } catch (e) {

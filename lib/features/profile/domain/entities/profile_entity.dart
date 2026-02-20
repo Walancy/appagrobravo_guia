@@ -35,6 +35,7 @@ abstract class ProfileEntity with _$ProfileEntity {
     required int connectionsCount,
     required int postsCount,
     required int missionsCount,
+    required bool isGuide,
     @Default(ConnectionStatus.none) ConnectionStatus connectionStatus,
   }) = _ProfileEntity;
 

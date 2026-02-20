@@ -117,6 +117,6 @@ class HeaderSpacer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return SizedBox(height: topPadding + 10);
+    return SizedBox(height: topPadding + 50);
   }
 }

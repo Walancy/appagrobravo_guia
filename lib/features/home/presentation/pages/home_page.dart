@@ -262,6 +262,11 @@ class _HomePageState extends State<HomePage> {
               _selectedGroupId = null;
             });
           },
+          onTabChange: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
         );
       }
       return GuideHomePage(
@@ -494,8 +499,8 @@ class _HomePageState extends State<HomePage> {
           ),
           _buildNavItem(
             3,
-            Icons.dynamic_feed_outlined,
-            Icons.dynamic_feed_outlined,
+            Icons.newspaper_outlined,
+            Icons.newspaper_outlined,
             'Feed',
           ),
           BlocBuilder<DocumentsCubit, DocumentsState>(

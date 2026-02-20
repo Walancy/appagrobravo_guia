@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/tokens/assets.gen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ProfileInfo extends StatelessWidget {
   final String name;
@@ -9,6 +11,7 @@ class ProfileInfo extends StatelessWidget {
   final String? bio;
   final String? missionName;
   final String? groupName;
+  final bool isGuide;
 
   const ProfileInfo({
     super.key,
@@ -17,6 +20,7 @@ class ProfileInfo extends StatelessWidget {
     this.bio,
     this.missionName,
     this.groupName,
+    this.isGuide = false,
   });
 
   @override
@@ -56,8 +60,25 @@ class ProfileInfo extends StatelessWidget {
               ),
             ),
 
-          // Cargo
-          if (jobTitle != null && jobTitle!.isNotEmpty)
+          // Cargo ou Tag de Guia
+          if (isGuide)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Text(
+                    'Guia oficial',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SvgPicture.asset(Assets.images.logoColorida, height: 16),
+                ],
+              ),
+            )
+          else if (jobTitle != null && jobTitle!.isNotEmpty)
             Text(
               jobTitle!,
               style: AppTextStyles.bodyMedium.copyWith(

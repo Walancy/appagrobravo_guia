@@ -56,147 +56,161 @@ class _ProfileTabState extends State<ProfileTab> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text('Minhas Missões', style: AppTextStyles.h3),
-            ),
-            const Divider(),
-            Expanded(
-              child: FutureBuilder<dartz.Either<Exception, List<MissionEntity>>>(
-                future: getIt<FeedRepository>().getUserMissions(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text('Minhas Missões', style: AppTextStyles.h3),
+                ),
+                const Divider(),
+                Expanded(
+                  child: FutureBuilder<
+                    dartz.Either<Exception, List<MissionEntity>>
+                  >(
+                    future: getIt<FeedRepository>().getUserMissions(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                  final result = snapshot.data;
-                  final missions =
-                      result?.fold((l) => <MissionEntity>[], (r) => r) ?? [];
+                      final result = snapshot.data;
+                      final missions =
+                          result?.fold((l) => <MissionEntity>[], (r) => r) ??
+                          [];
 
-                  if (missions.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.flag_outlined,
-                            size: 48,
-                            color: Colors.grey[400],
+                      if (missions.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.flag_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Nenhuma missão encontrada',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhuma missão encontrada',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                        );
+                      }
 
-                  return ListView.builder(
-                    itemCount: missions.length,
-                    padding: const EdgeInsets.all(16),
-                    itemBuilder: (context, index) {
-                      final mission = missions[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withOpacity(0.5),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: mission.logo != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: mission.logo!,
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.grey[200],
-                                        child: const Icon(
-                                          Icons.image,
-                                          size: 20,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                            color: Colors.grey[200],
-                                            child: const Icon(
-                                              Icons.broken_image,
-                                              size: 20,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                    )
-                                  : Container(
-                                      width: 50,
-                                      height: 50,
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      child: const Icon(
-                                        Icons.flag,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    mission.name,
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  // Add dates if available in MissionEntity?
-                                  // MissionEntity usually has date range?
-                                ],
+                      return ListView.builder(
+                        itemCount: missions.length,
+                        padding: const EdgeInsets.all(16),
+                        itemBuilder: (context, index) {
+                          final mission = missions[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.5),
                               ),
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
-                          ],
-                        ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child:
+                                      mission.logo != null
+                                          ? CachedNetworkImage(
+                                            imageUrl: mission.logo!,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            placeholder:
+                                                (context, url) => Container(
+                                                  color: Colors.grey[200],
+                                                  child: const Icon(
+                                                    Icons.image,
+                                                    size: 20,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Container(
+                                                      color: Colors.grey[200],
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        size: 20,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                          )
+                                          : Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            child: const Icon(
+                                              Icons.flag,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        mission.name,
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      // Add dates if available in MissionEntity?
+                                      // MissionEntity usually has date range?
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -206,9 +220,10 @@ class _ProfileTabState extends State<ProfileTab> {
       create: (context) => getIt<ProfileCubit>()..loadProfile(widget.userId),
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        appBar: widget.userId != null
-            ? const AppHeader(mode: HeaderMode.back, title: 'Perfil')
-            : null,
+        appBar:
+            widget.userId != null
+                ? const AppHeader(mode: HeaderMode.back, title: 'Perfil')
+                : null,
         body: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
             return state.when(
@@ -221,11 +236,13 @@ class _ProfileTabState extends State<ProfileTab> {
                   final source = await showModalBottomSheet<ImageSource>(
                     context: context,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => ImageSourceBottomSheet(
-                      title: isAvatar
-                          ? 'Alterar foto de perfil'
-                          : 'Alterar capa',
-                    ),
+                    builder:
+                        (context) => ImageSourceBottomSheet(
+                          title:
+                              isAvatar
+                                  ? 'Alterar foto de perfil'
+                                  : 'Alterar capa',
+                        ),
                   );
 
                   if (source != null) {
@@ -245,16 +262,16 @@ class _ProfileTabState extends State<ProfileTab> {
                   final isCamera = await showModalBottomSheet<bool>(
                     context: context,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => NewPostBottomSheet(
-                      onSourceSelected: (camera) =>
-                          Navigator.pop(context, camera),
-                    ),
+                    builder:
+                        (context) => NewPostBottomSheet(
+                          onSourceSelected:
+                              (camera) => Navigator.pop(context, camera),
+                        ),
                   );
 
                   if (isCamera != null) {
-                    final source = isCamera
-                        ? ImageSource.camera
-                        : ImageSource.gallery;
+                    final source =
+                        isCamera ? ImageSource.camera : ImageSource.gallery;
                     try {
                       final image = await picker.pickImage(source: source);
                       if (image != null && context.mounted) {
@@ -309,6 +326,7 @@ class _ProfileTabState extends State<ProfileTab> {
                               bio: profile.bio,
                               missionName: profile.missionName,
                               groupName: profile.groupName,
+                              isGuide: profile.isGuide,
                             ),
                           ],
                         ),
@@ -317,23 +335,28 @@ class _ProfileTabState extends State<ProfileTab> {
                       ProfileActions(
                         isMe: isMe,
                         connectionStatus: profile.connectionStatus,
-                        onConnect: () => context
-                            .read<ProfileCubit>()
-                            .requestConnection(profile.id),
-                        onCancelRequest: () => context
-                            .read<ProfileCubit>()
-                            .cancelConnection(profile.id),
-                        onAccept: () => context
-                            .read<ProfileCubit>()
-                            .acceptConnection(profile.id),
-                        onReject: () => context
-                            .read<ProfileCubit>()
-                            .rejectConnection(profile.id),
-                        onDisconnect: () => context
-                            .read<ProfileCubit>()
-                            .removeConnection(profile.id),
-                        onEditProfile: () =>
-                            context.read<ProfileCubit>().toggleEditing(),
+                        onConnect:
+                            () => context
+                                .read<ProfileCubit>()
+                                .requestConnection(profile.id),
+                        onCancelRequest:
+                            () => context.read<ProfileCubit>().cancelConnection(
+                              profile.id,
+                            ),
+                        onAccept:
+                            () => context.read<ProfileCubit>().acceptConnection(
+                              profile.id,
+                            ),
+                        onReject:
+                            () => context.read<ProfileCubit>().rejectConnection(
+                              profile.id,
+                            ),
+                        onDisconnect:
+                            () => context.read<ProfileCubit>().removeConnection(
+                              profile.id,
+                            ),
+                        onEditProfile:
+                            () => context.read<ProfileCubit>().toggleEditing(),
                         onPublish: () => handleNewPost(context),
                         isEditing: isEditing,
                         phone: profile.phone,

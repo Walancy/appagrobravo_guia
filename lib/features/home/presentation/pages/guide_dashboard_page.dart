@@ -12,15 +12,22 @@ import 'package:image_picker/image_picker.dart';
 import 'package:agrobravo/features/home/presentation/widgets/new_post_bottom_sheet.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart';
+import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
+import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
+import 'package:agrobravo/features/chat/presentation/pages/individual_chat_page.dart';
+import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
 
 class GuideDashboardPage extends StatefulWidget {
   final String groupId;
   final VoidCallback onSwitchGroup;
+  final ValueChanged<int>? onTabChange;
 
   const GuideDashboardPage({
     super.key,
     required this.groupId,
     required this.onSwitchGroup,
+    this.onTabChange,
   });
 
   @override
@@ -247,6 +254,55 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             return name.contains(query.toLowerCase());
           }).toList();
     });
+  }
+
+  Future<void> _openBackofficeChat(BuildContext context) async {
+    try {
+      final supabase = getIt<SupabaseClient>();
+
+      // Search for the Backoffice/Support user
+      // You might want to adjust the query based on how the backoffice user is identified
+      // e.g., by email, specific ID, or role.
+      final response =
+          await supabase
+              .from('users')
+              .select()
+              .ilike(
+                'nome',
+                '%Suporte%',
+              ) // Assuming name contains 'Suporte' or similar
+              .limit(1)
+              .maybeSingle();
+
+      if (response != null) {
+        final guide = GuideEntity(
+          id: response['id'],
+          name: response['nome'] ?? 'Suporte AgroBravo',
+          role: 'Suporte',
+          avatarUrl: response['foto'],
+        );
+
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IndividualChatPage(guide: guide),
+            ),
+          );
+        }
+      } else {
+        // Fallback to Chat Tab if user not found
+        widget.onTabChange?.call(2);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contato de suporte não encontrado.')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error opening backoffice chat: $e');
+      widget.onTabChange?.call(2);
+    }
   }
 
   IconData _getIconForType(ItineraryType type) {
@@ -568,30 +624,45 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   'Itinerário',
                   Icons.explore_outlined,
                   AppColors.primary,
+                  () => widget.onTabChange?.call(1),
                 ),
                 _buildActionItem(
                   context,
                   'Lembrete',
                   Icons.notifications_active_outlined,
                   AppColors.primary,
+                  () => showDialog(
+                    context: context,
+                    builder:
+                        (context) => ReminderModal(groupId: widget.groupId),
+                  ),
                 ),
                 _buildActionItem(
                   context,
                   'Relatório',
                   Icons.assignment_outlined,
                   AppColors.primary,
+                  () => showDialog(
+                    context: context,
+                    builder: (context) => const ReportModal(),
+                  ),
                 ),
                 _buildActionItem(
                   context,
                   'Incidente',
                   Icons.warning_amber_rounded,
                   AppColors.primary,
+                  () => showDialog(
+                    context: context,
+                    builder: (context) => const IncidentModal(),
+                  ),
                 ),
                 _buildActionItem(
                   context,
                   'Backoffice',
                   Icons.chat_bubble_outline_rounded,
                   AppColors.primary,
+                  () => _openBackofficeChat(context),
                 ),
               ],
             ),
@@ -606,30 +677,34 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
     String label,
     IconData icon,
     Color color,
+    VoidCallback onTap,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade100),
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
