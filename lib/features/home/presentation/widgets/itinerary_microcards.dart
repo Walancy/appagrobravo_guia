@@ -151,6 +151,10 @@ class ItineraryMicrocards extends StatelessWidget {
                   ? const Color(0xFF1E1E1E)
                   : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.5),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(

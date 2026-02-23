@@ -23,13 +23,10 @@ class GenericEventCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF1E1E1E)
-                : Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
           width: 1,
         ),
       ),
@@ -367,13 +364,10 @@ class FlightCard extends StatelessWidget {
       padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 8),
       margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF1E1E1E)
-                : Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
           width: 1,
         ),
       ),
@@ -762,13 +756,10 @@ class FlightCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.grey.shade50,
+            color: Theme.of(context).dividerColor.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+              color: Theme.of(context).dividerColor.withOpacity(0.5),
             ),
           ),
           child: Column(
@@ -963,13 +954,10 @@ class TransferCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF1E1E1E)
-                : Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
           width: 1,
         ),
       ),

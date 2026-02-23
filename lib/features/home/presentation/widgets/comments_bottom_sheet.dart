@@ -469,7 +469,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                       RichText(
                         text: TextSpan(
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           children: [
                             TextSpan(

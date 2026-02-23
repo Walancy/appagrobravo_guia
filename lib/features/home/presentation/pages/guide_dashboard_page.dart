@@ -279,7 +279,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
       return const Center(child: CircularProgressIndicator());
     }
     return ColoredBox(
-      color: const Color(0xFFF2F4F7),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -315,9 +315,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   Widget _buildMainCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -333,8 +333,10 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       height: 60,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade100),
+                        color: Theme.of(context).cardColor,
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       child: ClipOval(
                         child:
@@ -372,7 +374,10 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                             decoration: BoxDecoration(
                               color: const Color(0xFF00B289),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: Theme.of(context).cardColor,
+                                width: 2,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -459,7 +464,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       Text(
                         'Saldo do grupo',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.black87,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                           fontSize: 14,
                         ),
                       ),
@@ -563,7 +568,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           child: Text(
             'Ações rápidas',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.grey[600],
+              color:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+                  Colors.grey[600],
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -604,7 +613,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   AppColors.primary,
                   () => showDialog(
                     context: context,
-                    builder: (context) => const ReportModal(),
+                    builder: (context) => ReportModal(groupId: widget.groupId),
                   ),
                 ),
               ),
@@ -616,7 +625,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   AppColors.primary,
                   () => showDialog(
                     context: context,
-                    builder: (context) => const IncidentModal(),
+                    builder:
+                        (context) => IncidentModal(groupId: widget.groupId),
                   ),
                 ),
               ),
@@ -642,9 +652,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade100),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -653,7 +663,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             label,
             style: AppTextStyles.bodySmall.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodySmall?.color,
               fontSize: 12,
             ),
           ),
@@ -671,7 +681,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           child: Text(
             'Próximos eventos',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.grey[600],
+              color:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+                  Colors.grey[600],
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -689,8 +703,9 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     width: 240,
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: const Center(child: Text('Nenhum evento agendado')),
                   )
@@ -727,12 +742,13 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
       height: 145,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -786,7 +802,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             style: AppTextStyles.h3.copyWith(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -834,7 +850,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             Text(
               'Integrantes',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.grey[600],
+                color:
+                    Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+                    Colors.grey[600],
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -845,7 +865,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         Container(
           constraints: const BoxConstraints(maxHeight: 500),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -863,8 +883,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 12, left: 20, right: 20),
                   child: TabBar(
-                    labelColor: AppColors.textPrimary,
-                    unselectedLabelColor: AppColors.textPrimary,
+                    labelColor: Theme.of(context).colorScheme.onSurface,
+                    unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
                     labelStyle: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w500,
                       fontSize: 15,
@@ -906,7 +926,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   child: TextField(
                     onChanged: _onSearch,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Buscar por nome',
@@ -920,7 +940,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       ),
                       isDense: true,
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
                           AppSpacing.radiusLg,
@@ -992,7 +1012,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
       separatorBuilder:
           (context, index) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(height: 1, color: Colors.grey.shade100),
+            child: Divider(height: 1, color: Theme.of(context).dividerColor),
           ),
       itemBuilder: (context, index) {
         final item = members[index];
@@ -1062,7 +1082,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     radius: 24,
                     backgroundImage:
                         avatar != null ? NetworkImage(avatar) : null,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Theme.of(context).dividerColor,
                     child:
                         avatar == null
                             ? const Icon(Icons.person, color: Colors.grey)
@@ -1080,7 +1100,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                             height: 1.2,
                           ),
                         ),
@@ -1163,7 +1183,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(32),
               ),
               child: Column(
@@ -1192,7 +1212,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                             (avatar != null && avatar.isNotEmpty)
                                 ? NetworkImage(avatar)
                                 : null,
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor: Theme.of(context).dividerColor,
                         child:
                             (avatar == null || avatar.isEmpty)
                                 ? const Icon(
@@ -1310,7 +1330,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Text(
                 value.isEmpty ? 'Nenhuma' : value,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -1370,7 +1390,7 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
       ),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(32),
       ),
       child: SingleChildScrollView(
@@ -1444,13 +1464,17 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                                 color:
                                     _selectedCategory == cat
                                         ? AppColors.primary
-                                        : Colors.black,
+                                        : Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                 fontWeight:
                                     _selectedCategory == cat
                                         ? FontWeight.bold
                                         : FontWeight.normal,
                               ),
-                              backgroundColor: Colors.grey.shade100,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.1),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                   AppSpacing.radiusMd,
@@ -1473,7 +1497,7 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
               decoration: InputDecoration(
                 hintText: 'Ex: Almoço no aeroporto',
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Theme.of(context).dividerColor.withOpacity(0.1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,

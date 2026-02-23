@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 
 class ReportModal extends StatefulWidget {
-  const ReportModal({super.key});
+  final String groupId;
+  const ReportModal({super.key, required this.groupId});
 
   @override
   State<ReportModal> createState() => _ReportModalState();
@@ -13,11 +16,12 @@ class _ReportModalState extends State<ReportModal> {
   bool _activities = true;
   bool _incidents = true;
   bool _expenses = true;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -97,14 +101,44 @@ class _ReportModalState extends State<ReportModal> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Relatório enviado ao gestor!'),
-                        ),
-                      );
-                    },
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () async {
+                              setState(() => _isLoading = true);
+                              final repo = getIt<DashboardActionsRepository>();
+                              final result = await repo.requestReport(
+                                groupId: widget.groupId,
+                                includeActivities: _activities,
+                                includeIncidents: _incidents,
+                                includeExpenses: _expenses,
+                              );
+
+                              if (mounted) {
+                                setState(() => _isLoading = false);
+                                result.fold(
+                                  (l) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro: ${l.toString().replaceAll("Exception: ", "")}',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  (_) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Sua solicitação de relatório foi enviada com sucesso!',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                            },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -112,13 +146,23 @@ class _ReportModalState extends State<ReportModal> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text(
-                      'Enviar ao gestor',
-                      style: AppTextStyles.button.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              'Enviar ao gestor',
+                              style: AppTextStyles.button.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                   ),
                 ),
               ],

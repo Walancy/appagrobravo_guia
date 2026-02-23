@@ -33,8 +33,12 @@ import 'package:agrobravo/features/documents/domain/repositories/documents_repos
     as _i194;
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart'
     as _i920;
+import 'package:agrobravo/features/home/data/repositories/dashboard_actions_repository_impl.dart'
+    as _i32;
 import 'package:agrobravo/features/home/data/repositories/feed_repository_impl.dart'
     as _i386;
+import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart'
+    as _i441;
 import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart'
     as _i1016;
 import 'package:agrobravo/features/home/presentation/cubit/feed_cubit.dart'
@@ -87,6 +91,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i1016.FeedRepository>(
       () => _i386.FeedRepositoryImpl(gh<_i454.SupabaseClient>()),
+    );
+    gh.lazySingleton<_i441.DashboardActionsRepository>(
+      () => _i32.DashboardActionsRepositoryImpl(gh<_i454.SupabaseClient>()),
     );
     gh.factory<_i958.GroupInfoCubit>(
       () => _i958.GroupInfoCubit(

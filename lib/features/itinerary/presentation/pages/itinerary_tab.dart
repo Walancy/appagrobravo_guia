@@ -181,7 +181,8 @@ class _ItineraryContentState extends State<ItineraryContent> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF2F4F7), // Match home background
+      color:
+          Theme.of(context).scaffoldBackgroundColor, // Match theme background
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -240,9 +241,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                       color:
                           _filters.isActive
                               ? AppColors.primary.withOpacity(0.1)
-                              : (Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF1E1E1E)
-                                  : const Color(0xFFF2F4F7)),
+                              : Theme.of(context).dividerColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color:

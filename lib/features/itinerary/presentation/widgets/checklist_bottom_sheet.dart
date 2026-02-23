@@ -101,9 +101,9 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         child: Column(
@@ -284,7 +284,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.grey[200],
+                  color: Theme.of(context).dividerColor.withOpacity(0.1),
                   border: Border.all(
                     color: isChecked ? AppColors.primary : Colors.transparent,
                     width: isChecked ? 3 : 0,

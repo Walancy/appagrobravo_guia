@@ -26,7 +26,7 @@ class GuideHomePage extends StatelessWidget {
                 return const Center(child: Text("Nenhuma missão encontrada."));
               }
               return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
                 itemCount: missions.length + 2,
                 itemBuilder: (context, index) {
                   if (index == 0) {
@@ -34,7 +34,7 @@ class GuideHomePage extends StatelessWidget {
                   }
                   if (index == 1) {
                     return Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 12.0),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                       child: Text(
                         "Selecione uma missão",
                         style: AppTextStyles.h2.copyWith(
@@ -75,7 +75,7 @@ class GuideHomePage extends StatelessWidget {
       builder:
           (context) => Dialog(
             backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            insetPadding: EdgeInsets.zero,
             child: GroupsListModal(
               groups: groups,
               onGroupSelected: (groupId) {

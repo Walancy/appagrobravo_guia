@@ -106,9 +106,9 @@ class _DaySliderState extends State<DaySlider> {
             backgroundColor = AppColors.primary;
           } else {
             if (Theme.of(context).brightness == Brightness.dark) {
-              backgroundColor = const Color(0xFF1E1E1E);
+              backgroundColor = Theme.of(context).cardColor;
             } else {
-              backgroundColor = const Color(0xFFF2F4F7);
+              backgroundColor = Theme.of(context).scaffoldBackgroundColor;
             }
             if (isPast) {
               backgroundColor = backgroundColor.withOpacity(0.5);
@@ -124,9 +124,12 @@ class _DaySliderState extends State<DaySlider> {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  color:
+                      isSelected
+                          ? AppColors.primary
+                          : Theme.of(
+                            context,
+                          ).dividerColor.withOpacity(0.5),
                   width: 1,
                 ),
               ),
@@ -139,26 +142,25 @@ class _DaySliderState extends State<DaySlider> {
                       'pt_BR',
                     ).format(date).replaceAll('.', '').capitalize(),
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.onSurface.withValues(
-                              alpha: isPast ? 0.3 : 0.6,
-                            ),
+                      color:
+                          isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface
+                                  .withValues(alpha: isPast ? 0.3 : 0.6),
                       fontSize: 10,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     date.day.toString(),
                     style: AppTextStyles.bodyLarge.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.onSurface.withValues(
-                              alpha: isPast ? 0.4 : 1.0,
-                            ),
+                      color:
+                          isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface
+                                  .withValues(alpha: isPast ? 0.4 : 1.0),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),

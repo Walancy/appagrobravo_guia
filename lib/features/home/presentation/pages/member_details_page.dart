@@ -29,7 +29,7 @@ class MemberDetailsPage extends StatelessWidget {
         false;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppHeader(
         mode: HeaderMode.back,
         title: 'Viajante',
@@ -46,7 +46,7 @@ class MemberDetailsPage extends StatelessWidget {
             // Profile Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              color: const Color(0xFFF2F4F7),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -118,7 +118,7 @@ class MemberDetailsPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Column(
@@ -238,9 +238,11 @@ class MemberDetailsPage extends StatelessWidget {
       builder:
           (context) => Container(
             height: MediaQuery.of(context).size.height * 0.85,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               children: [
@@ -300,9 +302,15 @@ class MemberDetailsPage extends StatelessWidget {
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[50],
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey[200]!),
+                                  border: Border.all(
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -353,7 +361,7 @@ class MemberDetailsPage extends StatelessWidget {
   void _showTagsSheet(BuildContext context, String title, List? tags) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

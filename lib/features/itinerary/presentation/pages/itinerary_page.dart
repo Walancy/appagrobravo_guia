@@ -19,7 +19,7 @@ class ItineraryPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => GetIt.I<ItineraryCubit>()..loadItinerary(groupId),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF2F4F7), // Match home background
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: Text(
             'Itinerário',

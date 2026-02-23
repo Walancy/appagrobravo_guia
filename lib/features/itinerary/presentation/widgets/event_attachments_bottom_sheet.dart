@@ -131,9 +131,7 @@ class EventAttachmentsBottomSheet extends StatelessWidget {
                   ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.1),
+                    color: Theme.of(context).dividerColor.withOpacity(0.5),
                   ),
                 ),
                 child: Row(

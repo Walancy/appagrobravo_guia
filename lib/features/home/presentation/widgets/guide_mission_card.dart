@@ -28,17 +28,7 @@ class GuideMissionCard extends StatelessWidget {
     }
 
     return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: theme.colorScheme.surface),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -88,7 +78,7 @@ class GuideMissionCard extends StatelessWidget {
                       style: AppTextStyles.h3.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -130,7 +120,7 @@ class GuideMissionCard extends StatelessWidget {
                       style: AppTextStyles.h3.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -159,9 +149,9 @@ class GuideMissionCard extends StatelessWidget {
                               height: 28,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: theme.colorScheme.surface,
                                   width: 2,
                                 ),
                                 image:
@@ -193,7 +183,7 @@ class GuideMissionCard extends StatelessWidget {
                     style: AppTextStyles.h3.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],

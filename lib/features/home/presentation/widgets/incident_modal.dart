@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
+import 'package:intl/intl.dart';
 
 class IncidentModal extends StatefulWidget {
-  const IncidentModal({super.key});
+  final String groupId;
+  const IncidentModal({super.key, required this.groupId});
 
   @override
   State<IncidentModal> createState() => _IncidentModalState();
 }
 
 class _IncidentModalState extends State<IncidentModal> {
+  bool _isLoading = false;
   final TextEditingController _dateController = TextEditingController(
-    text: '15/07/2025',
+    text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
   );
   final TextEditingController _timeController = TextEditingController(
     text: '15:30',
@@ -42,7 +47,7 @@ class _IncidentModalState extends State<IncidentModal> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: SingleChildScrollView(
@@ -155,14 +160,76 @@ class _IncidentModalState extends State<IncidentModal> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Incidente registrado!'),
-                          ),
-                        );
-                      },
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () async {
+                                if (_selectedType == null ||
+                                    _descriptionController.text.isEmpty ||
+                                    _actionController.text.isEmpty ||
+                                    _locationController.text.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Preencha os campos obrigatórios.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                setState(() => _isLoading = true);
+                                final repo =
+                                    getIt<DashboardActionsRepository>();
+
+                                DateTime parsedDate;
+                                try {
+                                  parsedDate = DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).parse(_dateController.text);
+                                } catch (e) {
+                                  parsedDate = DateTime.now();
+                                }
+
+                                final result = await repo.registerIncident(
+                                  groupId: widget.groupId,
+                                  type: _selectedType!,
+                                  location: _locationController.text,
+                                  date: parsedDate,
+                                  time: _timeController.text,
+                                  description: _descriptionController.text,
+                                  actionTaken: _actionController.text,
+                                );
+
+                                if (mounted) {
+                                  setState(() => _isLoading = false);
+                                  result.fold(
+                                    (l) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Erro: ${l.toString().replaceAll("Exception: ", "")}',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    (_) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Incidente registrado com sucesso!',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }
+                              },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -170,13 +237,23 @@ class _IncidentModalState extends State<IncidentModal> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(
-                        'Enviar relato',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                'Enviar relato',
+                                style: AppTextStyles.button.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                     ),
                   ),
                 ],

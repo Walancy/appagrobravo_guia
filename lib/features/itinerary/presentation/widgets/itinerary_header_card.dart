@@ -23,8 +23,9 @@ class ItineraryHeaderCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       padding: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Theme.of(context).dividerColor),
         // removed boxShadow
       ),
       child: Column(
@@ -39,7 +40,7 @@ class ItineraryHeaderCard extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: Theme.of(context).dividerColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                     image:
                         group.logo != null && group.logo!.isNotEmpty
@@ -69,7 +70,10 @@ class ItineraryHeaderCard extends StatelessWidget {
                       ),
                       Text(
                         group.name,
-                        style: AppTextStyles.h3.copyWith(fontSize: 18),
+                        style: AppTextStyles.h3.copyWith(
+                          fontSize: 18,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -134,7 +138,7 @@ class ItineraryHeaderCard extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F4F7),
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(20),
             ),
             clipBehavior: Clip.hardEdge, // Clip content

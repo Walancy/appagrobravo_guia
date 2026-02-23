@@ -22,10 +22,11 @@ class SelectMissionDialog extends StatelessWidget {
         selectedMission ?? (missions.isNotEmpty ? missions.first : null);
 
     return Dialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      insetPadding: EdgeInsets.zero,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,7 +36,10 @@ class SelectMissionDialog extends StatelessWidget {
               children: [
                 Text(
                   'Selecionar missão',
-                  style: AppTextStyles.h2.copyWith(fontSize: 24),
+                  style: AppTextStyles.h2.copyWith(
+                    fontSize: 24,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -61,66 +65,85 @@ class SelectMissionDialog extends StatelessWidget {
               StatefulBuilder(
                 builder: (context, setState) {
                   return Column(
-                    children: missions.map((mission) {
-                      final isSelected = currentSelection?.id == mission.id;
-                      return GestureDetector(
-                        onTap: () => setState(() => currentSelection = mission),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.5),
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.1)
-                                    : AppColors.background,
-                                backgroundImage: mission.logo != null
-                                    ? NetworkImage(mission.logo!)
-                                    : null,
-                                child: mission.logo == null
-                                    ? const Icon(Icons.public)
-                                    : null,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Missão:',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    Text(
-                                      mission.name,
-                                      style: AppTextStyles.h3.copyWith(
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
+                    children:
+                        missions.map((mission) {
+                          final isSelected = currentSelection?.id == mission.id;
+                          return GestureDetector(
+                            onTap:
+                                () =>
+                                    setState(() => currentSelection = mission),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color:
+                                    isSelected
+                                        ? AppColors.primary.withOpacity(0.1)
+                                        : Theme.of(
+                                          context,
+                                        ).scaffoldBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color:
+                                      isSelected
+                                          ? AppColors.primary
+                                          : Theme.of(
+                                            context,
+                                          ).dividerColor.withOpacity(0.5),
+                                  width: isSelected ? 2 : 1,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white.withValues(
+                                              alpha: 0.1,
+                                            )
+                                            : AppColors.background,
+                                    backgroundImage:
+                                        mission.logo != null
+                                            ? NetworkImage(mission.logo!)
+                                            : null,
+                                    child:
+                                        mission.logo == null
+                                            ? const Icon(Icons.public)
+                                            : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Missão:',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Text(
+                                          mission.name,
+                                          style: AppTextStyles.h3.copyWith(
+                                            fontSize: 18,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
                   );
                 },
               ),

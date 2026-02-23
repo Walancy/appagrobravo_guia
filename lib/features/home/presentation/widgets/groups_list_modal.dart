@@ -23,7 +23,7 @@ class GroupsListModal extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.zero,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(

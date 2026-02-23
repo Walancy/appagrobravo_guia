@@ -20,9 +20,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: "assets/env");
+    await dotenv.load(fileName: ".env");
   } catch (e) {
-    debugPrint('Erro ao carregar o arquivo assets/env: $e');
+    debugPrint('Erro ao carregar o arquivo .env: $e');
   }
 
   await initializeDateFormatting('pt_BR', null);
@@ -76,6 +76,7 @@ class AgroBravoApp extends StatelessWidget {
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
+              dividerColor: AppColors.backgroundLight,
               dividerTheme: const DividerThemeData(
                 color: AppColors.backgroundLight,
               ),
@@ -92,6 +93,7 @@ class AgroBravoApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
+              dividerColor: AppColors.backgroundLightDark,
               dividerTheme: const DividerThemeData(
                 color: AppColors.backgroundLightDark,
               ),

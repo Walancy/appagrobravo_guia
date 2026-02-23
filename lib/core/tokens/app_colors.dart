@@ -12,7 +12,9 @@ class AppColors {
   static const Color background = Color(0xFFF8F9FA); // Fundo claro mais suave
   static const Color backgroundDark = Color(0xFF121212); // Fundo Grafite Escuro
   static const Color surface = Color(0xFFFFFFFF); // Branco
-  static const Color surfaceDark = Color(0xFF121212); // Superficie Grafite
+  static const Color surfaceDark = Color(
+    0xFF1E1E1E,
+  ); // Superficie Escura/Grafite
   static const Color textPrimary = Color(0xFF212121); // Preto Suave
   static const Color textPrimaryDark = Color(0xFFF5F5F5); // Branco Suave
   static const Color textSecondary = Color(0xFF757575); // Cinza Médio

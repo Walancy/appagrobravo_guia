@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrobravo/core/di/injection.dart';
-import 'package:agrobravo/core/tokens/app_colors.dart';
+
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/home/presentation/cubit/guide_home_cubit.dart';
@@ -24,7 +24,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
     return BlocProvider(
       create: (context) => getIt<GuideHomeCubit>()..loadMissions(),
       child: Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: ConstrainedBox(
@@ -38,7 +38,12 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Trocar Grupo', style: AppTextStyles.h3),
+                    Text(
+                      'Trocar Grupo',
+                      style: AppTextStyles.h3.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close, color: Colors.grey),
@@ -96,7 +101,9 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                         missions.first.mission.id,
                                     decoration: InputDecoration(
                                       filled: true,
-                                      fillColor: AppColors.background,
+                                      fillColor: Theme.of(
+                                        context,
+                                      ).dividerColor.withOpacity(0.05),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -107,7 +114,9 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Colors.grey[200]!,
+                                          color: Theme.of(
+                                            context,
+                                          ).dividerColor.withOpacity(0.1),
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
@@ -115,7 +124,9 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Colors.grey[200]!,
+                                          color: Theme.of(
+                                            context,
+                                          ).dividerColor.withOpacity(0.1),
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
@@ -169,6 +180,11 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                                     .copyWith(
                                                       fontWeight:
                                                           FontWeight.w600,
+                                                      color:
+                                                          Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.color,
                                                     ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -213,9 +229,15 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                                 Expanded(
                                                   child: Text(
                                                     guideMission.mission.name,
-                                                    style:
-                                                        AppTextStyles
-                                                            .bodyMedium,
+                                                    style: AppTextStyles
+                                                        .bodyMedium
+                                                        .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .bodyMedium
+                                                                  ?.color,
+                                                        ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   ),
@@ -279,9 +301,11 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -320,6 +344,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                     group.name,
                     style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                   if (group.missionLocation != null)
