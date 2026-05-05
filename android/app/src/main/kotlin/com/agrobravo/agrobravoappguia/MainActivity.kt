@@ -1,4 +1,4 @@
-package com.example.agrobravo
+package com.agrobravo.agrobravoappguia
 
 import io.flutter.embedding.android.FlutterActivity
 
