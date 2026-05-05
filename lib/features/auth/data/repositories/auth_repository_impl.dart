@@ -194,7 +194,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _supabaseClient.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.agrobravo://login-callback/',
+        redirectTo: kIsWeb ? null : 'io.supabase.agrobravoappguia://login-callback/',
       );
       return const Right(null);
     } on AuthException catch (e) {
@@ -209,7 +209,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _supabaseClient.auth.signInWithOAuth(
         OAuthProvider.apple,
-        redirectTo: kIsWeb ? null : 'io.supabase.agrobravo://login-callback/',
+        redirectTo: kIsWeb ? null : 'io.supabase.agrobravoappguia://login-callback/',
       );
       return const Right(null);
     } on AuthException catch (e) {

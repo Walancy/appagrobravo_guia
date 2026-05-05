@@ -19,17 +19,32 @@ import 'package:flutter/foundation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    debugPrint('Erro ao carregar o arquivo .env: $e');
+  // Em produção, injete as chaves via --dart-define:
+  //   flutter build ipa \
+  //     --dart-define=SUPABASE_URL=<url> \
+  //     --dart-define=SUPABASE_ANON_KEY=<key>
+  // Em desenvolvimento local, o fallback lê o .env da raiz do projeto.
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  String resolvedUrl = supabaseUrl;
+  String resolvedAnonKey = supabaseAnonKey;
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    try {
+      await dotenv.load(fileName: '.env');
+      resolvedUrl = dotenv.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '';
+      resolvedAnonKey = dotenv.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ?? '';
+    } catch (e) {
+      debugPrint('Erro ao carregar o arquivo .env: $e');
+    }
   }
 
   await initializeDateFormatting('pt_BR', null);
 
   await Supabase.initialize(
-    url: dotenv.env['NEXT_PUBLIC_SUPABASE_URL']!,
-    anonKey: dotenv.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
+    url: resolvedUrl,
+    anonKey: resolvedAnonKey,
   );
 
   configureDependencies();
@@ -38,7 +53,10 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(
-    DevicePreview(enabled: kIsWeb, builder: (context) => const AgroBravoApp()),
+    DevicePreview(
+      enabled: kDebugMode && kIsWeb,
+      builder: (context) => const AgroBravoApp(),
+    ),
   );
 }
 
@@ -98,8 +116,8 @@ class AgroBravoApp extends StatelessWidget {
                 color: AppColors.backgroundLightDark,
               ),
             ),
-            locale: DevicePreview.locale(context),
-            builder: DevicePreview.appBuilder,
+            locale: kDebugMode && kIsWeb ? DevicePreview.locale(context) : null,
+            builder: kDebugMode && kIsWeb ? DevicePreview.appBuilder : null,
             routerConfig: appRouter,
           );
         },

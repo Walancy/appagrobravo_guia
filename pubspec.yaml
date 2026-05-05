@@ -131,7 +131,6 @@ flutter:
 
   assets:
     - assets/images/
-    - .env
 
 flutter_gen:
   output: lib/core/tokens/

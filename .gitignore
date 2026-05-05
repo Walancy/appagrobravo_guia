@@ -47,3 +47,7 @@ app.*.map.json
 # Secrets
 .env
 assets/env
+
+# Android signing — NUNCA versionar
+android/key.properties
+android/keystore/
