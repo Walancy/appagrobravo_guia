@@ -57,9 +57,22 @@ class AuthRepositoryImpl implements AuthRepository {
           .from('users')
           .select()
           .eq('id', response.user!.id)
-          .single();
+          .maybeSingle();
 
-      final userModel = UserModel.fromJson(userProfile);
+      UserModel userModel;
+      if (userProfile != null) {
+        userModel = UserModel.fromJson(userProfile);
+      } else {
+        // Fallback: usuário existe no Auth mas não tem perfil em public.users
+        final metadata = response.user!.userMetadata ?? {};
+        userModel = UserModel(
+          id: response.user!.id,
+          email: email,
+          nome: metadata['nome'] as String? ?? email.split('@').first,
+          roles: (metadata['tipouser'] as List?)?.cast<String>() ?? [],
+          foto: null,
+        );
+      }
       await _saveUserToPreferences(userModel);
 
       return Right(userModel.toEntity());
@@ -145,20 +158,36 @@ class AuthRepositoryImpl implements AuthRepository {
           .from('users')
           .select()
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-      final userModel = UserModel.fromJson(userProfile);
-      await _saveUserToPreferences(userModel);
-      return some(userModel.toEntity());
+      if (userProfile != null) {
+        final userModel = UserModel.fromJson(userProfile);
+        await _saveUserToPreferences(userModel);
+        return some(userModel.toEntity());
+      }
+
+      // Perfil não encontrado: tenta cache offline
+      final cachedUser = await _getUserFromPreferences();
+      if (cachedUser != null && cachedUser.id == user.id) {
+        return some(cachedUser.toEntity());
+      }
+
+      // Fallback: constrói entidade básica dos metadados do Auth
+      final metadata = user.userMetadata ?? {};
+      final fallbackModel = UserModel(
+        id: user.id,
+        email: user.email ?? '',
+        nome: metadata['nome'] as String? ?? (user.email ?? '').split('@').first,
+        roles: (metadata['tipouser'] as List?)?.cast<String>() ?? [],
+        foto: null,
+      );
+      return some(fallbackModel.toEntity());
     } catch (e) {
       log('Erro ao recuperar usuário atual: $e. Tentando cache offline.');
       final cachedUser = await _getUserFromPreferences();
       if (cachedUser != null && cachedUser.id == user.id) {
         return some(cachedUser.toEntity());
       }
-      // If we are offline and have no cache, we currently force logout/none.
-      // Alternatively, we could construct a basic UserEntity from Supabase User metadata if available,
-      // but complete functional offline usage likely requires the profile.
       return none();
     }
   }

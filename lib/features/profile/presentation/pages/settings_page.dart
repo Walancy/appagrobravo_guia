@@ -71,15 +71,19 @@ class SettingsPage extends StatelessWidget {
                     ),
                     BlocBuilder<ThemeCubit, ThemeMode>(
                       builder: (context, mode) {
+                        final systemIsDark =
+                            MediaQuery.platformBrightnessOf(context) ==
+                            Brightness.dark;
+                        final isDark =
+                            mode == ThemeMode.dark ||
+                            (mode == ThemeMode.system && systemIsDark);
                         return _buildOption(
                           context,
                           icon:
-                              mode == ThemeMode.dark
-                                  ? Icons.dark_mode
-                                  : Icons.light_mode,
-                          title: 'Modo Escuro',
+                              isDark ? Icons.dark_mode : Icons.light_mode,
+                          title: isDark ? 'Modo Escuro' : 'Modo Claro',
                           trailing: Switch(
-                            value: mode == ThemeMode.dark,
+                            value: isDark,
                             onChanged: (value) {
                               context.read<ThemeCubit>().setThemeMode(
                                 value ? ThemeMode.dark : ThemeMode.light,
@@ -88,7 +92,9 @@ class SettingsPage extends StatelessWidget {
                             activeColor: AppColors.primary,
                           ),
                           onTap: () {
-                            context.read<ThemeCubit>().toggleTheme();
+                            context.read<ThemeCubit>().setThemeMode(
+                              isDark ? ThemeMode.light : ThemeMode.dark,
+                            );
                           },
                         );
                       },
@@ -141,62 +147,38 @@ class SettingsPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Stack(
-            children: [
-              ClipOval(
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : AppColors.backgroundLight,
-                  ),
-                  child:
-                      profile.avatarUrl != null
-                          ? CachedNetworkImage(
-                            imageUrl: profile.avatarUrl!,
-                            fit: BoxFit.cover,
-                            placeholder:
-                                (context, url) =>
-                                    const CircularProgressIndicator(),
-                            errorWidget:
-                                (context, url, error) => const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                          )
-                          : const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                ),
+          ClipOval(
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : AppColors.backgroundLight,
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.surface,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ],
+              child:
+                  profile.avatarUrl != null
+                      ? CachedNetworkImage(
+                        imageUrl: profile.avatarUrl!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) =>
+                                const CircularProgressIndicator(),
+                        errorWidget:
+                            (context, url, error) => const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                      )
+                      : const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+            ),
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(

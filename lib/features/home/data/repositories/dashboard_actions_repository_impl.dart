@@ -19,11 +19,24 @@ class DashboardActionsRepositoryImpl implements DashboardActionsRepository {
     required String time,
     required String description,
     required String actionTaken,
-    String? photoUrl,
+    List<String> photoPaths = const [],
   }) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return Left(Exception('Usuário não autenticado.'));
+
+      List<String> photoUrls = [];
+      for (final path in photoPaths) {
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${path.split('/').last}';
+        final storagePath = 'incidentes/$groupId/$userId/$fileName';
+        await _supabaseClient.storage
+            .from('files')
+            .upload(storagePath, File(path));
+        photoUrls.add(
+          _supabaseClient.storage.from('files').getPublicUrl(storagePath),
+        );
+      }
 
       await _supabaseClient.from('incidentes').insert({
         'grupo_id': groupId,
@@ -34,7 +47,7 @@ class DashboardActionsRepositoryImpl implements DashboardActionsRepository {
         'hora_ocorrencia': '$time:00',
         'descricao': description,
         'acao_tomada': actionTaken,
-        'foto_url': photoUrl,
+        'foto_url': photoUrls.isNotEmpty ? photoUrls.first : null,
       });
 
       return const Right(null);

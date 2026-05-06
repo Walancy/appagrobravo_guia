@@ -16,17 +16,21 @@ import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart
 import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
+import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
+import 'package:agrobravo/core/components/app_text_field.dart';
 
 class GuideDashboardPage extends StatefulWidget {
   final String groupId;
   final VoidCallback onSwitchGroup;
   final ValueChanged<int>? onTabChange;
+  final ValueChanged<String>? onNavigateToEvent;
 
   const GuideDashboardPage({
     super.key,
     required this.groupId,
     required this.onSwitchGroup,
     this.onTabChange,
+    this.onNavigateToEvent,
   });
 
   @override
@@ -100,16 +104,22 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           }, (r) => r);
 
           final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final tomorrow = today.add(const Duration(days: 1));
           _upcomingEvents =
               itinerary
-                  .where(
-                    (e) =>
-                        e.startDateTime != null &&
-                        (e.startDateTime!.isAfter(
-                          now.subtract(const Duration(minutes: 30)),
-                        )),
-                  )
-                  .take(5)
+                  .where((e) {
+                    if (e.startDateTime == null) return false;
+                    final start = e.startDateTime!;
+                    // Apenas hoje
+                    if (start.isBefore(today) || !start.isBefore(tomorrow)) {
+                      return false;
+                    }
+                    // Não concluído: evento ainda não terminou
+                    final end =
+                        e.endDateTime ?? start.add(const Duration(hours: 1));
+                    return now.isBefore(end);
+                  })
                   .toList();
 
           // 3. Traveler Count
@@ -734,6 +744,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                         title: e.name,
                         loc: e.location ?? 'Sem local',
                         icon: _getIconForType(e.type),
+                        onTap: () => widget.onNavigateToEvent?.call(e.id),
                       ),
                     ),
                   ),
@@ -751,101 +762,105 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
     required String title,
     required String loc,
     required IconData icon,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: 190,
-      height: 145,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: const Color(0xFF00B289), size: 22),
-                  const SizedBox(width: 8),
-                  Text(
-                    time,
-                    style: AppTextStyles.h3.copyWith(
-                      fontSize: 17,
-                      color: const Color(0xFF00B289),
-                      fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 190,
+        height: 145,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).dividerColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.015),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: const Color(0xFF00B289), size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      time,
+                      style: AppTextStyles.h3.copyWith(
+                        fontSize: 17,
+                        color: const Color(0xFF00B289),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00B289),
-                  shape: BoxShape.circle,
+                  ],
                 ),
-                child: const Icon(
-                  Icons.north_east_rounded,
-                  color: Colors.white,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00B289),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.north_east_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              type,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.grey[500],
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Text(
+              title,
+              style: AppTextStyles.h3.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
                   size: 16,
+                  color: Colors.grey[400],
                 ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            type,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.grey[500],
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          Text(
-            title,
-            style: AppTextStyles.h3.copyWith(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  loc,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.grey[500],
-                    fontSize: 12,
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    loc,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -938,55 +953,19 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                  child: TextField(
+                  child: AppTextField(
                     onChanged: _onSearch,
-                    style: AppTextStyles.bodyMedium.copyWith(
+                    textStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar por nome',
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary.withOpacity(0.7),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                      isDense: true,
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusLg,
-                        ),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusLg,
-                        ),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusLg,
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.primary.withOpacity(0.5),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
+                    hint: 'Buscar por nome',
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary.withOpacity(0.7),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primary,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -1434,24 +1413,22 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
               ],
             ),
             const SizedBox(height: 24),
-            Text(
-              'Valor do gasto',
-              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-            ),
-            TextField(
+            AppTextField(
+              label: 'Valor do gasto',
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              style: AppTextStyles.h1.copyWith(
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                CurrencyTextInputFormatter.currency(
+                  locale: 'pt_BR',
+                  symbol: 'R\$ ',
+                  decimalDigits: 2,
+                ),
+              ],
+              textStyle: AppTextStyles.h1.copyWith(
                 fontSize: 32,
                 color: AppColors.primary,
               ),
-              decoration: const InputDecoration(
-                prefixText: r'R$ ',
-                border: InputBorder.none,
-                hintText: '0,00',
-              ),
+              hint: 'R\$ 0,00',
             ),
             const SizedBox(height: 24),
             Text(
@@ -1510,21 +1487,10 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Descrição / Local',
-              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-            ),
-            TextField(
+            AppTextField(
+              label: 'Descrição / Local',
               controller: _descriptionController,
-              decoration: InputDecoration(
-                hintText: 'Ex: Almoço no aeroporto',
-                filled: true,
-                fillColor: Theme.of(context).dividerColor.withOpacity(0.1),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              hint: 'Ex: Almoço no aeroporto',
             ),
             const SizedBox(height: 24),
             Row(
@@ -1672,7 +1638,11 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                         return;
                       }
 
-                      final amountText = _amountController.text.replaceAll(',', '.');
+                      final amountText = _amountController.text
+                          .replaceAll('R\$', '')
+                          .replaceAll('.', '')
+                          .replaceAll(',', '.')
+                          .trim();
                       final amount = double.tryParse(amountText) ?? 0.0;
                       
                       if (amount <= 0) {

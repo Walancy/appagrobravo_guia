@@ -11,7 +11,7 @@ abstract class UserModel with _$UserModel {
     required String email,
     required String nome,
     String? foto,
-    @JsonKey(name: 'tipouser') required List<String> roles,
+    @JsonKey(name: 'tipouser', defaultValue: <String>[]) required List<String> roles,
   }) = _UserModel;
 
   const UserModel._();

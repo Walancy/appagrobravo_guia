@@ -160,10 +160,12 @@ class _ChatInputState extends State<ChatInput> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Theme.of(context).colorScheme.surfaceContainerHigh
-                        : Theme.of(context).colorScheme.surface,
+                    color: Theme.of(context).dividerColor.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [

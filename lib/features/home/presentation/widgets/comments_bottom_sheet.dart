@@ -373,11 +373,13 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                           horizontal: AppSpacing.md,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.grey[100],
+                          color: Theme.of(context).dividerColor.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(
                             AppSpacing.radiusLg,
+                          ),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            width: 1,
                           ),
                         ),
                         child: TextField(

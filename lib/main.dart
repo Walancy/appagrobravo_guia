@@ -98,6 +98,23 @@ class AgroBravoApp extends StatelessWidget {
               dividerTheme: const DividerThemeData(
                 color: AppColors.backgroundLight,
               ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: AppColors.backgroundLight.withOpacity(0.08),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                ),
+              ),
             ),
             darkTheme: ThemeData(
               primaryColor: AppColors.primary,
@@ -114,6 +131,23 @@ class AgroBravoApp extends StatelessWidget {
               dividerColor: AppColors.backgroundLightDark,
               dividerTheme: const DividerThemeData(
                 color: AppColors.backgroundLightDark,
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: AppColors.backgroundLightDark.withOpacity(0.08),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                ),
               ),
             ),
             locale: kDebugMode && kIsWeb ? DevicePreview.locale(context) : null,

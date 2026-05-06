@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart' as dartz;
+import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/di/injection.dart';
@@ -183,28 +184,10 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             const SizedBox(height: 24),
 
             // Search
-            TextField(
+            AppTextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar por nome',
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.grey,
-                ),
-                prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.primary),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
+              hint: 'Buscar por nome',
+              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
 

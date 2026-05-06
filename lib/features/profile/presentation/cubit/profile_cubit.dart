@@ -175,7 +175,16 @@ class ProfileCubit extends Cubit<ProfileState> {
     final result = await _profileRepository.updateFoodPreferences(preferences);
     result.fold(
       (error) => emit(ProfileState.error(_mapFailure(error))),
-      (_) => loadProfile(),
+      (_) => state.maybeMap(
+        loaded: (currentState) => emit(
+          currentState.copyWith(
+            profile: currentState.profile.copyWith(
+              foodPreferences: preferences,
+            ),
+          ),
+        ),
+        orElse: () {},
+      ),
     );
   }
 
@@ -185,7 +194,16 @@ class ProfileCubit extends Cubit<ProfileState> {
     );
     result.fold(
       (error) => emit(ProfileState.error(_mapFailure(error))),
-      (_) => loadProfile(),
+      (_) => state.maybeMap(
+        loaded: (currentState) => emit(
+          currentState.copyWith(
+            profile: currentState.profile.copyWith(
+              medicalRestrictions: restrictions,
+            ),
+          ),
+        ),
+        orElse: () {},
+      ),
     );
   }
 

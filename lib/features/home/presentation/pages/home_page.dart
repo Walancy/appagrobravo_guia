@@ -44,6 +44,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   String? _selectedGroupId;
+  String? _itineraryScrollToItemId;
   @override
   void initState() {
     super.initState();
@@ -268,6 +269,12 @@ class _HomePageState extends State<HomePage> {
               _selectedIndex = index;
             });
           },
+          onNavigateToEvent: (itemId) {
+            setState(() {
+              _itineraryScrollToItemId = itemId;
+              _selectedIndex = 1;
+            });
+          },
         );
       }
       return GuideHomePage(
@@ -283,6 +290,7 @@ class _HomePageState extends State<HomePage> {
       return ItineraryTab(
         key: ValueKey(_selectedGroupId),
         groupId: _selectedGroupId,
+        scrollToItemId: _itineraryScrollToItemId,
         onSwitchGroup: () {
           setState(() {
             _selectedGroupId = null;
@@ -534,7 +542,10 @@ class _HomePageState extends State<HomePage> {
             : Theme.of(context).colorScheme.onSurface;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () => setState(() {
+        _selectedIndex = index;
+        _itineraryScrollToItemId = null;
+      }),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 60,

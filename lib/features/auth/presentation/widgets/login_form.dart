@@ -153,12 +153,14 @@ class _LoginFormState extends State<LoginForm> {
   List<Widget> _buildLoginContent() {
     return [
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'E-mail:',
         hint: 'example@gmail.com',
         controller: _emailController,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Senha:',
         hint: '**********',
         obscureText: _obscurePassword,
@@ -215,18 +217,21 @@ class _LoginFormState extends State<LoginForm> {
   List<Widget> _buildRegisterContent() {
     return [
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Nome e sobrenome:',
         hint: 'Seu nome e sobrenome',
         controller: _nameController,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'E-mail:',
         hint: 'example@gmail.com',
         controller: _emailController,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Senha:',
         hint: '**********',
         obscureText: _obscurePassword,
@@ -235,6 +240,7 @@ class _LoginFormState extends State<LoginForm> {
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Confirmar senha:',
         hint: '**********',
         obscureText: _obscureConfirmPassword,
@@ -306,6 +312,7 @@ class _LoginFormState extends State<LoginForm> {
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'E-mail:',
         hint: 'example@gmail.com',
         controller: _emailController,
@@ -331,6 +338,7 @@ class _LoginFormState extends State<LoginForm> {
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Nova senha:',
         hint: '**********',
         obscureText: _obscurePassword,
@@ -339,6 +347,7 @@ class _LoginFormState extends State<LoginForm> {
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
+        isLightModeOnDarkBackground: true,
         label: 'Confirmar senha:',
         hint: '**********',
         obscureText: _obscureConfirmPassword,

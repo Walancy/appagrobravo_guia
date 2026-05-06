@@ -20,6 +20,20 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
   final _controller = TextEditingController();
   List<String> _tags = [];
   bool _isInitialized = false;
+  late final ProfileCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = getIt<ProfileCubit>()..loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _addTag(String text) {
     if (text.isEmpty) return;
@@ -40,19 +54,13 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
   }
 
   void _saveTags() {
-    context.read<ProfileCubit>().updateMedicalRestrictions(_tags);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    _cubit.updateMedicalRestrictions(_tags);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<ProfileCubit>()..loadProfile(),
+    return BlocProvider.value(
+      value: _cubit,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: const AppHeader(
@@ -71,6 +79,14 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                     _isInitialized = true;
                   });
                 }
+              },
+              error: (message) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
               },
               orElse: () {},
             );
@@ -138,17 +154,20 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                               (tag) => Chip(
                                 label: Text(
                                   tag,
-                                  style: AppTextStyles.bodySmall,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 deleteIcon: const Icon(Icons.close, size: 16),
+                                deleteIconColor: Colors.white,
                                 onDeleted: () => _removeTag(tag),
-                                backgroundColor: AppColors.error.withOpacity(
-                                  0.1,
-                                ),
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
-                                  side: BorderSide(
-                                    color: AppColors.error.withOpacity(0.3),
+                                  side: const BorderSide(
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),

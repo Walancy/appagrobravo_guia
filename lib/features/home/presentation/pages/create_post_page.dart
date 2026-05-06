@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -431,25 +432,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   const SizedBox(height: AppSpacing.md),
 
                   // Caption Input
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: _captionController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Adicione uma legenda',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(
-                          color: Theme.of(context).hintColor,
-                        ),
-                      ),
-                    ),
+                  AppTextField(
+                    controller: _captionController,
+                    hint: 'Adicione uma legenda',
+                    maxLines: 3,
                   ),
                 ],
               ),

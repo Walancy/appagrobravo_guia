@@ -9,7 +9,7 @@ abstract class DashboardActionsRepository {
     required String time,
     required String description,
     required String actionTaken,
-    String? photoUrl,
+    List<String> photoPaths = const [],
   });
 
   Future<Either<Exception, void>> requestReport({

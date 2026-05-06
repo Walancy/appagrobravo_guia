@@ -16,15 +16,16 @@ import 'package:agrobravo/core/components/itinerary_shimmer.dart';
 /// Standalone Widget to be used as a Tab
 class ItineraryTab extends StatelessWidget {
   final String? groupId;
-  final VoidCallback?
-  onSwitchGroup; // Keep for backward compatibility if needed, or remove
+  final VoidCallback? onSwitchGroup;
   final Function(String)? onGroupChanged;
+  final String? scrollToItemId;
 
   const ItineraryTab({
     super.key,
     this.groupId,
     this.onSwitchGroup,
     this.onGroupChanged,
+    this.scrollToItemId,
   });
 
   @override
@@ -60,6 +61,7 @@ class ItineraryTab extends StatelessWidget {
                   pendingDocs: pendingDocs,
                   onSwitchGroup: onSwitchGroup ?? () {},
                   onGroupChanged: onGroupChanged ?? (_) {},
+                  scrollToItemId: scrollToItemId,
                 );
               },
               orElse: () => const SizedBox.shrink(),
@@ -78,6 +80,7 @@ class ItineraryContent extends StatefulWidget {
   final List<String> pendingDocs;
   final VoidCallback onSwitchGroup;
   final Function(String) onGroupChanged;
+  final String? scrollToItemId;
 
   const ItineraryContent({
     super.key,
@@ -87,6 +90,7 @@ class ItineraryContent extends StatefulWidget {
     required this.pendingDocs,
     required this.onSwitchGroup,
     required this.onGroupChanged,
+    this.scrollToItemId,
   });
 
   @override
@@ -125,12 +129,6 @@ class _ItineraryContentState extends State<ItineraryContent> {
   }
 
   void _showFilterModal() async {
-    // Generate dates between start and end
-    final availableDates = List.generate(
-      widget.group.endDate.difference(widget.group.startDate).inDays + 1,
-      (i) => widget.group.startDate.add(Duration(days: i)),
-    );
-
     final result = await showDialog<ItineraryFilters>(
       context: context,
       builder:
@@ -145,7 +143,6 @@ class _ItineraryContentState extends State<ItineraryContent> {
             ),
             child: ItineraryFilterModal(
               initialFilters: _filters,
-              availableDates: availableDates,
             ),
           ),
     );
@@ -153,14 +150,6 @@ class _ItineraryContentState extends State<ItineraryContent> {
     if (result != null) {
       setState(() {
         _filters = result;
-        if (result.date != null) {
-          // Normalize selected date from filter modal
-          _selectedDate = DateTime(
-            result.date!.year,
-            result.date!.month,
-            result.date!.day,
-          );
-        }
       });
     }
   }
@@ -195,13 +184,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
             selectedDate: _selectedDate,
             onDateSelected: (date) {
               setState(() {
-                // Normalize selected date from slider
                 _selectedDate = DateTime(date.year, date.month, date.day);
-                // If filter had a different date, we clear it or sync it
-                if (_filters.date != null &&
-                    !_isSameDay(_filters.date!, _selectedDate!)) {
-                  _filters = _filters.copyWith(date: _selectedDate);
-                }
               });
             },
             onTrocar: _showSwitchModal,
@@ -294,6 +277,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
               groupId: widget.group.id,
               filters: _filters,
               pendingDocs: widget.pendingDocs,
+              scrollToItemId: widget.scrollToItemId,
             ),
           ),
         ],

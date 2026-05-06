@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -298,46 +299,10 @@ class _AccountDataPageState extends State<AccountDataPage> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Theme.of(context).colorScheme.surface
-                      : const Color(0xFFFAFAFA),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
-          ),
-        ],
+      child: AppTextField(
+        label: label,
+        controller: controller,
+        keyboardType: keyboardType,
       ),
     );
   }
@@ -359,14 +324,14 @@ class _AccountDataPageState extends State<AccountDataPage> {
           InkWell(
             onTap: () => _selectBirthDate(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
               decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Theme.of(context).colorScheme.surface
-                        : const Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
+                color: Theme.of(context).dividerColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

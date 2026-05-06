@@ -7,13 +7,14 @@ import '../cubit/itinerary_cubit.dart';
 
 import 'itinerary_filter_modal.dart';
 
-class ItineraryList extends StatelessWidget {
+class ItineraryList extends StatefulWidget {
   final List<ItineraryItemEntity> items;
   final List<Map<String, dynamic>> travelTimes;
   final DateTime? selectedDate;
   final ItineraryFilters? filters;
   final List<String> pendingDocs;
   final String groupId;
+  final String? scrollToItemId;
 
   const ItineraryList({
     super.key,
@@ -23,31 +24,91 @@ class ItineraryList extends StatelessWidget {
     required this.groupId,
     this.filters,
     this.pendingDocs = const [],
+    this.scrollToItemId,
   });
+
+  @override
+  State<ItineraryList> createState() => _ItineraryListState();
+}
+
+class _ItineraryListState extends State<ItineraryList> {
+  final _scrollController = ScrollController();
+  final Map<String, GlobalKey> _itemKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToItemId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToItem(widget.scrollToItemId!);
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ItineraryList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.scrollToItemId != null &&
+        widget.scrollToItemId != oldWidget.scrollToItemId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToItem(widget.scrollToItemId!);
+      });
+    }
+  }
+
+  void _scrollToItem(String itemId) {
+    final key = _itemKeys[itemId];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.2,
+      );
+    }
+  }
+
+  GlobalKey _keyForItem(String itemId) {
+    return _itemKeys.putIfAbsent(itemId, () => GlobalKey());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Filter items
     final displayedItemsFull =
-        items.where((item) {
-          // 1. Filter by Date (Priority to filter.date, fallback to selectedDate)
-          final filterDate = filters?.date ?? selectedDate;
-          if (filterDate != null && item.startDateTime != null) {
-            if (!_isSameDay(item.startDateTime!, filterDate)) return false;
+        widget.items.where((item) {
+          // 1. Filter by Date (selectedDate from header slider)
+          if (widget.selectedDate != null && item.startDateTime != null) {
+            if (!_isSameDay(item.startDateTime!, widget.selectedDate!)) {
+              return false;
+            }
           }
 
           // 2. Filter by Type
-          if (filters != null && filters!.types.isNotEmpty) {
-            if (!filters!.types.contains(item.type)) return false;
+          if (widget.filters != null && widget.filters!.types.isNotEmpty) {
+            if (!widget.filters!.types.contains(item.type)) return false;
           }
 
-          // 3. Filter by Time
-          if (filters?.startTime != null && item.startDateTime != null) {
+          // 3. Filter by time range
+          final startTime = widget.filters?.startTime;
+          final endTime = widget.filters?.endTime;
+          if ((startTime != null || endTime != null) &&
+              item.startDateTime != null) {
             final itemTime = TimeOfDay.fromDateTime(item.startDateTime!);
-            if (itemTime.hour < filters!.startTime!.hour) return false;
-            if (itemTime.hour == filters!.startTime!.hour &&
-                itemTime.minute < filters!.startTime!.minute)
+            final itemMinutes = itemTime.hour * 60 + itemTime.minute;
+            final effectiveStart = startTime ?? const TimeOfDay(hour: 0, minute: 0);
+            final effectiveEnd = endTime ?? const TimeOfDay(hour: 23, minute: 59);
+            final startMinutes = effectiveStart.hour * 60 + effectiveStart.minute;
+            final endMinutes = effectiveEnd.hour * 60 + effectiveEnd.minute;
+            if (itemMinutes < startMinutes || itemMinutes > endMinutes) {
               return false;
+            }
           }
 
           return true;
@@ -58,7 +119,7 @@ class ItineraryList extends StatelessWidget {
     displayedItems.sort(_sortLogic);
 
     // Filter items for logical neighbors logic needs the FULL sorted list
-    final fullItemsSorted = List<ItineraryItemEntity>.from(items);
+    final fullItemsSorted = List<ItineraryItemEntity>.from(widget.items);
     fullItemsSorted.sort(_sortLogic);
 
     if (displayedItems.isEmpty) {
@@ -82,6 +143,7 @@ class ItineraryList extends StatelessWidget {
         await context.read<ItineraryCubit>().loadUserItinerary();
       },
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         itemCount: displayedItems.length,
         itemBuilder: (context, index) {
@@ -130,11 +192,11 @@ class ItineraryList extends StatelessWidget {
           }
 
           if (item.type == ItineraryType.flight) {
-            card = FlightCard(item: item, pendingDocs: pendingDocs);
+            card = FlightCard(item: item, pendingDocs: widget.pendingDocs);
           } else if (item.type == ItineraryType.transfer) {
             card = TransferCard(item: item, showNextDayTag: showNextDayTag);
           } else {
-            card = GenericEventCard(item: item, groupId: groupId);
+            card = GenericEventCard(item: item, groupId: widget.groupId);
           }
 
           if (statusLabel != null) {
@@ -142,10 +204,7 @@ class ItineraryList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  margin: const EdgeInsets.only(
-                    bottom: 8,
-                    left: 20,
-                  ), // Indent to align with content
+                  margin: const EdgeInsets.only(bottom: 8, left: 20),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 4,
@@ -187,7 +246,7 @@ class ItineraryList extends StatelessWidget {
 
               if (travelDuration == null || travelDuration.isEmpty) {
                 try {
-                  final travel = travelTimes.firstWhere(
+                  final travel = widget.travelTimes.firstWhere(
                     (t) =>
                         t['id_origem'].toString() == item.id.toString() &&
                         t['id_destino'].toString() == nextItem.id.toString(),
@@ -199,12 +258,12 @@ class ItineraryList extends StatelessWidget {
           }
 
           return Stack(
+            key: _keyForItem(item.id),
             children: [
               // Timeline line
               if (!isLast)
                 Positioned(
-                  left:
-                      30, // Alinhado com o centro do ícone (20 padding + 20/2 tamanho)
+                  left: 30,
                   top: 50,
                   bottom: -2,
                   child: Container(

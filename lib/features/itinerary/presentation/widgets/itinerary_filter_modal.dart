@@ -1,44 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import '../../domain/entities/itinerary_item.dart';
 
 class ItineraryFilters {
   final Set<ItineraryType> types;
-  final DateTime? date;
   final TimeOfDay? startTime;
+  final TimeOfDay? endTime;
 
-  const ItineraryFilters({this.types = const {}, this.date, this.startTime});
+  const ItineraryFilters({this.types = const {}, this.startTime, this.endTime});
 
-  bool get isActive => types.isNotEmpty || date != null || startTime != null;
+  bool get isActive => types.isNotEmpty || startTime != null || endTime != null;
 
   int get count =>
-      types.length + (date != null ? 1 : 0) + (startTime != null ? 1 : 0);
+      types.length + (startTime != null ? 1 : 0) + (endTime != null ? 1 : 0);
 
   ItineraryFilters copyWith({
     Set<ItineraryType>? types,
-    DateTime? date,
     TimeOfDay? startTime,
-    bool clearDate = false,
-    bool clearTime = false,
+    TimeOfDay? endTime,
+    bool clearStartTime = false,
+    bool clearEndTime = false,
   }) {
     return ItineraryFilters(
       types: types ?? this.types,
-      date: clearDate ? null : (date ?? this.date),
-      startTime: clearTime ? null : (startTime ?? this.startTime),
+      startTime: clearStartTime ? null : (startTime ?? this.startTime),
+      endTime: clearEndTime ? null : (endTime ?? this.endTime),
     );
   }
 }
 
 class ItineraryFilterModal extends StatefulWidget {
   final ItineraryFilters initialFilters;
-  final List<DateTime> availableDates;
 
   const ItineraryFilterModal({
     super.key,
     required this.initialFilters,
-    required this.availableDates,
   });
 
   @override
@@ -47,15 +44,15 @@ class ItineraryFilterModal extends StatefulWidget {
 
 class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
   late Set<ItineraryType> _selectedTypes;
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
+  TimeOfDay? _selectedStartTime;
+  TimeOfDay? _selectedEndTime;
 
   @override
   void initState() {
     super.initState();
     _selectedTypes = Set.from(widget.initialFilters.types);
-    _selectedDate = widget.initialFilters.date;
-    _selectedTime = widget.initialFilters.startTime;
+    _selectedStartTime = widget.initialFilters.startTime;
+    _selectedEndTime = widget.initialFilters.endTime;
   }
 
   void _toggleType(ItineraryType type) {
@@ -156,57 +153,6 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Data',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    InkWell(
-                      onTap: _pickDate,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context).dividerColor,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 16,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _selectedDate != null
-                                  ? DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(_selectedDate!)
-                                  : 'Selecionar',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
                       'Hora início',
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
@@ -214,7 +160,7 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                     ),
                     const SizedBox(height: 10),
                     InkWell(
-                      onTap: _pickTime,
+                      onTap: _pickStartTime,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -236,8 +182,57 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _selectedTime != null
-                                  ? _selectedTime!.format(context)
+                              _selectedStartTime != null
+                                  ? _selectedStartTime!.format(context)
+                                  : 'Selecionar',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hora fim',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: _pickEndTime,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_filled,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _selectedEndTime != null
+                                  ? _selectedEndTime!.format(context)
                                   : 'Selecionar',
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
@@ -260,11 +255,7 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    setState(() {
-                      _selectedTypes = {};
-                      _selectedDate = null;
-                      _selectedTime = null;
-                    });
+                    Navigator.pop(context, const ItineraryFilters());
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -288,8 +279,8 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                       context,
                       ItineraryFilters(
                         types: _selectedTypes,
-                        date: _selectedDate,
-                        startTime: _selectedTime,
+                        startTime: _selectedStartTime,
+                        endTime: _selectedEndTime,
                       ),
                     );
                   },
@@ -327,7 +318,7 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
       case ItineraryType.food:
         return Icons.restaurant;
       case ItineraryType.leisure:
-        return Icons.pool; // or local_play
+        return Icons.pool;
       case ItineraryType.transfer:
         return Icons.directions_bus;
       case ItineraryType.returnType:
@@ -358,33 +349,10 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
     }
   }
 
-  Future<void> _pickDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? widget.availableDates.first,
-      firstDate: widget.availableDates.first,
-      lastDate: widget.availableDates.last,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
-              brightness: Theme.of(context).brightness,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (date != null) {
-      setState(() => _selectedDate = date);
-    }
-  }
-
-  Future<void> _pickTime() async {
+  Future<void> _pickStartTime() async {
     final time = await showTimePicker(
       context: context,
-      initialTime: _selectedTime ?? TimeOfDay.now(),
+      initialTime: _selectedStartTime ?? const TimeOfDay(hour: 0, minute: 0),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -398,7 +366,28 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
       },
     );
     if (time != null) {
-      setState(() => _selectedTime = time);
+      setState(() => _selectedStartTime = time);
+    }
+  }
+
+  Future<void> _pickEndTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _selectedEndTime ?? const TimeOfDay(hour: 23, minute: 59),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: Theme.of(context).brightness,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (time != null) {
+      setState(() => _selectedEndTime = time);
     }
   }
 }

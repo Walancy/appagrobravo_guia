@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/di/injection.dart';
@@ -100,39 +101,10 @@ class _ReminderModalState extends State<ReminderModal> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Descrição',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
+            AppTextField(
+              label: 'Descrição',
               controller: _descriptionController,
-              decoration: InputDecoration(
-                hintText: 'Descreva',
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.grey,
-                ),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
+              hint: 'Descreva',
               maxLines: 3,
             ),
             const SizedBox(height: 24),

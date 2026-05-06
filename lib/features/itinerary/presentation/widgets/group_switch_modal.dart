@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrobravo/core/di/injection.dart';
-
+import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/home/presentation/cubit/guide_home_cubit.dart';
@@ -103,20 +103,19 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                       filled: true,
                                       fillColor: Theme.of(
                                         context,
-                                      ).dividerColor.withOpacity(0.05),
+                                      ).dividerColor.withOpacity(0.08),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
                                             horizontal: 16,
-                                            vertical: 8,
+                                            vertical: 14,
                                           ),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Theme.of(
-                                            context,
-                                          ).dividerColor.withOpacity(0.1),
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                          width: 1,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
@@ -124,9 +123,8 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Theme.of(
-                                            context,
-                                          ).dividerColor.withOpacity(0.1),
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                          width: 1,
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
@@ -134,7 +132,8 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: const BorderSide(
-                                          color: Color(0xFF00B289),
+                                          color: AppColors.primary,
+                                          width: 1.5,
                                         ),
                                       ),
                                     ),
