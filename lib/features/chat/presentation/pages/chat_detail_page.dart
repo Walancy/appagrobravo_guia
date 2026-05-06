@@ -16,8 +16,13 @@ import 'package:intl/intl.dart';
 
 class ChatDetailPage extends StatelessWidget {
   final ChatEntity chat;
+  final bool showAppBar;
 
-  const ChatDetailPage({super.key, required this.chat});
+  const ChatDetailPage({
+    super.key,
+    required this.chat,
+    this.showAppBar = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +30,19 @@ class ChatDetailPage extends StatelessWidget {
     return BlocProvider(
       create: (_) =>
           getIt<ChatDetailCubit>()..loadMessages(chat.id, isGroup: true),
-      child: _ChatDetailView(chat: chat),
+      child: _ChatDetailView(chat: chat, showAppBar: showAppBar),
     );
   }
 }
 
 class _ChatDetailView extends StatefulWidget {
   final ChatEntity chat;
+  final bool showAppBar;
 
-  const _ChatDetailView({required this.chat});
+  const _ChatDetailView({
+    required this.chat,
+    this.showAppBar = true,
+  });
 
   @override
   State<_ChatDetailView> createState() => _ChatDetailViewState();
@@ -107,45 +116,47 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? AppColors.chatBackgroundDark
           : AppColors.chatBackground,
-      appBar: AppHeader(
-        mode: HeaderMode.back,
-        title: widget.chat.title,
-        subtitle: widget.chat.subtitle,
-        // Using logo param to show group image, similar to home showing app logo
-        logo: ClipOval(
-          child: widget.chat.imageUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: widget.chat.imageUrl!,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => _buildPlaceholderAvatar(),
-                  errorWidget: (_, __, ___) => _buildPlaceholderAvatar(),
-                )
-              : _buildPlaceholderAvatar(),
-        ),
-        onTitleTap: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  GroupInfoPage(chat: widget.chat),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        },
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_none_rounded,
-              size: 28,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
+      appBar: widget.showAppBar
+          ? AppHeader(
+              mode: HeaderMode.back,
+              title: widget.chat.title,
+              subtitle: widget.chat.subtitle,
+              // Using logo param to show group image, similar to home showing app logo
+              logo: ClipOval(
+                child: widget.chat.imageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: widget.chat.imageUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => _buildPlaceholderAvatar(),
+                        errorWidget: (_, __, ___) => _buildPlaceholderAvatar(),
+                      )
+                    : _buildPlaceholderAvatar(),
+              ),
+              onTitleTap: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        GroupInfoPage(chat: widget.chat),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              },
+              actions: [
+                IconButton(
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.notifications_none_rounded,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            )
+          : null,
       body: Stack(
         children: [
           Positioned.fill(

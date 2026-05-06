@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserModel {
 
- String get id; String get email; String get nome; String? get foto;@JsonKey(name: 'tipouser') List<String> get roles;
+ String get id; String get email; String get nome; String? get foto;@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> get roles;
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $UserModelCopyWith<$Res>  {
   factory $UserModelCopyWith(UserModel value, $Res Function(UserModel) _then) = _$UserModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser') List<String> roles
+ String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles
 });
 
 
@@ -157,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser')  List<String> roles)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
 return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
@@ -178,7 +178,7 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser')  List<String> roles)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)  $default,) {final _that = this;
 switch (_that) {
 case _UserModel():
 return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
@@ -198,7 +198,7 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser')  List<String> roles)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)?  $default,) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
 return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
@@ -213,7 +213,7 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 @JsonSerializable()
 
 class _UserModel extends UserModel {
-  const _UserModel({required this.id, required this.email, required this.nome, this.foto, @JsonKey(name: 'tipouser') required final  List<String> roles}): _roles = roles,super._();
+  const _UserModel({required this.id, required this.email, required this.nome, this.foto, @JsonKey(name: 'tipouser', defaultValue: <String>[]) required final  List<String> roles}): _roles = roles,super._();
   factory _UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
 @override final  String id;
@@ -221,7 +221,7 @@ class _UserModel extends UserModel {
 @override final  String nome;
 @override final  String? foto;
  final  List<String> _roles;
-@override@JsonKey(name: 'tipouser') List<String> get roles {
+@override@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> get roles {
   if (_roles is EqualUnmodifiableListView) return _roles;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_roles);
@@ -261,7 +261,7 @@ abstract mixin class _$UserModelCopyWith<$Res> implements $UserModelCopyWith<$Re
   factory _$UserModelCopyWith(_UserModel value, $Res Function(_UserModel) _then) = __$UserModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser') List<String> roles
+ String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles
 });
 
 

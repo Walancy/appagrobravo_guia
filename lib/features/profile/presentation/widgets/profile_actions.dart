@@ -43,8 +43,8 @@ class ProfileActions extends StatelessWidget {
           if (isMe) ...[
             Expanded(
               child: _ProfileActionButton(
-                label: isEditing ? 'Cancelar' : 'Editar perfil',
-                icon: isEditing ? Icons.close : Icons.edit_outlined,
+                label: isEditing ? 'Concluir' : 'Editar perfil',
+                icon: isEditing ? Icons.check : Icons.edit_outlined,
                 backgroundColor: AppColors.primary,
                 onPressed: onEditProfile,
               ),

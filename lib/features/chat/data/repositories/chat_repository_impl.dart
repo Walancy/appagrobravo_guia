@@ -145,13 +145,16 @@ class ChatRepositoryImpl implements ChatRepository {
           }
         } catch (_) {}
       }
+      
+      final leaderGroupsResponse = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
 
-      final groupIds =
-          (groupsResponse as List)
-              .map((e) => e['grupo_id'] as String?)
-              .where((e) => e != null)
-              .cast<String>()
-              .toList();
+      final groupIds = {
+        ...(groupsResponse as List).map((e) => e['grupo_id'] as String?),
+        ...(leaderGroupsResponse as List).map((e) => e['grupo_id'] as String?),
+      }.where((e) => e != null).cast<String>().toList();
 
       if (groupIds.isEmpty) {
         return const Right(ChatData());

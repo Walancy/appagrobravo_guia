@@ -71,7 +71,10 @@ class _ReminderModalState extends State<ReminderModal> {
     return Dialog(
       backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -162,6 +165,7 @@ class _ReminderModalState extends State<ReminderModal> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

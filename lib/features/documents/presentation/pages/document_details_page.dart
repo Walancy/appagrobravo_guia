@@ -129,7 +129,10 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppHeader(mode: HeaderMode.back, title: widget.type.label),
-      body: SingleChildScrollView(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,6 +259,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
       ),
     );
   }

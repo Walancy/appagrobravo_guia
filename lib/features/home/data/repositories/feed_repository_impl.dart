@@ -738,52 +738,50 @@ class FeedRepositoryImpl implements FeedRepository {
           .select('grupo_id')
           .eq('user_id', userId);
 
-      final groupIds =
-          (groupsResponse as List)
-              .map((e) => e['grupo_id'] as String?)
-              .where((e) => e != null)
-              .cast<String>()
-              .toList();
+      final leaderGroupsResponse = await _supabaseClient
+          .from('lideresGrupo')
+          .select('grupo_id')
+          .eq('lider_id', userId);
 
-      if (groupIds.isEmpty) {
-        // Clear cache if online but empty? Not strictly necessary but consistent.
-        await _saveUserMissionsToCache([]);
-        return const Right([]);
-      }
+      final groupIds = {
+        ...(groupsResponse as List).map((e) => e['grupo_id'] as String?),
+        ...(leaderGroupsResponse as List).map((e) => e['grupo_id'] as String?),
+      }.where((e) => e != null).cast<String>().toList();
 
       // 2. Get Mission IDs from those Groups
-      final groupsDetailsResponse = await _supabaseClient
-          .from('grupos')
-          .select('missao_id')
-          .inFilter('id', groupIds);
+      List<String> missionIds = [];
+      if (groupIds.isNotEmpty) {
+        final groupsDetailsResponse = await _supabaseClient
+            .from('grupos')
+            .select('missao_id')
+            .inFilter('id', groupIds);
 
-      final missionIds =
-          (groupsDetailsResponse as List)
-              .map((e) => e['missao_id'] as String?)
-              .where((e) => e != null)
-              .cast<String>()
-              .toSet() // Remove duplicates
-              .toList();
-
-      if (missionIds.isEmpty) {
-        await _saveUserMissionsToCache([]);
-        return const Right([]);
+        missionIds =
+            (groupsDetailsResponse as List)
+                .map((e) => e['missao_id'] as String?)
+                .where((e) => e != null)
+                .cast<String>()
+                .toSet()
+                .toList();
       }
 
       // 3. Fetch Mission Details
-      final missionsResponse = await _supabaseClient
-          .from('missoes')
-          .select('id, nome, logo')
-          .inFilter('id', missionIds);
+      List<MissionEntity> missions = [];
+      if (missionIds.isNotEmpty) {
+        final missionsResponse = await _supabaseClient
+            .from('missoes')
+            .select('id, nome, logo')
+            .inFilter('id', missionIds);
 
-      final missions =
-          (missionsResponse as List).map((m) {
-            return MissionEntity(
-              id: m['id'],
-              name: m['nome'] ?? 'Sem nome',
-              logo: m['logo'],
-            );
-          }).toList();
+        missions =
+            (missionsResponse as List).map((m) {
+              return MissionEntity(
+                id: m['id'],
+                name: m['nome'] ?? 'Sem nome',
+                logo: m['logo'],
+              );
+            }).toList();
+      }
 
       // Fallback: also check missoesParticipantes directly just in case some users are linked directly
       try {

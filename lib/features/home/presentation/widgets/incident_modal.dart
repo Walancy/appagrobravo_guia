@@ -90,7 +90,10 @@ class _IncidentModalState extends State<IncidentModal> {
       backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: SingleChildScrollView(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -428,6 +431,7 @@ class _IncidentModalState extends State<IncidentModal> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

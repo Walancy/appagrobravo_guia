@@ -253,7 +253,10 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -388,6 +391,8 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                           decoration: const InputDecoration(
                             hintText: 'Adicione um comentário',
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                             hintStyle: TextStyle(fontSize: 14),
                             contentPadding: EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -419,6 +424,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

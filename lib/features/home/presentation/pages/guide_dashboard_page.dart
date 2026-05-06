@@ -16,7 +16,7 @@ import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart
 import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
-import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
+import 'package:agrobravo/core/formatters/centavos_input_formatter.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 
 class GuideDashboardPage extends StatefulWidget {
@@ -1418,11 +1418,7 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                CurrencyTextInputFormatter.currency(
-                  locale: 'pt_BR',
-                  symbol: 'R\$ ',
-                  decimalDigits: 2,
-                ),
+                CentavosInputFormatter(),
               ],
               textStyle: AppTextStyles.h1.copyWith(
                 fontSize: 32,
@@ -1638,12 +1634,8 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                         return;
                       }
 
-                      final amountText = _amountController.text
-                          .replaceAll('R\$', '')
-                          .replaceAll('.', '')
-                          .replaceAll(',', '.')
-                          .trim();
-                      final amount = double.tryParse(amountText) ?? 0.0;
+                      final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
+                      final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
                       
                       if (amount <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(

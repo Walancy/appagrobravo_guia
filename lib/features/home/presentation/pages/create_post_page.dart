@@ -192,7 +192,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
             ? 'Edite sua publicação'
             : 'Crie uma nova publicação',
       ),
-      body: Column(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -496,6 +499,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

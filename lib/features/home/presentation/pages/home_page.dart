@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
     if (_selectedIndex == 2) {
-      return const ChatPage();
+      return ChatPage(groupId: _selectedGroupId);
     }
     if (_selectedIndex == 4) {
       return const ProfileTab();
@@ -398,7 +398,7 @@ class _HomePageState extends State<HomePage> {
       builder:
           (context) => CommentsBottomSheet(
             postId: postId,
-            onCommentChanged: () => feedCubit.loadFeed(),
+            onCommentChanged: () => feedCubit.incrementCommentCount(postId),
           ),
     );
   }

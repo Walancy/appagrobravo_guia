@@ -94,7 +94,10 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -128,6 +131,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
         ),
       ),
+    ),
     );
   }
 

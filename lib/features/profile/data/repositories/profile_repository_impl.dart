@@ -129,7 +129,19 @@ class ProfileRepositoryImpl implements ProfileRepository {
           .select('id')
           .eq('user_id', userId);
 
-      final missionsCount = (missionsResponse as List).length;
+      final leaderMissionsResponse = await _supabaseClient
+          .from('lideresGrupo')
+          .select('id')
+          .eq('lider_id', userId);
+          
+      final directMissionsResponse = await _supabaseClient
+          .from('missoesParticipantes')
+          .select('id')
+          .eq('user_id', userId);
+
+      final missionsCount = (missionsResponse as List).length + 
+                            (leaderMissionsResponse as List).length + 
+                            (directMissionsResponse as List).length;
 
       // 4. Fetch Connections Count
       final connectionsResponse = await _supabaseClient
@@ -187,6 +199,45 @@ class ProfileRepositoryImpl implements ProfileRepository {
             final m = g['missao'];
             if (m is Map) {
               missionName = m['nome'];
+            }
+          }
+        } else {
+          final leaderRes = await _supabaseClient
+              .from('lideresGrupo')
+              .select('grupo_id')
+              .eq('lider_id', userId)
+              .limit(1)
+              .maybeSingle();
+              
+          if (leaderRes != null && leaderRes['grupo_id'] != null) {
+            final groupRes = await _supabaseClient
+                .from('grupos')
+                .select('nome, missao:missao_id(nome)')
+                .eq('id', leaderRes['grupo_id'])
+                .maybeSingle();
+            
+            if (groupRes != null) {
+              final m = groupRes['missao'];
+              if (m is Map) {
+                missionName = m['nome'];
+              }
+            }
+          }
+          
+          if (missionName == null) {
+            // Check direct mission
+            final directMissionRes = await _supabaseClient
+                .from('missoesParticipantes')
+                .select('missao:missoes_id(nome:nome_viagem)')
+                .eq('user_id', userId)
+                .limit(1)
+                .maybeSingle();
+                
+            if (directMissionRes != null && directMissionRes['missao'] != null) {
+              final m = directMissionRes['missao'];
+              if (m is Map) {
+                missionName = m['nome'];
+              }
             }
           }
         }

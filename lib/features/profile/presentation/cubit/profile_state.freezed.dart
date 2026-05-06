@@ -128,12 +128,12 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
-return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing);case _Error() when error != null:
+return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing,_that.isUpdatingAvatar,_that.isUpdatingCover);case _Error() when error != null:
 return error(_that.message);case _:
   return orElse();
 
@@ -152,12 +152,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing)  loaded,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover)  loaded,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial();case _Loading():
 return loading();case _Loaded():
-return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing);case _Error():
+return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing,_that.isUpdatingAvatar,_that.isUpdatingCover);case _Error():
 return error(_that.message);case _:
   throw StateError('Unexpected subclass');
 
@@ -175,12 +175,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
-return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing);case _Error() when error != null:
+return loaded(_that.profile,_that.posts,_that.isMe,_that.isEditing,_that.isUpdatingAvatar,_that.isUpdatingCover);case _Error() when error != null:
 return error(_that.message);case _:
   return null;
 
@@ -257,7 +257,7 @@ String toString() {
 
 
 class _Loaded implements ProfileState {
-  const _Loaded({required this.profile, required final  List<PostEntity> posts, required this.isMe, this.isEditing = false}): _posts = posts;
+  const _Loaded({required this.profile, required final  List<PostEntity> posts, required this.isMe, this.isEditing = false, this.isUpdatingAvatar = false, this.isUpdatingCover = false}): _posts = posts;
   
 
  final  ProfileEntity profile;
@@ -270,6 +270,8 @@ class _Loaded implements ProfileState {
 
  final  bool isMe;
 @JsonKey() final  bool isEditing;
+@JsonKey() final  bool isUpdatingAvatar;
+@JsonKey() final  bool isUpdatingCover;
 
 /// Create a copy of ProfileState
 /// with the given fields replaced by the non-null parameter values.
@@ -281,16 +283,16 @@ _$LoadedCopyWith<_Loaded> get copyWith => __$LoadedCopyWithImpl<_Loaded>(this, _
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&(identical(other.profile, profile) || other.profile == profile)&&const DeepCollectionEquality().equals(other._posts, _posts)&&(identical(other.isMe, isMe) || other.isMe == isMe)&&(identical(other.isEditing, isEditing) || other.isEditing == isEditing));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&(identical(other.profile, profile) || other.profile == profile)&&const DeepCollectionEquality().equals(other._posts, _posts)&&(identical(other.isMe, isMe) || other.isMe == isMe)&&(identical(other.isEditing, isEditing) || other.isEditing == isEditing)&&(identical(other.isUpdatingAvatar, isUpdatingAvatar) || other.isUpdatingAvatar == isUpdatingAvatar)&&(identical(other.isUpdatingCover, isUpdatingCover) || other.isUpdatingCover == isUpdatingCover));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,profile,const DeepCollectionEquality().hash(_posts),isMe,isEditing);
+int get hashCode => Object.hash(runtimeType,profile,const DeepCollectionEquality().hash(_posts),isMe,isEditing,isUpdatingAvatar,isUpdatingCover);
 
 @override
 String toString() {
-  return 'ProfileState.loaded(profile: $profile, posts: $posts, isMe: $isMe, isEditing: $isEditing)';
+  return 'ProfileState.loaded(profile: $profile, posts: $posts, isMe: $isMe, isEditing: $isEditing, isUpdatingAvatar: $isUpdatingAvatar, isUpdatingCover: $isUpdatingCover)';
 }
 
 
@@ -301,7 +303,7 @@ abstract mixin class _$LoadedCopyWith<$Res> implements $ProfileStateCopyWith<$Re
   factory _$LoadedCopyWith(_Loaded value, $Res Function(_Loaded) _then) = __$LoadedCopyWithImpl;
 @useResult
 $Res call({
- ProfileEntity profile, List<PostEntity> posts, bool isMe, bool isEditing
+ ProfileEntity profile, List<PostEntity> posts, bool isMe, bool isEditing, bool isUpdatingAvatar, bool isUpdatingCover
 });
 
 
@@ -318,12 +320,14 @@ class __$LoadedCopyWithImpl<$Res>
 
 /// Create a copy of ProfileState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? profile = null,Object? posts = null,Object? isMe = null,Object? isEditing = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? profile = null,Object? posts = null,Object? isMe = null,Object? isEditing = null,Object? isUpdatingAvatar = null,Object? isUpdatingCover = null,}) {
   return _then(_Loaded(
 profile: null == profile ? _self.profile : profile // ignore: cast_nullable_to_non_nullable
 as ProfileEntity,posts: null == posts ? _self._posts : posts // ignore: cast_nullable_to_non_nullable
 as List<PostEntity>,isMe: null == isMe ? _self.isMe : isMe // ignore: cast_nullable_to_non_nullable
 as bool,isEditing: null == isEditing ? _self.isEditing : isEditing // ignore: cast_nullable_to_non_nullable
+as bool,isUpdatingAvatar: null == isUpdatingAvatar ? _self.isUpdatingAvatar : isUpdatingAvatar // ignore: cast_nullable_to_non_nullable
+as bool,isUpdatingCover: null == isUpdatingCover ? _self.isUpdatingCover : isUpdatingCover // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

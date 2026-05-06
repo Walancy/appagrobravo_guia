@@ -8,6 +8,8 @@ class ProfileHeaderCover extends StatelessWidget {
   final String? avatarUrl;
   final bool isMe;
   final bool isEditing;
+  final bool isUpdatingAvatar;
+  final bool isUpdatingCover;
   final VoidCallback? onUpdateAvatar;
   final VoidCallback? onUpdateCover;
   final Widget? statsWidget;
@@ -18,6 +20,8 @@ class ProfileHeaderCover extends StatelessWidget {
     this.avatarUrl,
     this.isMe = false,
     this.isEditing = false,
+    this.isUpdatingAvatar = false,
+    this.isUpdatingCover = false,
     this.onUpdateAvatar,
     this.onUpdateCover,
     this.statsWidget,
@@ -48,7 +52,20 @@ class ProfileHeaderCover extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  if (isEditing)
+                  if (isUpdatingCover)
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  if (isEditing && !isUpdatingCover)
                     Positioned(
                       right: 16,
                       bottom: 16,
@@ -86,47 +103,61 @@ class ProfileHeaderCover extends StatelessWidget {
                     ),
                   ),
                   child: ClipOval(
-                    child: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                        ? CachedNetworkImage(
-                            imageUrl: avatarUrl!,
-                            fit: BoxFit.cover,
-                            height: 110,
-                            width: 110,
-                            placeholder: (context, url) => Container(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
+                    child: Stack(
+                      children: [
+                        (avatarUrl != null && avatarUrl!.isNotEmpty)
+                            ? CachedNetworkImage(
+                              imageUrl: avatarUrl!,
+                              fit: BoxFit.cover,
+                              height: 110,
+                              width: 110,
+                              placeholder:
+                                  (context, url) => Container(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[800]
+                                            : Colors.grey[200],
+                                  ),
+                              errorWidget: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[600]
+                                            : Colors.grey,
+                                  ),
+                                );
+                              },
+                            )
+                            : Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 60,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[600]
+                                        : Colors.grey,
+                              ),
                             ),
-                            errorWidget: (context, error, stackTrace) {
-                              return Center(
-                                child: Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[600]
-                                      : Colors.grey,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(
-                            child: Icon(
-                              Icons.person,
-                              size: 60,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[600]
-                                  : Colors.grey,
+                        if (isUpdatingAvatar)
+                          Container(
+                            color: Colors.black45,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
                             ),
                           ),
+                      ],
+                    ),
                   ),
                 ),
-                if (isEditing)
+                if (isEditing && !isUpdatingAvatar)
                   Positioned(
                     right: 0,
                     bottom: 0,

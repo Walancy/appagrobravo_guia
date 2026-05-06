@@ -102,7 +102,10 @@ class _ConnectionsPageState extends State<ConnectionsPage>
       appBar: AppHeader(mode: HeaderMode.back, title: 'Conexões'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Column(
               children: [
                 const SizedBox(height: 12),
                 // Search Bar
@@ -121,21 +124,22 @@ class _ConnectionsPageState extends State<ConnectionsPage>
                       controller: _searchController,
                       style: AppTextStyles.bodyMedium,
                       decoration: InputDecoration(
-                        hintText: 'Pesquisar',
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
+                       hintText: 'Pesquisar',
+                       prefixIcon: Icon(
+                         Icons.search,
+                         color: Theme.of(
+                           context,
+                         ).colorScheme.onSurface.withValues(alpha: 0.6),
+                         size: 20,
+                       ),
+                       border: InputBorder.none,
+                       enabledBorder: InputBorder.none,
+                       focusedBorder: InputBorder.none,
+                       contentPadding: const EdgeInsets.symmetric(
+                         horizontal: AppSpacing.md,
+                         vertical: 14,
+                       ),
+                      ),                    ),
                   ),
                 ),
 
@@ -196,6 +200,7 @@ class _ConnectionsPageState extends State<ConnectionsPage>
                 ),
               ],
             ),
+          ),
     );
   }
 

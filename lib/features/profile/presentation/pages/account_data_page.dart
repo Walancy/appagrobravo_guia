@@ -95,7 +95,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
             state.maybeWhen(
-              loaded: (profile, _, __, ___) {
+              loaded: (profile, _, __, ___, ____, _____) {
                 _initializeControllers(profile);
               },
               orElse: () {},
@@ -103,8 +103,11 @@ class _AccountDataPageState extends State<AccountDataPage> {
           },
           builder: (context, state) {
             return state.maybeWhen(
-              loaded: (profile, _, __, ___) {
-                return SingleChildScrollView(
+              loaded: (profile, _, __, ___, ____, _____) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => FocusScope.of(context).unfocus(),
+                  child: SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,6 +283,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                       ),
                       const SizedBox(height: AppSpacing.xl),
                     ],
+                  ),
                   ),
                 );
               },

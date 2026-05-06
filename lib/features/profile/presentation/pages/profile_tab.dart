@@ -230,7 +230,7 @@ class _ProfileTabState extends State<ProfileTab> {
               initial: () => const SizedBox.shrink(),
               loading: () => const ProfileShimmer(),
               error: (message) => Center(child: Text(message)),
-              loaded: (profile, posts, isMe, isEditing) {
+              loaded: (profile, posts, isMe, isEditing, isUpdatingAvatar, isUpdatingCover) {
                 Future<void> pickAndUploadImage(bool isAvatar) async {
                   final picker = ImagePicker();
                   final source = await showModalBottomSheet<ImageSource>(
@@ -299,6 +299,8 @@ class _ProfileTabState extends State<ProfileTab> {
                         avatarUrl: profile.avatarUrl,
                         isMe: isMe,
                         isEditing: isEditing,
+                        isUpdatingAvatar: isUpdatingAvatar,
+                        isUpdatingCover: isUpdatingCover,
                         onUpdateAvatar: () => pickAndUploadImage(true),
                         onUpdateCover: () => pickAndUploadImage(false),
                         statsWidget: Opacity(

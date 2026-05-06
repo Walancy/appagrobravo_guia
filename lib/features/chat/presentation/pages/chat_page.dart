@@ -22,7 +22,9 @@ class _MissionInfo {
 }
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  final String? groupId;
+
+  const ChatPage({super.key, this.groupId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -396,10 +398,10 @@ class _ChatPageState extends State<ChatPage>
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(text: 'Viajantes'),
-                Tab(text: 'Guias'),
-                Tab(text: 'Grupos'),
+              tabs: [
+                const Tab(text: 'Viajantes'),
+                const Tab(text: 'Guias'),
+                Tab(text: widget.groupId != null ? 'Grupo' : 'Grupos'),
               ],
             ),
           ),
@@ -415,7 +417,9 @@ class _ChatPageState extends State<ChatPage>
                       children: [
                         _buildTravelersList(),
                         _buildGuidesList(),
-                        _buildGroupsList(),
+                        widget.groupId != null
+                            ? _buildDirectGroupChat()
+                            : _buildGroupsList(),
                       ],
                     ),
           ),
@@ -464,22 +468,27 @@ class _ChatPageState extends State<ChatPage>
 
     // Filter travelers
     List<TravelerInfo> filtered = _allTravelers;
-    if (_travelerMissionFilter != null) {
+    if (widget.groupId != null) {
       filtered =
-          filtered
-              .where((t) => t.missionName == _travelerMissionFilter)
-              .toList();
-    }
-    if (_travelerGroupFilter != null) {
-      filtered =
-          filtered.where((t) => t.groupId == _travelerGroupFilter).toList();
+          filtered.where((t) => t.groupId == widget.groupId).toList();
+    } else {
+      if (_travelerMissionFilter != null) {
+        filtered =
+            filtered
+                .where((t) => t.missionName == _travelerMissionFilter)
+                .toList();
+      }
+      if (_travelerGroupFilter != null) {
+        filtered =
+            filtered.where((t) => t.groupId == _travelerGroupFilter).toList();
+      }
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Filter row
-        if (missions.isNotEmpty || availableGroups.isNotEmpty)
+        if (widget.groupId == null && (missions.isNotEmpty || availableGroups.isNotEmpty))
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -760,23 +769,30 @@ class _ChatPageState extends State<ChatPage>
 
     // Apply filtering
     List<GuideInfo> filtered = _guides;
-    if (_guideMissionFilter != null) {
+    if (widget.groupId != null) {
       filtered =
           filtered
-              .where((g) => g.missionNames.contains(_guideMissionFilter))
+              .where((g) => g.groupIds.contains(widget.groupId))
               .toList();
-    }
-    if (_guideGroupFilter != null) {
-      filtered =
-          filtered
-              .where((g) => g.groupIds.contains(_guideGroupFilter))
-              .toList();
+    } else {
+      if (_guideMissionFilter != null) {
+        filtered =
+            filtered
+                .where((g) => g.missionNames.contains(_guideMissionFilter))
+                .toList();
+      }
+      if (_guideGroupFilter != null) {
+        filtered =
+            filtered
+                .where((g) => g.groupIds.contains(_guideGroupFilter))
+                .toList();
+      }
     }
 
     return Column(
       children: [
         // Filter row
-        if (missions.isNotEmpty || availableGroups.isNotEmpty)
+        if (widget.groupId == null && (missions.isNotEmpty || availableGroups.isNotEmpty))
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -1115,6 +1131,24 @@ class _ChatPageState extends State<ChatPage>
               Navigator.pop(ctx);
             },
           ),
+    );
+  }
+
+  Widget _buildDirectGroupChat() {
+    final group = _allGroups.firstWhere(
+      (g) => g.id == widget.groupId,
+      orElse:
+          () => ChatEntity(
+            id: widget.groupId!,
+            title: 'Grupo',
+            subtitle: '',
+            unreadCount: 0,
+          ),
+    );
+
+    return ChatDetailPage(
+      chat: group,
+      showAppBar: false,
     );
   }
 

@@ -70,7 +70,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
             state.maybeWhen(
-              loaded: (profile, _, __, ___) {
+              loaded: (profile, _, __, ___, ____, _____) {
                 if (!_isInitialized) {
                   setState(() {
                     _tags = List<String>.from(
@@ -93,7 +93,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
           },
           builder: (context, state) {
             return state.maybeWhen(
-              loaded: (profile, _, __, ___) {
+              loaded: (profile, _, __, ___, ____, _____) {
                 return Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(

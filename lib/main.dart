@@ -151,7 +151,17 @@ class AgroBravoApp extends StatelessWidget {
               ),
             ),
             locale: kDebugMode && kIsWeb ? DevicePreview.locale(context) : null,
-            builder: kDebugMode && kIsWeb ? DevicePreview.appBuilder : null,
+            builder: (context, child) {
+              Widget app = GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: child!,
+              );
+              if (kDebugMode && kIsWeb) {
+                app = DevicePreview.appBuilder(context, app);
+              }
+              return app;
+            },
             routerConfig: appRouter,
           );
         },

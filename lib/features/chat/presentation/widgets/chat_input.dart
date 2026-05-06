@@ -182,6 +182,8 @@ class _ChatInputState extends State<ChatInput> {
                               color: Theme.of(context).hintColor,
                             ),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 12,

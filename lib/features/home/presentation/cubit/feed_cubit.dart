@@ -138,6 +138,21 @@ class FeedCubit extends Cubit<FeedState> {
     );
   }
 
+  void incrementCommentCount(String postId) {
+    state.maybeWhen(
+      loaded: (posts, canPost, missionToAlert) {
+        final updatedPosts = List<PostEntity>.from(posts);
+        final index = updatedPosts.indexWhere((p) => p.id == postId);
+        if (index == -1) return;
+        updatedPosts[index] = updatedPosts[index].copyWith(
+          commentsCount: updatedPosts[index].commentsCount + 1,
+        );
+        emit(FeedState.loaded(updatedPosts, canPost, missionToAlert: missionToAlert));
+      },
+      orElse: () {},
+    );
+  }
+
   Future<void> updatePost(
     String postId,
     List<String> images,

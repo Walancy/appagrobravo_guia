@@ -99,7 +99,10 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   @override
   Widget build(BuildContext context) {
     // Constraint height to 70% of screen
-    return SizedBox(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Container(
         decoration: BoxDecoration(
@@ -218,6 +221,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

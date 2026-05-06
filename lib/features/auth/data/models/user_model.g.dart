@@ -11,7 +11,9 @@ _UserModel _$UserModelFromJson(Map<String, dynamic> json) => _UserModel(
   email: json['email'] as String,
   nome: json['nome'] as String,
   foto: json['foto'] as String?,
-  roles: (json['tipouser'] as List<dynamic>?)?.map((e) => e as String).toList() ?? <String>[],
+  roles:
+      (json['tipouser'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      [],
 );
 
 Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>

@@ -13,6 +13,8 @@ abstract class ProfileState with _$ProfileState {
     required List<PostEntity> posts,
     required bool isMe,
     @Default(false) bool isEditing,
+    @Default(false) bool isUpdatingAvatar,
+    @Default(false) bool isUpdatingCover,
   }) = _Loaded;
   const factory ProfileState.error(String message) = _Error;
 }

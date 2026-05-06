@@ -70,6 +70,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> updateProfilePhoto(XFile file) async {
     state.maybeMap(
       loaded: (currentState) async {
+        emit(currentState.copyWith(isUpdatingAvatar: true));
         final bytes = await file.readAsBytes();
         final extension = file.path.split('.').last;
         final result = await _profileRepository.updateProfilePhoto(
@@ -77,15 +78,22 @@ class ProfileCubit extends Cubit<ProfileState> {
           extension,
         );
 
-        result.fold((error) => emit(ProfileState.error(_mapFailure(error))), (
-          newUrl,
-        ) {
-          emit(
-            currentState.copyWith(
-              profile: currentState.profile.copyWith(avatarUrl: newUrl),
-            ),
-          );
-        });
+        result.fold(
+          (error) {
+            // Em caso de erro, apenas desativa o loading para não travar a tela
+            emit(currentState.copyWith(
+              isUpdatingAvatar: false,
+            ));
+          },
+          (newUrl) {
+            emit(
+              currentState.copyWith(
+                profile: currentState.profile.copyWith(avatarUrl: newUrl),
+                isUpdatingAvatar: false,
+              ),
+            );
+          },
+        );
       },
       orElse: () {},
     );
@@ -94,6 +102,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> updateCoverPhoto(XFile file) async {
     state.maybeMap(
       loaded: (currentState) async {
+        emit(currentState.copyWith(isUpdatingCover: true));
         final bytes = await file.readAsBytes();
         final extension = file.path.split('.').last;
         final result = await _profileRepository.updateCoverPhoto(
@@ -101,15 +110,22 @@ class ProfileCubit extends Cubit<ProfileState> {
           extension,
         );
 
-        result.fold((error) => emit(ProfileState.error(_mapFailure(error))), (
-          newUrl,
-        ) {
-          emit(
-            currentState.copyWith(
-              profile: currentState.profile.copyWith(coverUrl: newUrl),
-            ),
-          );
-        });
+        result.fold(
+          (error) {
+            // Em caso de erro, apenas desativa o loading para não travar a tela
+            emit(currentState.copyWith(
+              isUpdatingCover: false,
+            ));
+          },
+          (newUrl) {
+            emit(
+              currentState.copyWith(
+                profile: currentState.profile.copyWith(coverUrl: newUrl),
+                isUpdatingCover: false,
+              ),
+            );
+          },
+        );
       },
       orElse: () {},
     );
