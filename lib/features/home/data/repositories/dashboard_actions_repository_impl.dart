@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -64,6 +65,56 @@ class DashboardActionsRepositoryImpl implements DashboardActionsRepository {
       return const Right(null);
     } catch (e) {
       return Left(Exception('Erro ao solicitar relatório: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, void>> registerExpense({
+    required String groupId,
+    required double amount,
+    required String category,
+    required String description,
+    required List<String> receiptPaths,
+  }) async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return Left(Exception('Usuário não autenticado.'));
+
+      List<String> receiptUrls = [];
+
+      // Upload files
+      for (final path in receiptPaths) {
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${path.split('/').last}';
+        final storagePath = 'comprovantes/$groupId/$userId/$fileName';
+        
+        final file = File(path);
+        
+        await _supabaseClient.storage
+            .from('files')
+            .upload(storagePath, file);
+            
+        final publicUrl = _supabaseClient.storage
+            .from('files')
+            .getPublicUrl(storagePath);
+            
+        receiptUrls.add(publicUrl);
+      }
+
+      // Insert transaction
+      await _supabaseClient.from('transacoes_financeiras').insert({
+        'grupo_id': groupId,
+        'user_id': userId,
+        'valor_gasto': amount,
+        'categoria': category,
+        'local': description,
+        'comprovantes_urls': receiptUrls,
+        'data_transacao': DateTime.now().toUtc().toIso8601String(),
+        'status': 'Pendente', // Fixed capitalization to match DB constraint
+      });
+
+      return const Right(null);
+    } catch (e) {
+      return Left(Exception('Erro ao registrar gasto: $e'));
     }
   }
 }

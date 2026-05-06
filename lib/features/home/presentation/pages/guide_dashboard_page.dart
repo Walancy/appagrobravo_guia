@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
+import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 
 class GuideDashboardPage extends StatefulWidget {
   final String groupId;
@@ -521,16 +522,30 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   }
 
   void _showRegisterExpenseModal(BuildContext context) {
-    showDialog(
+    if (_group?.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: Grupo não encontrado.')),
+      );
+      return;
+    }
+
+    showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder:
-          (context) => const Dialog(
+          (context) => Dialog(
             backgroundColor: Colors.transparent,
-            insetPadding: EdgeInsets.symmetric(horizontal: 16),
-            child: _RegisterExpenseDialog(),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _RegisterExpenseDialog(
+              groupId: _group!.id,
+              repository: getIt<DashboardActionsRepository>(),
+            ),
           ),
-    );
+    ).then((value) {
+      if (value == true) {
+        _loadData();
+      }
+    });
   }
 
   Widget _buildAvatarStackCompact() {
@@ -1342,7 +1357,13 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
 }
 
 class _RegisterExpenseDialog extends StatefulWidget {
-  const _RegisterExpenseDialog();
+  final String groupId;
+  final DashboardActionsRepository repository;
+
+  const _RegisterExpenseDialog({
+    required this.groupId,
+    required this.repository,
+  });
 
   @override
   State<_RegisterExpenseDialog> createState() => _RegisterExpenseDialogState();
@@ -1352,7 +1373,8 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Refeição';
-  String? _attachedFileName;
+  List<String> _attachedFilePaths = [];
+  bool _isLoading = false;
 
   final List<String> _categories = [
     'Refeição',
@@ -1512,118 +1534,127 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Comprovante',
+                        'Comprovante(s)',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      if (_attachedFileName != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                      if (_attachedFilePaths.isNotEmpty)
+                        Column(
+                          children: _attachedFilePaths.map((path) {
+                            final fileName = path.split('/').last;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSpacing.radiusMd,
+                                  ),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.description_outlined,
+                                      size: 20,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        fileName,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap:
+                                          () => setState(
+                                            () => _attachedFilePaths.remove(path),
+                                          ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final isCamera = await showModalBottomSheet<bool>(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder:
+                                (context) => NewPostBottomSheet(
+                                  onSourceSelected:
+                                      (camera) =>
+                                          Navigator.pop(context, camera),
+                                ),
+                          );
+
+                          if (isCamera != null) {
+                            final source =
+                                isCamera
+                                    ? ImageSource.camera
+                                    : ImageSource.gallery;
+                            try {
+                              final image = await picker.pickImage(
+                                source: source,
+                              );
+                              if (image != null) {
+                                setState(() {
+                                  _attachedFilePaths.add(image.path);
+                                });
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Erro ao selecionar arquivo.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.attach_file_rounded, size: 20),
+                        label: Text(_attachedFilePaths.isEmpty ? 'Anexar Comprovante' : 'Adicionar outro anexo'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppSpacing.radiusMd,
                             ),
-                            border: Border.all(
-                              color: AppColors.primary.withOpacity(0.3),
-                            ),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.description_outlined,
-                                size: 20,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _attachedFileName!,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap:
-                                    () => setState(
-                                      () => _attachedFileName = null,
-                                    ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 18,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final picker = ImagePicker();
-                            final isCamera = await showModalBottomSheet<bool>(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder:
-                                  (context) => NewPostBottomSheet(
-                                    onSourceSelected:
-                                        (camera) =>
-                                            Navigator.pop(context, camera),
-                                  ),
-                            );
-
-                            if (isCamera != null) {
-                              final source =
-                                  isCamera
-                                      ? ImageSource.camera
-                                      : ImageSource.gallery;
-                              try {
-                                final image = await picker.pickImage(
-                                  source: source,
-                                );
-                                if (image != null) {
-                                  setState(() {
-                                    _attachedFileName = image.name;
-                                  });
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Erro ao selecionar arquivo.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.attach_file_rounded, size: 20),
-                          label: const Text('Anexar Comprovante'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: AppColors.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusMd,
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -1631,14 +1662,56 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Gasto registrado com sucesso!'),
-                  ),
-                );
-              },
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      if (_amountController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Informe um valor válido')),
+                        );
+                        return;
+                      }
+
+                      final amountText = _amountController.text.replaceAll(',', '.');
+                      final amount = double.tryParse(amountText) ?? 0.0;
+                      
+                      if (amount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Informe um valor válido')),
+                        );
+                        return;
+                      }
+
+                      setState(() => _isLoading = true);
+
+                      final result = await widget.repository.registerExpense(
+                        groupId: widget.groupId,
+                        amount: amount,
+                        category: _selectedCategory,
+                        description: _descriptionController.text.trim(),
+                        receiptPaths: _attachedFilePaths,
+                      );
+
+                      if (mounted) {
+                        setState(() => _isLoading = false);
+                        
+                        result.fold(
+                          (failure) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erro: ${failure.toString().replaceAll('Exception: ', '')}')),
+                            );
+                          },
+                          (_) {
+                            Navigator.pop(context, true);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Gasto registrado com sucesso!'),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -1648,10 +1721,16 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Confirmar Registro',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Confirmar Registro',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                    ),
             ),
           ],
         ),

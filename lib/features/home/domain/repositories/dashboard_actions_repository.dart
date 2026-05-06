@@ -18,4 +18,12 @@ abstract class DashboardActionsRepository {
     required bool includeIncidents,
     required bool includeExpenses,
   });
+
+  Future<Either<Exception, void>> registerExpense({
+    required String groupId,
+    required double amount,
+    required String category,
+    required String description,
+    required List<String> receiptPaths,
+  });
 }
