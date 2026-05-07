@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 class ProfileActions extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onPublish;
+  final VoidCallback? onSaveEdit;
+  final VoidCallback? onCancelEdit;
   final bool isEditing;
   final bool isMe;
   final ConnectionStatus connectionStatus;
@@ -23,6 +25,8 @@ class ProfileActions extends StatelessWidget {
     super.key,
     required this.onEditProfile,
     required this.onPublish,
+    this.onSaveEdit,
+    this.onCancelEdit,
     this.isEditing = false,
     this.isMe = true,
     this.connectionStatus = ConnectionStatus.none,
@@ -41,16 +45,34 @@ class ProfileActions extends StatelessWidget {
       child: Row(
         children: [
           if (isMe) ...[
-            Expanded(
-              child: _ProfileActionButton(
-                label: isEditing ? 'Concluir' : 'Editar perfil',
-                icon: isEditing ? Icons.check : Icons.edit_outlined,
-                backgroundColor: AppColors.primary,
-                onPressed: onEditProfile,
+            if (isEditing) ...[
+              Expanded(
+                child: _ProfileActionButton(
+                  label: 'Cancelar',
+                  icon: Icons.close,
+                  backgroundColor: Colors.grey[200],
+                  foregroundColor: Colors.black,
+                  onPressed: onCancelEdit ?? () {},
+                ),
               ),
-            ),
-            if (!isEditing) const SizedBox(width: AppSpacing.sm),
-            if (!isEditing)
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _ProfileActionButton(
+                  label: 'Concluir',
+                  icon: Icons.check,
+                  onPressed: onSaveEdit ?? () {},
+                ),
+              ),
+            ] else ...[
+              Expanded(
+                child: _ProfileActionButton(
+                  label: 'Editar perfil',
+                  icon: Icons.edit_outlined,
+                  backgroundColor: AppColors.primary,
+                  onPressed: onEditProfile,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ProfileActionButton(
                   label: 'Publicar',
@@ -58,6 +80,7 @@ class ProfileActions extends StatelessWidget {
                   onPressed: onPublish,
                 ),
               ),
+            ],
           ] else ...[
             Expanded(child: _buildConnectionButton()),
           ],

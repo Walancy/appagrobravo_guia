@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
@@ -32,6 +34,11 @@ class _AccountDataPageState extends State<AccountDataPage> {
   final _passportController = TextEditingController();
   DateTime? _birthDate;
 
+  final _phoneMaskFormatter = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {'#': RegExp(r'[0-9]')},
+  );
+
   bool _initialized = false;
 
   @override
@@ -55,7 +62,13 @@ class _AccountDataPageState extends State<AccountDataPage> {
   void _initializeControllers(profile) {
     if (_initialized) return;
     _nameController.text = profile.name;
-    _phoneController.text = profile.phone ?? '';
+    final phoneDigits = (profile.phone ?? '').replaceAll(RegExp(r'\D'), '');
+    _phoneController.text = _phoneMaskFormatter
+        .formatEditUpdate(
+          TextEditingValue.empty,
+          TextEditingValue(text: phoneDigits),
+        )
+        .text;
     _cpfController.text = profile.cpf ?? '';
     _ssnController.text = profile.ssn ?? '';
     _zipCodeController.text = profile.zipCode ?? '';
@@ -95,7 +108,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
             state.maybeWhen(
-              loaded: (profile, _, __, ___, ____, _____) {
+              loaded: (profile, _, __, ___, ____, _____, ______, _______) {
                 _initializeControllers(profile);
               },
               orElse: () {},
@@ -103,7 +116,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
           },
           builder: (context, state) {
             return state.maybeWhen(
-              loaded: (profile, _, __, ___, ____, _____) {
+              loaded: (profile, _, __, ___, ____, _____, ______, _______) {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => FocusScope.of(context).unfocus(),
@@ -127,6 +140,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         _phoneController,
                         'Telefone',
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [_phoneMaskFormatter],
                       ),
 
                       Row(
@@ -137,6 +151,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               _cpfController,
                               'CPF',
                               keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -146,6 +161,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               _ssnController,
                               'SSN',
                               keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             ),
                           ),
                         ],
@@ -165,6 +181,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         _zipCodeController,
                         'CEP',
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       ),
                       Row(
                         children: [
@@ -198,6 +215,8 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               context,
                               _numberController,
                               'Número',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -300,6 +319,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
     TextEditingController controller,
     String label, {
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -307,6 +327,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
         label: label,
         controller: controller,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
       ),
     );
   }

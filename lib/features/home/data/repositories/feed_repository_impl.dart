@@ -812,6 +812,37 @@ class FeedRepositoryImpl implements FeedRepository {
         debugPrint('Erro ao buscar missões diretas: $e');
       }
 
+      // Fallback: MASTER/COLABORADOR veem todas as missões ativas
+      if (missions.isEmpty) {
+        try {
+          final userRes = await _supabaseClient
+              .from('users')
+              .select('tipouser')
+              .eq('id', userId)
+              .maybeSingle();
+
+          final roles = (userRes?['tipouser'] as List?)?.cast<String>() ?? [];
+          final isAdmin = roles.any((r) => r == 'MASTER' || r == 'COLABORADOR');
+
+          if (isAdmin) {
+            final allMissionsRes = await _supabaseClient
+                .from('missoes')
+                .select('id, nome, logo')
+                .isFilter('deleted_at', null);
+
+            missions = (allMissionsRes as List).map((m) {
+              return MissionEntity(
+                id: m['id'],
+                name: m['nome'] ?? 'Sem nome',
+                logo: m['logo'],
+              );
+            }).toList();
+          }
+        } catch (e) {
+          debugPrint('Erro ao buscar missões admin: $e');
+        }
+      }
+
       await _saveUserMissionsToCache(missions);
 
       return Right(missions);

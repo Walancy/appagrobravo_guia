@@ -110,7 +110,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           await _supabaseClient
               .from('users')
               .select(
-                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte',
+                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser',
               )
               .eq('id', userId)
               .single();
@@ -123,25 +123,80 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       final postsCount = (postsResponse as List).length;
 
-      // 3. Fetch Missions Count
-      final missionsResponse = await _supabaseClient
+      // 3. Fetch Missions (unique, via groups and direct participation)
+      // Step A: collect all group IDs the user belongs to
+      final participantGroupsRes = await _supabaseClient
           .from('gruposParticipantes')
-          .select('id')
+          .select('grupo_id')
           .eq('user_id', userId);
 
-      final leaderMissionsResponse = await _supabaseClient
+      final leaderGroupsRes = await _supabaseClient
           .from('lideresGrupo')
-          .select('id')
+          .select('grupo_id')
           .eq('lider_id', userId);
-          
-      final directMissionsResponse = await _supabaseClient
+
+      final allGroupIds = {
+        ...(participantGroupsRes as List).map((r) => r['grupo_id'] as String?),
+        ...(leaderGroupsRes as List).map((r) => r['grupo_id'] as String?),
+      }.where((id) => id != null).cast<String>().toList();
+
+      // Step B: get unique mission IDs from those groups
+      final Set<String> missionIdSet = {};
+      if (allGroupIds.isNotEmpty) {
+        final groupMissionsRes = await _supabaseClient
+            .from('grupos')
+            .select('missao_id')
+            .inFilter('id', allGroupIds);
+
+        for (final g in groupMissionsRes as List) {
+          final mId = g['missao_id'] as String?;
+          if (mId != null) missionIdSet.add(mId);
+        }
+      }
+
+      // Step C: fallback — direct participation
+      final directMissionsRes = await _supabaseClient
           .from('missoesParticipantes')
-          .select('id')
+          .select('missoes_id')
           .eq('user_id', userId);
 
-      final missionsCount = (missionsResponse as List).length + 
-                            (leaderMissionsResponse as List).length + 
-                            (directMissionsResponse as List).length;
+      for (final d in directMissionsRes as List) {
+        final mId = d['missoes_id'] as String?;
+        if (mId != null) missionIdSet.add(mId);
+      }
+
+      // Step D: MASTER/COLABORADOR veem todas as missões ativas (sem vínculo de grupo)
+      final userRoles = (userResponse['tipouser'] as List?)?.cast<String>() ?? [];
+      final isAdminRole = userRoles.any((r) => r == 'MASTER' || r == 'COLABORADOR');
+      if (missionIdSet.isEmpty && isAdminRole) {
+        final allMissionsRes = await _supabaseClient
+            .from('missoes')
+            .select('id')
+            .isFilter('deleted_at', null);
+
+        for (final m in allMissionsRes as List) {
+          final mId = m['id'] as String?;
+          if (mId != null) missionIdSet.add(mId);
+        }
+      }
+
+      final missionsCount = missionIdSet.length;
+
+      // Step E: fetch mission names
+      String? missionName;
+      if (missionIdSet.isNotEmpty) {
+        final missionsNamesRes = await _supabaseClient
+            .from('missoes')
+            .select('nome')
+            .inFilter('id', missionIdSet.toList());
+
+        final names = (missionsNamesRes as List)
+            .map((m) => m['nome'] as String?)
+            .whereType<String>()
+            .toList();
+
+        if (names.isNotEmpty) missionName = names.join(', ');
+      }
 
       // 4. Fetch Connections Count
       final connectionsResponse = await _supabaseClient
@@ -179,72 +234,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         }
       }
 
-      // 6. Fetch Current Mission and Group
-      String? missionName;
-
-      try {
-        final missionRes =
-            await _supabaseClient
-                .from('gruposParticipantes')
-                .select(
-                  'grupo:grupos!fk_gruposparticipantes_grupos(nome, missao:missao_id(nome))',
-                )
-                .eq('user_id', userId)
-                .limit(1)
-                .maybeSingle();
-
-        if (missionRes != null && missionRes['grupo'] != null) {
-          final g = missionRes['grupo'];
-          if (g is Map) {
-            final m = g['missao'];
-            if (m is Map) {
-              missionName = m['nome'];
-            }
-          }
-        } else {
-          final leaderRes = await _supabaseClient
-              .from('lideresGrupo')
-              .select('grupo_id')
-              .eq('lider_id', userId)
-              .limit(1)
-              .maybeSingle();
-              
-          if (leaderRes != null && leaderRes['grupo_id'] != null) {
-            final groupRes = await _supabaseClient
-                .from('grupos')
-                .select('nome, missao:missao_id(nome)')
-                .eq('id', leaderRes['grupo_id'])
-                .maybeSingle();
-            
-            if (groupRes != null) {
-              final m = groupRes['missao'];
-              if (m is Map) {
-                missionName = m['nome'];
-              }
-            }
-          }
-          
-          if (missionName == null) {
-            // Check direct mission
-            final directMissionRes = await _supabaseClient
-                .from('missoesParticipantes')
-                .select('missao:missoes_id(nome:nome_viagem)')
-                .eq('user_id', userId)
-                .limit(1)
-                .maybeSingle();
-                
-            if (directMissionRes != null && directMissionRes['missao'] != null) {
-              final m = directMissionRes['missao'];
-              if (m is Map) {
-                missionName = m['nome'];
-              }
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error fetching mission/group: $e');
-      }
-
       final profile = ProfileEntity(
         id: userResponse['id'],
         name: userResponse['nome'] ?? 'Sem nome',
@@ -279,11 +268,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
         connectionsCount: connectionsCount,
         postsCount: postsCount,
         missionsCount: missionsCount,
-        isGuide:
-            (userResponse['cargo'] as String?)?.toLowerCase().contains(
-              'guia',
-            ) ??
-            false,
+        isGuide: () {
+          final roles = (userResponse['tipouser'] as List?)?.cast<String>() ?? [];
+          return roles.any((r) => r == 'GUIA' || r == 'COLABORADOR' || r == 'MASTER');
+        }(),
         connectionStatus: connectionStatus,
       );
 

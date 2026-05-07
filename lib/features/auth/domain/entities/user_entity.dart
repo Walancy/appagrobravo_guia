@@ -10,6 +10,7 @@ abstract class UserEntity with _$UserEntity {
     required String name,
     String? avatarUrl,
     required List<String> roles, // Mapped from 'tipouser'
+    @Default(false) bool isFirstAccess,
   }) = _UserEntity;
 
   const UserEntity._();

@@ -56,6 +56,31 @@ class ItineraryCubit extends Cubit<ItineraryState> {
     );
   }
 
+  Future<void> refreshItinerary(String groupId) async {
+    final groupResult = await _repository.getGroupDetails(groupId);
+
+    groupResult.fold(
+      (failure) => emit(ItineraryState.error(_mapFailure(failure))),
+      (group) async {
+        final itemsResult = await _repository.getItinerary(groupId);
+
+        itemsResult.fold(
+          (failure) => emit(ItineraryState.error(_mapFailure(failure))),
+          (items) async {
+            final travelResult = await _repository.getTravelTimes(groupId);
+            final travelTimes = travelResult.getOrElse(() => []);
+
+            final pendingDocsResult = await _repository
+                .getUserPendingDocuments();
+            final pendingDocs = pendingDocsResult.getOrElse(() => []);
+
+            emit(ItineraryState.loaded(group, items, travelTimes, pendingDocs));
+          },
+        );
+      },
+    );
+  }
+
   Future<void> loadUserItinerary() async {
     emit(const ItineraryState.loading());
     final userGroupResult = await _repository.getUserGroupId();

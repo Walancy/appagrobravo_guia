@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/components/primary_button.dart';
@@ -13,33 +14,27 @@ class LoginForm extends StatefulWidget {
   final VoidCallback onForgotPasswordNavigation;
   final VoidCallback
   onLoginNavigation; // Navegação para Login (ex: sucesso -> login)
-  final VoidCallback onRegisterNavigation; // Navegação para Registro
-
-  // Ações de Submissão com Dados
   final void Function(String email, String password, bool rememberMe)?
   onLoginAction;
-  final void Function(
-    String name,
-    String email,
-    String password,
-    String confirmPassword,
-  )?
-  onRegisterAction;
   final void Function(String email)? onRecoverPasswordAction;
   final void Function(String password, String confirmPassword)?
   onResetPasswordAction;
+  final void Function(String code)? onVerifyOtpAction;
+  final void Function(String password, String confirmPassword)?
+  onCreatePasswordAction;
   final String? errorMessage; // Nova prop para erros
+
 
   const LoginForm({
     super.key,
     required this.authMode,
     required this.onForgotPasswordNavigation,
     required this.onLoginNavigation,
-    required this.onRegisterNavigation,
     this.onLoginAction,
-    this.onRegisterAction,
     this.onRecoverPasswordAction,
     this.onResetPasswordAction,
+    this.onVerifyOtpAction,
+    this.onCreatePasswordAction,
     this.errorMessage,
   });
 
@@ -53,6 +48,7 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _otpController = TextEditingController();
 
   // State
   bool _rememberMe = false;
@@ -89,6 +85,7 @@ class _LoginFormState extends State<LoginForm> {
     _passwordController.dispose();
     _nameController.dispose();
     _confirmPasswordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -139,10 +136,12 @@ class _LoginFormState extends State<LoginForm> {
     switch (widget.authMode) {
       case AuthMode.login:
         return _buildLoginContent();
-      case AuthMode.register:
-        return _buildRegisterContent();
       case AuthMode.forgotPassword:
         return _buildForgotPasswordContent();
+      case AuthMode.otpVerification:
+        return _buildOtpVerificationContent();
+      case AuthMode.createPassword:
+        return _buildCreatePasswordContent();
       case AuthMode.resetPassword:
         return _buildResetPasswordContent();
       case AuthMode.success:
@@ -218,25 +217,47 @@ class _LoginFormState extends State<LoginForm> {
     ];
   }
 
-  List<Widget> _buildRegisterContent() {
+  List<Widget> _buildOtpVerificationContent() {
     return [
-      AppTextField(
-        isLightModeOnDarkBackground: true,
-        label: 'Nome e sobrenome:',
-        hint: 'Seu nome e sobrenome',
-        controller: _nameController,
+      Text(
+        'Insira o código enviado para o seu e-mail.',
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.surface,
+          fontSize: 14,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
         isLightModeOnDarkBackground: true,
-        label: 'E-mail:',
-        hint: 'example@gmail.com',
-        controller: _emailController,
+        label: 'Código:',
+        hint: '123456',
+        controller: _otpController,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      ),
+      const SizedBox(height: AppSpacing.md),
+      PrimaryButton(
+        label: 'Verificar código',
+        onPressed: () {
+          widget.onVerifyOtpAction?.call(_otpController.text);
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildCreatePasswordContent() {
+    return [
+      Text(
+        'Para continuar, crie uma senha para sua conta.',
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.surface,
+          fontSize: 14,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
         isLightModeOnDarkBackground: true,
-        label: 'Senha:',
+        label: 'Nova senha:',
         hint: '**********',
         obscureText: _obscurePassword,
         controller: _passwordController,
@@ -251,52 +272,11 @@ class _LoginFormState extends State<LoginForm> {
         controller: _confirmPasswordController,
         suffixIcon: _buildVisibilityIcon(false),
       ),
-      const SizedBox(height: AppSpacing.sm),
-      Row(
-        children: [
-          _buildCheckbox(
-            value: _termsAccepted,
-            onChanged: (v) => setState(() => _termsAccepted = v ?? false),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _termsAccepted = !_termsAccepted),
-              child: RichText(
-                text: TextSpan(
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.surface,
-                    fontSize: 13,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Ao criar, você concorda com '),
-                    TextSpan(
-                      text: 'nossos termos e condições',
-                      style: const TextStyle(
-                        decoration: TextDecoration.underline,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       const SizedBox(height: AppSpacing.md),
       PrimaryButton(
-        label: 'Criar',
+        label: 'Criar senha',
         onPressed: () {
-          if (!_termsAccepted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Aceite os termos para continuar')),
-            );
-            return;
-          }
-          widget.onRegisterAction?.call(
-            _nameController.text,
-            _emailController.text,
+          widget.onCreatePasswordAction?.call(
             _passwordController.text,
             _confirmPasswordController.text,
           );

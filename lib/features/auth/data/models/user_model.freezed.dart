@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserModel {
 
- String get id; String get email; String get nome; String? get foto;@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> get roles;
+ String get id; String get email; String get nome; String? get foto;@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> get roles;@JsonKey(name: 'first_access', defaultValue: false) bool get isFirstAccess;
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserModelCopyWith<UserModel> get copyWith => _$UserModelCopyWithImpl<UserModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.nome, nome) || other.nome == nome)&&(identical(other.foto, foto) || other.foto == foto)&&const DeepCollectionEquality().equals(other.roles, roles));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.nome, nome) || other.nome == nome)&&(identical(other.foto, foto) || other.foto == foto)&&const DeepCollectionEquality().equals(other.roles, roles)&&(identical(other.isFirstAccess, isFirstAccess) || other.isFirstAccess == isFirstAccess));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,email,nome,foto,const DeepCollectionEquality().hash(roles));
+int get hashCode => Object.hash(runtimeType,id,email,nome,foto,const DeepCollectionEquality().hash(roles),isFirstAccess);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, email: $email, nome: $nome, foto: $foto, roles: $roles)';
+  return 'UserModel(id: $id, email: $email, nome: $nome, foto: $foto, roles: $roles, isFirstAccess: $isFirstAccess)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserModelCopyWith<$Res>  {
   factory $UserModelCopyWith(UserModel value, $Res Function(UserModel) _then) = _$UserModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles
+ String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles,@JsonKey(name: 'first_access', defaultValue: false) bool isFirstAccess
 });
 
 
@@ -65,14 +65,15 @@ class _$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? nome = null,Object? foto = freezed,Object? roles = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? nome = null,Object? foto = freezed,Object? roles = null,Object? isFirstAccess = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,nome: null == nome ? _self.nome : nome // ignore: cast_nullable_to_non_nullable
 as String,foto: freezed == foto ? _self.foto : foto // ignore: cast_nullable_to_non_nullable
 as String?,roles: null == roles ? _self.roles : roles // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,isFirstAccess: null == isFirstAccess ? _self.isFirstAccess : isFirstAccess // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles, @JsonKey(name: 'first_access', defaultValue: false)  bool isFirstAccess)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
+return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles,_that.isFirstAccess);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles, @JsonKey(name: 'first_access', defaultValue: false)  bool isFirstAccess)  $default,) {final _that = this;
 switch (_that) {
 case _UserModel():
-return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
+return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles,_that.isFirstAccess);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +199,10 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String nome,  String? foto, @JsonKey(name: 'tipouser', defaultValue: <String>[])  List<String> roles, @JsonKey(name: 'first_access', defaultValue: false)  bool isFirstAccess)?  $default,) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
+return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles,_that.isFirstAccess);case _:
   return null;
 
 }
@@ -213,7 +214,7 @@ return $default(_that.id,_that.email,_that.nome,_that.foto,_that.roles);case _:
 @JsonSerializable()
 
 class _UserModel extends UserModel {
-  const _UserModel({required this.id, required this.email, required this.nome, this.foto, @JsonKey(name: 'tipouser', defaultValue: <String>[]) required final  List<String> roles}): _roles = roles,super._();
+  const _UserModel({required this.id, required this.email, required this.nome, this.foto, @JsonKey(name: 'tipouser', defaultValue: <String>[]) required final  List<String> roles, @JsonKey(name: 'first_access', defaultValue: false) required this.isFirstAccess}): _roles = roles,super._();
   factory _UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
 @override final  String id;
@@ -227,6 +228,7 @@ class _UserModel extends UserModel {
   return EqualUnmodifiableListView(_roles);
 }
 
+@override@JsonKey(name: 'first_access', defaultValue: false) final  bool isFirstAccess;
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.nome, nome) || other.nome == nome)&&(identical(other.foto, foto) || other.foto == foto)&&const DeepCollectionEquality().equals(other._roles, _roles));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.nome, nome) || other.nome == nome)&&(identical(other.foto, foto) || other.foto == foto)&&const DeepCollectionEquality().equals(other._roles, _roles)&&(identical(other.isFirstAccess, isFirstAccess) || other.isFirstAccess == isFirstAccess));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,email,nome,foto,const DeepCollectionEquality().hash(_roles));
+int get hashCode => Object.hash(runtimeType,id,email,nome,foto,const DeepCollectionEquality().hash(_roles),isFirstAccess);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, email: $email, nome: $nome, foto: $foto, roles: $roles)';
+  return 'UserModel(id: $id, email: $email, nome: $nome, foto: $foto, roles: $roles, isFirstAccess: $isFirstAccess)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class _$UserModelCopyWith<$Res> implements $UserModelCopyWith<$Re
   factory _$UserModelCopyWith(_UserModel value, $Res Function(_UserModel) _then) = __$UserModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles
+ String id, String email, String nome, String? foto,@JsonKey(name: 'tipouser', defaultValue: <String>[]) List<String> roles,@JsonKey(name: 'first_access', defaultValue: false) bool isFirstAccess
 });
 
 
@@ -278,14 +280,15 @@ class __$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? nome = null,Object? foto = freezed,Object? roles = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? nome = null,Object? foto = freezed,Object? roles = null,Object? isFirstAccess = null,}) {
   return _then(_UserModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,nome: null == nome ? _self.nome : nome // ignore: cast_nullable_to_non_nullable
 as String,foto: freezed == foto ? _self.foto : foto // ignore: cast_nullable_to_non_nullable
 as String?,roles: null == roles ? _self._roles : roles // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,isFirstAccess: null == isFirstAccess ? _self.isFirstAccess : isFirstAccess // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

@@ -22,7 +22,13 @@ class AuthCubit extends Cubit<AuthState> {
     final userOption = await _authRepository.getCurrentUser();
     userOption.fold(
       () => emit(const AuthState.unauthenticated()),
-      (user) => emit(AuthState.authenticated(user)),
+      (user) {
+        if (user.isFirstAccess) {
+          emit(AuthState.requireFirstAccessPasswordChange(user));
+        } else {
+          emit(AuthState.authenticated(user));
+        }
+      },
     );
   }
 
@@ -50,7 +56,13 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold(
       (error) =>
           emit(AuthState.error(error.toString().replaceAll('Exception: ', ''))),
-      (user) => emit(AuthState.authenticated(user)),
+      (user) {
+        if (user.isFirstAccess) {
+          emit(AuthState.requireFirstAccessPasswordChange(user));
+        } else {
+          emit(AuthState.authenticated(user));
+        }
+      },
     );
   }
 
@@ -99,7 +111,16 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> updatePassword(String password, String confirmPassword) async {
+  Future<void> verifyRecoveryCode(String email, String code) async {
+    emit(const AuthState.loading());
+    final result = await _authRepository.verifyOTP(email, code);
+    result.fold(
+      (error) => emit(AuthState.error(error.toString())),
+      (_) => emit(const AuthState.otpVerified()),
+    );
+  }
+
+  Future<void> updatePassword(String password, String confirmPassword, {bool isFirstAccess = false}) async {
     if (password != confirmPassword) {
       emit(const AuthState.error('As senhas não conferem.'));
       return;
@@ -112,9 +133,20 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(const AuthState.loading());
     final result = await _authRepository.updatePassword(password);
-    result.fold(
-      (error) => emit(AuthState.error(error.toString())),
-      (_) => emit(const AuthState.passwordUpdated()),
+    await result.fold(
+      (error) async => emit(AuthState.error(error.toString())),
+      (_) async {
+        if (isFirstAccess) {
+           final userOption = await _authRepository.getCurrentUser();
+           await userOption.fold(
+             () async {}, 
+             (user) async {
+               await _authRepository.updateFirstAccess(user.id, false);
+             }
+           );
+        }
+        emit(const AuthState.passwordUpdated());
+      },
     );
   }
 

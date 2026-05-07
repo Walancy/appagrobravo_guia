@@ -71,6 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
           nome: metadata['nome'] as String? ?? email.split('@').first,
           roles: (metadata['tipouser'] as List?)?.cast<String>() ?? [],
           foto: null,
+          isFirstAccess: false,
         );
       }
       await _saveUserToPreferences(userModel);
@@ -127,6 +128,7 @@ class AuthRepositoryImpl implements AuthRepository {
         nome: name,
         roles: [userType],
         foto: null,
+        isFirstAccess: false,
       );
 
       // Cache this basic model as well so subsequent immediate offline starts have something
@@ -180,6 +182,7 @@ class AuthRepositoryImpl implements AuthRepository {
         nome: metadata['nome'] as String? ?? (user.email ?? '').split('@').first,
         roles: (metadata['tipouser'] as List?)?.cast<String>() ?? [],
         foto: null,
+        isFirstAccess: false,
       );
       return some(fallbackModel.toEntity());
     } catch (e) {
@@ -215,6 +218,39 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(Exception(e.message));
     } catch (e) {
       return Left(Exception('Erro ao atualizar a senha.'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, void>> verifyOTP(String email, String token) async {
+    try {
+      final res = await _supabaseClient.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.recovery,
+      );
+      if (res.user != null) {
+        return const Right(null);
+      } else {
+        return Left(Exception('Token inválido ou expirado.'));
+      }
+    } on AuthException catch (e) {
+      return Left(Exception(e.message));
+    } catch (e) {
+      return Left(Exception('Erro ao verificar código.'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, void>> updateFirstAccess(String userId, bool isFirstAccess) async {
+    try {
+      await _supabaseClient.from('users').update({
+        'first_access': isFirstAccess,
+      }).eq('id', userId);
+      return const Right(null);
+    } catch (e) {
+      log('Erro ao atualizar primeiro acesso: $e');
+      return Left(Exception('Erro ao atualizar primeiro acesso.'));
     }
   }
 

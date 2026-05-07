@@ -12,6 +12,7 @@ abstract class UserModel with _$UserModel {
     required String nome,
     String? foto,
     @JsonKey(name: 'tipouser', defaultValue: <String>[]) required List<String> roles,
+    @JsonKey(name: 'first_access', defaultValue: false) required bool isFirstAccess,
   }) = _UserModel;
 
   const UserModel._();
@@ -25,5 +26,6 @@ abstract class UserModel with _$UserModel {
     name: nome,
     avatarUrl: foto,
     roles: roles,
+    isFirstAccess: isFirstAccess,
   );
 }

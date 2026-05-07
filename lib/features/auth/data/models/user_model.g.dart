@@ -14,6 +14,7 @@ _UserModel _$UserModelFromJson(Map<String, dynamic> json) => _UserModel(
   roles:
       (json['tipouser'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       [],
+  isFirstAccess: json['first_access'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>
@@ -23,4 +24,5 @@ Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>
       'nome': instance.nome,
       'foto': instance.foto,
       'tipouser': instance.roles,
+      'first_access': instance.isFirstAccess,
     };

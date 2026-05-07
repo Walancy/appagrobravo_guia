@@ -287,24 +287,29 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return Left(Exception('Usuário não autenticado'));
 
-      var response =
+      final participantResponse =
           await _supabaseClient
               .from('gruposParticipantes')
               .select('grupo_id')
               .eq('user_id', userId)
-              .maybeSingle();
+              .limit(1);
 
-      if (response == null) {
-        response = await _supabaseClient
+      String? groupId;
+
+      if (participantResponse is List && participantResponse.isNotEmpty) {
+        groupId = participantResponse.first['grupo_id'] as String?;
+      }
+
+      if (groupId == null) {
+        final leaderResponse = await _supabaseClient
             .from('lideresGrupo')
             .select('grupo_id')
             .eq('lider_id', userId)
-            .maybeSingle();
-      }
+            .limit(1);
 
-      String? groupId;
-      if (response != null) {
-        groupId = response['grupo_id'] as String?;
+        if (leaderResponse is List && leaderResponse.isNotEmpty) {
+          groupId = leaderResponse.first['grupo_id'] as String?;
+        }
       }
 
       await _saveUserGroupIdToCache(groupId);

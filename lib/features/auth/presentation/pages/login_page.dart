@@ -30,6 +30,7 @@ class _LoginPageState extends State<LoginPage>
   late Animation<Offset> _formSlideAnimation;
 
   late AuthMode _authMode;
+  String _recoveryEmail = '';
 
   @override
   void initState() {
@@ -105,12 +106,14 @@ class _LoginPageState extends State<LoginPage>
     switch (_authMode) {
       case AuthMode.login:
         return 'Login';
-      case AuthMode.register:
-        return 'Criar conta';
+      case AuthMode.otpVerification:
+        return 'Verificação de código';
+      case AuthMode.createPassword:
+        return 'Criar nova senha';
       case AuthMode.forgotPassword:
         return 'Recuperação';
       case AuthMode.resetPassword:
-        return 'Nova senha';
+        return 'Redefinir senha';
       case AuthMode.success:
         return 'Sucesso!';
       case AuthMode.emailVerification:
@@ -146,7 +149,13 @@ class _LoginPageState extends State<LoginPage>
             // Feedback agora é exibido apenas via texto vermelho noLoginForm
           },
           passwordResetEmailSent: () {
-            _switchMode(AuthMode.emailVerification);
+            _switchMode(AuthMode.otpVerification);
+          },
+          otpVerified: () {
+            _switchMode(AuthMode.resetPassword);
+          },
+          requireFirstAccessPasswordChange: (user) {
+            _switchMode(AuthMode.createPassword);
           },
           passwordRecovery: () {
             _switchMode(AuthMode.resetPassword);
@@ -196,8 +205,7 @@ class _LoginPageState extends State<LoginPage>
                   return const SizedBox.shrink();
 
                 final showSocials =
-                    _authMode == AuthMode.login ||
-                    _authMode == AuthMode.register;
+                    _authMode == AuthMode.login;
 
                 return Align(
                   alignment: Alignment.bottomCenter,
@@ -272,8 +280,6 @@ class _LoginPageState extends State<LoginPage>
                                                 ),
                                             onLoginNavigation: () =>
                                                 _switchMode(AuthMode.login),
-                                            onRegisterNavigation: () =>
-                                                _switchMode(AuthMode.register),
                                             onLoginAction:
                                                 (email, password, rememberMe) {
                                                   context
@@ -284,26 +290,18 @@ class _LoginPageState extends State<LoginPage>
                                                         rememberMe: rememberMe,
                                                       );
                                                 },
-                                            onRegisterAction:
-                                                (
-                                                  name,
-                                                  email,
-                                                  password,
-                                                  confirm,
-                                                ) {
-                                                  context
-                                                      .read<AuthCubit>()
-                                                      .register(
-                                                        name,
-                                                        email,
-                                                        password,
-                                                        confirm,
-                                                      );
-                                                },
                                             onRecoverPasswordAction: (email) {
+                                              setState(() {
+                                                _recoveryEmail = email;
+                                              });
                                               context
                                                   .read<AuthCubit>()
                                                   .recoverPassword(email);
+                                            },
+                                            onVerifyOtpAction: (code) {
+                                              context
+                                                  .read<AuthCubit>()
+                                                  .verifyRecoveryCode(_recoveryEmail, code);
                                             },
                                             onResetPasswordAction:
                                                 (password, confirm) {
@@ -312,6 +310,16 @@ class _LoginPageState extends State<LoginPage>
                                                       .updatePassword(
                                                         password,
                                                         confirm,
+                                                      );
+                                                },
+                                            onCreatePasswordAction:
+                                                (password, confirm) {
+                                                  context
+                                                      .read<AuthCubit>()
+                                                      .updatePassword(
+                                                        password,
+                                                        confirm,
+                                                        isFirstAccess: true,
                                                       );
                                                 },
                                           ),
@@ -389,17 +397,7 @@ class _LoginPageState extends State<LoginPage>
   Widget _buildFooterLink() {
     switch (_authMode) {
       case AuthMode.login:
-        return _buildTextLink(
-          'Não possui uma conta? ',
-          'Crie uma',
-          () => _switchMode(AuthMode.register),
-        );
-      case AuthMode.register:
-        return _buildTextLink(
-          'Já possui uma conta? ',
-          'Faça login',
-          () => _switchMode(AuthMode.login),
-        );
+        return const SizedBox.shrink();
       case AuthMode.forgotPassword:
         return _buildSingleLink(
           'Voltar para login',
@@ -407,6 +405,8 @@ class _LoginPageState extends State<LoginPage>
         );
       case AuthMode.resetPassword:
         return _buildSingleLink('Cancelar', () => _switchMode(AuthMode.login));
+      case AuthMode.otpVerification:
+      case AuthMode.createPassword:
       case AuthMode.success:
       case AuthMode.emailVerification:
         return const SizedBox.shrink();

@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/home/domain/entities/post_entity.dart';
 
@@ -15,6 +16,8 @@ abstract class ProfileState with _$ProfileState {
     @Default(false) bool isEditing,
     @Default(false) bool isUpdatingAvatar,
     @Default(false) bool isUpdatingCover,
+    @JsonKey(includeFromJson: false, includeToJson: false) XFile? pendingAvatar,
+    @JsonKey(includeFromJson: false, includeToJson: false) XFile? pendingCover,
   }) = _Loaded;
   const factory ProfileState.error(String message) = _Error;
 }

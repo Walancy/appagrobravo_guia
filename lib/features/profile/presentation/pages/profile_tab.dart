@@ -230,7 +230,7 @@ class _ProfileTabState extends State<ProfileTab> {
               initial: () => const SizedBox.shrink(),
               loading: () => const ProfileShimmer(),
               error: (message) => Center(child: Text(message)),
-              loaded: (profile, posts, isMe, isEditing, isUpdatingAvatar, isUpdatingCover) {
+              loaded: (profile, posts, isMe, isEditing, isUpdatingAvatar, isUpdatingCover, pendingAvatar, pendingCover) {
                 Future<void> pickAndUploadImage(bool isAvatar) async {
                   final picker = ImagePicker();
                   final source = await showModalBottomSheet<ImageSource>(
@@ -249,9 +249,9 @@ class _ProfileTabState extends State<ProfileTab> {
                     final image = await picker.pickImage(source: source);
                     if (image != null && context.mounted) {
                       if (isAvatar) {
-                        context.read<ProfileCubit>().updateProfilePhoto(image);
+                        context.read<ProfileCubit>().setPendingAvatar(image);
                       } else {
-                        context.read<ProfileCubit>().updateCoverPhoto(image);
+                        context.read<ProfileCubit>().setPendingCover(image);
                       }
                     }
                   }
@@ -297,6 +297,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       ProfileHeaderCover(
                         coverUrl: profile.coverUrl,
                         avatarUrl: profile.avatarUrl,
+                        pendingAvatar: pendingAvatar,
+                        pendingCover: pendingCover,
                         isMe: isMe,
                         isEditing: isEditing,
                         isUpdatingAvatar: isUpdatingAvatar,
@@ -359,6 +361,8 @@ class _ProfileTabState extends State<ProfileTab> {
                             ),
                         onEditProfile:
                             () => context.read<ProfileCubit>().toggleEditing(),
+                        onSaveEdit: () => context.read<ProfileCubit>().saveChanges(),
+                        onCancelEdit: () => context.read<ProfileCubit>().cancelEditing(),
                         onPublish: () => handleNewPost(context),
                         isEditing: isEditing,
                         phone: profile.phone,

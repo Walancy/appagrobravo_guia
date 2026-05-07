@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/assets.gen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileHeaderCover extends StatelessWidget {
   final String? coverUrl;
   final String? avatarUrl;
+  final XFile? pendingAvatar;
+  final XFile? pendingCover;
   final bool isMe;
   final bool isEditing;
   final bool isUpdatingAvatar;
@@ -18,6 +22,8 @@ class ProfileHeaderCover extends StatelessWidget {
     super.key,
     this.coverUrl,
     this.avatarUrl,
+    this.pendingAvatar,
+    this.pendingCover,
     this.isMe = false,
     this.isEditing = false,
     this.isUpdatingAvatar = false,
@@ -29,6 +35,15 @@ class ProfileHeaderCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ImageProvider coverImage;
+    if (pendingCover != null) {
+      coverImage = FileImage(File(pendingCover!.path));
+    } else if (coverUrl != null) {
+      coverImage = CachedNetworkImageProvider(coverUrl!);
+    } else {
+      coverImage = Assets.images.background.provider();
+    }
+
     return SizedBox(
       height: 230, // 180 (cover) + 50 (avatar overflow)
       width: double.infinity,
@@ -43,12 +58,7 @@ class ProfileHeaderCover extends StatelessWidget {
             height: 180,
             child: Container(
               decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: coverUrl != null
-                      ? CachedNetworkImageProvider(coverUrl!)
-                      : Assets.images.background.provider(),
-                  fit: BoxFit.cover,
-                ),
+                image: DecorationImage(image: coverImage, fit: BoxFit.cover),
               ),
               child: Stack(
                 children: [
@@ -93,9 +103,10 @@ class ProfileHeaderCover extends StatelessWidget {
                   width: 110,
                   height: 110,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]
-                        : Colors.grey[100],
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[800]
+                            : Colors.grey[100],
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Theme.of(context).colorScheme.surface,
@@ -105,45 +116,7 @@ class ProfileHeaderCover extends StatelessWidget {
                   child: ClipOval(
                     child: Stack(
                       children: [
-                        (avatarUrl != null && avatarUrl!.isNotEmpty)
-                            ? CachedNetworkImage(
-                              imageUrl: avatarUrl!,
-                              fit: BoxFit.cover,
-                              height: 110,
-                              width: 110,
-                              placeholder:
-                                  (context, url) => Container(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[800]
-                                            : Colors.grey[200],
-                                  ),
-                              errorWidget: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 60,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[600]
-                                            : Colors.grey,
-                                  ),
-                                );
-                              },
-                            )
-                            : Center(
-                              child: Icon(
-                                Icons.person,
-                                size: 60,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[600]
-                                        : Colors.grey,
-                              ),
-                            ),
+                        _buildAvatarImage(context),
                         if (isUpdatingAvatar)
                           Container(
                             color: Colors.black45,
@@ -173,6 +146,56 @@ class ProfileHeaderCover extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarImage(BuildContext context) {
+    if (pendingAvatar != null) {
+      return Image.file(
+        File(pendingAvatar!.path),
+        fit: BoxFit.cover,
+        height: 110,
+        width: 110,
+      );
+    }
+
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: avatarUrl!,
+        fit: BoxFit.cover,
+        height: 110,
+        width: 110,
+        placeholder:
+            (context, url) => Container(
+              color:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
+            ),
+        errorWidget: (context, error, stackTrace) {
+          return Center(
+            child: Icon(
+              Icons.person,
+              size: 60,
+              color:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[600]
+                      : Colors.grey,
+            ),
+          );
+        },
+      );
+    }
+
+    return Center(
+      child: Icon(
+        Icons.person,
+        size: 60,
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[600]
+                : Colors.grey,
       ),
     );
   }

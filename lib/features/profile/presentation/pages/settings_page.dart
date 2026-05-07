@@ -31,7 +31,7 @@ class SettingsPage extends StatelessWidget {
         body: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
             return state.maybeWhen(
-              loaded: (profile, _, isMe, __, ___, ____) {
+              loaded: (profile, _, isMe, __, ___, ____, _____, ______) {
                 return ListView(
                   padding: EdgeInsets.zero,
                   children: [

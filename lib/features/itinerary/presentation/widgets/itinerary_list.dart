@@ -125,7 +125,7 @@ class _ItineraryListState extends State<ItineraryList> {
     if (displayedItems.isEmpty) {
       return RefreshIndicator(
         onRefresh: () async {
-          await context.read<ItineraryCubit>().loadUserItinerary();
+          await context.read<ItineraryCubit>().refreshItinerary(widget.groupId);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -140,7 +140,7 @@ class _ItineraryListState extends State<ItineraryList> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read<ItineraryCubit>().loadUserItinerary();
+        await context.read<ItineraryCubit>().refreshItinerary(widget.groupId);
       },
       child: ListView.builder(
         controller: _scrollController,

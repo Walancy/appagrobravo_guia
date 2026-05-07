@@ -20,7 +20,9 @@ abstract class AuthRepository {
   Future<Option<UserEntity>> getCurrentUser();
 
   Future<Either<Exception, void>> resetPassword(String email);
+  Future<Either<Exception, void>> verifyOTP(String email, String token);
   Future<Either<Exception, void>> updatePassword(String newPassword);
+  Future<Either<Exception, void>> updateFirstAccess(String userId, bool isFirstAccess);
   Future<Either<Exception, void>> signInWithGoogle();
   Future<Either<Exception, void>> signInWithApple();
   Stream<AuthChangeEvent> get onAuthStateChange;

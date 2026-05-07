@@ -67,65 +67,108 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  Future<void> updateProfilePhoto(XFile file) async {
+  void setPendingAvatar(XFile file) {
     state.maybeMap(
-      loaded: (currentState) async {
-        emit(currentState.copyWith(isUpdatingAvatar: true));
-        final bytes = await file.readAsBytes();
-        final extension = file.path.split('.').last;
-        final result = await _profileRepository.updateProfilePhoto(
-          bytes,
-          extension,
-        );
-
-        result.fold(
-          (error) {
-            // Em caso de erro, apenas desativa o loading para não travar a tela
-            emit(currentState.copyWith(
-              isUpdatingAvatar: false,
-            ));
-          },
-          (newUrl) {
-            emit(
-              currentState.copyWith(
-                profile: currentState.profile.copyWith(avatarUrl: newUrl),
-                isUpdatingAvatar: false,
-              ),
-            );
-          },
-        );
+      loaded: (currentState) {
+        emit(currentState.copyWith(pendingAvatar: file));
       },
       orElse: () {},
     );
   }
 
-  Future<void> updateCoverPhoto(XFile file) async {
+  void setPendingCover(XFile file) {
     state.maybeMap(
-      loaded: (currentState) async {
-        emit(currentState.copyWith(isUpdatingCover: true));
-        final bytes = await file.readAsBytes();
-        final extension = file.path.split('.').last;
-        final result = await _profileRepository.updateCoverPhoto(
-          bytes,
-          extension,
-        );
+      loaded: (currentState) {
+        emit(currentState.copyWith(pendingCover: file));
+      },
+      orElse: () {},
+    );
+  }
 
-        result.fold(
-          (error) {
-            // Em caso de erro, apenas desativa o loading para não travar a tela
-            emit(currentState.copyWith(
-              isUpdatingCover: false,
-            ));
-          },
-          (newUrl) {
-            emit(
-              currentState.copyWith(
-                profile: currentState.profile.copyWith(coverUrl: newUrl),
+  Future<void> saveChanges() async {
+    final currentState = state.maybeMap(
+      loaded: (s) => s,
+      orElse: () => null,
+    );
+    if (currentState == null) return;
+
+    // Se não há nada para salvar, apenas desliga a edição
+    if (currentState.pendingAvatar == null && currentState.pendingCover == null) {
+      emit(currentState.copyWith(isEditing: false));
+      return;
+    }
+
+    // Upload Avatar se houver
+    if (currentState.pendingAvatar != null) {
+      state.maybeMap(
+        loaded: (s) => emit(s.copyWith(isUpdatingAvatar: true)),
+        orElse: () {},
+      );
+      final file = currentState.pendingAvatar!;
+      final bytes = await file.readAsBytes();
+      final extension = file.path.split('.').last;
+      final result = await _profileRepository.updateProfilePhoto(bytes, extension);
+      
+      result.fold(
+        (error) => emit(ProfileState.error(_mapFailure(error))),
+        (newUrl) {
+          state.maybeMap(
+            loaded: (s) {
+              emit(s.copyWith(
+                profile: s.profile.copyWith(avatarUrl: newUrl),
+                isUpdatingAvatar: false,
+                pendingAvatar: null,
+              ));
+            },
+            orElse: () {},
+          );
+        },
+      );
+    }
+
+    // Upload Cover se houver
+    if (currentState.pendingCover != null) {
+      state.maybeMap(
+        loaded: (s) => emit(s.copyWith(isUpdatingCover: true)),
+        orElse: () {},
+      );
+      final file = currentState.pendingCover!;
+      final bytes = await file.readAsBytes();
+      final extension = file.path.split('.').last;
+      final result = await _profileRepository.updateCoverPhoto(bytes, extension);
+      
+      result.fold(
+        (error) => emit(ProfileState.error(_mapFailure(error))),
+        (newUrl) {
+          state.maybeMap(
+            loaded: (s) {
+              emit(s.copyWith(
+                profile: s.profile.copyWith(coverUrl: newUrl),
                 isUpdatingCover: false,
-              ),
-            );
-          },
-        );
+                pendingCover: null,
+              ));
+            },
+            orElse: () {},
+          );
+        },
+      );
+    }
+
+    // Desliga modo edição após salvar tudo com sucesso
+    state.maybeMap(
+      loaded: (s) => emit(s.copyWith(isEditing: false)),
+      orElse: () {},
+    );
+  }
+
+  void cancelEditing() {
+    state.maybeMap(
+      loaded: (currentState) {
+        emit(currentState.copyWith(
+          isEditing: false,
+          pendingAvatar: null,
+          pendingCover: null,
+        ));
       },
       orElse: () {},
     );
@@ -134,7 +177,12 @@ class ProfileCubit extends Cubit<ProfileState> {
   void toggleEditing() {
     state.maybeMap(
       loaded: (currentState) {
-        emit(currentState.copyWith(isEditing: !currentState.isEditing));
+        if (currentState.isEditing) {
+          // Se estava editando e clicou, resetamos os pendentes ao fechar
+          cancelEditing();
+        } else {
+          emit(currentState.copyWith(isEditing: true));
+        }
       },
       orElse: () {},
     );
