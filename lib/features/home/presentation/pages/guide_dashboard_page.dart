@@ -1441,6 +1441,7 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
                           (cat) => Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: ChoiceChip(
+                              showCheckmark: false,
                               avatar: Icon(
                                 _getCategoryIcon(cat),
                                 size: 18,

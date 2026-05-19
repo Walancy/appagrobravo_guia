@@ -1,5 +1,5 @@
 name: agrobravo
-description: "A new Flutter project."
+description: "Aplicativo AgroBravo Guia — plataforma de gestão de missões e itinerários para guias e viajantes do agronegócio."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.1+2
+version: 1.1.0+3
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
@@ -56,7 +56,6 @@ dependencies:
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
   flutter_dotenv: ^6.0.0
-  device_preview: ^1.2.0
   rxdart: ^0.28.0
   mask_text_input_formatter: ^2.9.0
   currency_text_input_formatter: ^2.3.0
@@ -71,6 +70,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  device_preview: ^1.2.0  # Usado apenas em debug web (kDebugMode && kIsWeb) para preview de dispositivos
   build_runner: ^2.10.5
   injectable_generator: ^2.12.0
   freezed: ^3.2.4
@@ -133,7 +133,8 @@ flutter:
 
   assets:
     - assets/images/
-    - .env
+    # .env NÃO deve ser listado aqui — em produção, as chaves são injetadas
+    # via --dart-define-from-file=.env no comando de build, sem bundlear o arquivo.
 
 flutter_gen:
   output: lib/core/tokens/

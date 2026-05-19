@@ -19,13 +19,10 @@ import 'package:flutter/foundation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Em produção, injete as chaves via --dart-define:
-  //   flutter build ipa \
-  //     --dart-define=SUPABASE_URL=<url> \
-  //     --dart-define=SUPABASE_ANON_KEY=<key>
-  // Em desenvolvimento local, o fallback lê o .env da raiz do projeto.
-  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  // Em produção, injete as chaves via --dart-define-from-file=.env (ou --dart-define).
+  // Os nomes das constantes devem bater exatamente com as chaves do arquivo .env.
+  const supabaseUrl = String.fromEnvironment('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   String resolvedUrl = supabaseUrl;
   String resolvedAnonKey = supabaseAnonKey;

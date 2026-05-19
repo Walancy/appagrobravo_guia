@@ -46,13 +46,13 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>O AgroBravo precisa da sua localização para exibir propriedades e itinerários próximos a você.</string>
+	<string>O AgroBravo usa a sua localização no modal de emergência para compartilhar sua posição com a equipe de suporte.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>O AgroBravo precisa da sua localização para exibir propriedades e itinerários próximos a você.</string>
+	<string>O AgroBravo usa a sua localização no modal de emergência para compartilhar sua posição com a equipe de suporte.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>O AgroBravo usa a câmera para que você possa fotografar documentos e imagens de propriedades.</string>
+	<string>O AgroBravo usa a câmera para fotografar comprovantes de despesas, documentos da viagem e enviar fotos no chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>O AgroBravo acessa sua galeria para que você possa selecionar imagens de documentos e propriedades.</string>
+	<string>O AgroBravo acessa sua galeria para selecionar imagens de comprovantes, documentos e enviar fotos no chat.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>O AgroBravo pode salvar imagens na sua galeria.</string>
 </dict>
