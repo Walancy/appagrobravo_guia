@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +31,7 @@ import 'package:agrobravo/features/itinerary/presentation/widgets/emergency_moda
 import 'package:agrobravo/features/home/presentation/pages/guide_home_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/guide_dashboard_page.dart';
 import 'package:agrobravo/core/components/feed_shimmer.dart';
+import 'package:agrobravo/core/components/empty_mission_state.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
@@ -129,10 +129,7 @@ class _HomePageState extends State<HomePage> {
             extendBodyBehindAppBar: true,
             appBar: _buildHeader(context),
             body: _buildBody(),
-            bottomNavigationBar:
-                (_selectedIndex == 0 && _selectedGroupId == null)
-                    ? null
-                    : _buildBottomNav(),
+            bottomNavigationBar: _buildBottomNav(),
           ),
         ),
       ),
@@ -287,6 +284,15 @@ class _HomePageState extends State<HomePage> {
       );
     }
     if (_selectedIndex == 1) {
+      if (_selectedGroupId == null) {
+        return EmptyMissionState(
+          icon: Icons.explore_off_outlined,
+          title: 'Nenhum itinerário ativo',
+          description: 'Selecione uma missão na aba Início para visualizar o itinerário.',
+          actionLabel: 'Selecionar Missão',
+          onActionPressed: () => setState(() => _selectedIndex = 0),
+        );
+      }
       return ItineraryTab(
         key: ValueKey(_selectedGroupId),
         groupId: _selectedGroupId,
@@ -305,10 +311,31 @@ class _HomePageState extends State<HomePage> {
       );
     }
     if (_selectedIndex == 2) {
+      if (_selectedGroupId == null) {
+        return EmptyMissionState(
+          icon: Icons.chat_bubble_outline_rounded,
+          title: 'Nenhum chat ativo',
+          description: 'Selecione uma missão na aba Início para conversar com os viajantes e guias.',
+          actionLabel: 'Selecionar Missão',
+          onActionPressed: () => setState(() => _selectedIndex = 0),
+        );
+      }
       return ChatPage(groupId: _selectedGroupId);
     }
     if (_selectedIndex == 4) {
       return const ProfileTab();
+    }
+
+    if (_selectedIndex == 3) {
+      if (_selectedGroupId == null) {
+        return EmptyMissionState(
+          icon: Icons.dynamic_feed_outlined,
+          title: 'Nenhum feed ativo',
+          description: 'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
+          actionLabel: 'Selecionar Missão',
+          onActionPressed: () => setState(() => _selectedIndex = 0),
+        );
+      }
     }
 
     return BlocBuilder<FeedCubit, FeedState>(

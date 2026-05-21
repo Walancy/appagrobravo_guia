@@ -7,6 +7,7 @@ import 'package:agrobravo/features/home/presentation/cubit/guide_home_cubit.dart
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_group.dart';
 import 'package:agrobravo/features/home/presentation/widgets/guide_mission_card.dart';
 import 'package:agrobravo/features/home/presentation/widgets/groups_list_modal.dart';
+import 'package:agrobravo/core/components/empty_mission_state.dart';
 
 class GuideHomePage extends StatelessWidget {
   final Function(String)? onGroupSelected;
@@ -23,7 +24,13 @@ class GuideHomePage extends StatelessWidget {
             error: (msg) => Center(child: Text(msg)),
             loaded: (missions) {
               if (missions.isEmpty) {
-                return const Center(child: Text("Nenhuma missão encontrada."));
+                return EmptyMissionState(
+                  icon: Icons.assignment_outlined,
+                  title: 'Nenhuma missão encontrada',
+                  description: 'Você não possui missões ativas vinculadas à sua conta no momento.',
+                  actionLabel: 'Recarregar',
+                  onActionPressed: () => context.read<GuideHomeCubit>().loadMissions(),
+                );
               }
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),

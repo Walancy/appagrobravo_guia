@@ -6,6 +6,7 @@ import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/cubits/theme_cubit.dart';
+import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/auth/domain/repositories/auth_repository.dart';
@@ -30,108 +31,44 @@ class SettingsPage extends StatelessWidget {
         appBar: const AppHeader(mode: HeaderMode.back, title: 'Configurações'),
         body: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
-            return state.maybeWhen(
-              loaded: (profile, _, isMe, __, ___, ____, _____, ______) {
-                return ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _buildUserHeader(context, profile),
-                    Divider(
-                      height: 1,
-                      color: Theme.of(context).dividerColor.withOpacity(0.5),
-                    ),
-                    BlocBuilder<DocumentsCubit, DocumentsState>(
-                      builder: (context, state) {
-                        return _buildOption(
-                          context,
-                          icon: Icons.description_outlined,
-                          title: 'Meus documentos',
-                          onTap: () => context.push('/documents'),
-                          hasBadge: state.hasPendingAction,
-                        );
-                      },
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.person_outline,
-                      title: 'Dados da conta',
-                      onTap: () => context.push('/account-data'),
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.restaurant_menu_outlined,
-                      title: 'Preferências alimentares',
-                      onTap: () => context.push('/food-preferences'),
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.medical_services_outlined,
-                      title: 'Restrições médicas',
-                      onTap: () => context.push('/medical-restrictions'),
-                    ),
-                    BlocBuilder<ThemeCubit, ThemeMode>(
-                      builder: (context, mode) {
-                        final systemIsDark =
-                            MediaQuery.platformBrightnessOf(context) ==
-                            Brightness.dark;
-                        final isDark =
-                            mode == ThemeMode.dark ||
-                            (mode == ThemeMode.system && systemIsDark);
-                        return _buildOption(
-                          context,
-                          icon:
-                              isDark ? Icons.dark_mode : Icons.light_mode,
-                          title: isDark ? 'Modo Escuro' : 'Modo Claro',
-                          trailing: Switch(
-                            value: isDark,
-                            onChanged: (value) {
-                              context.read<ThemeCubit>().setThemeMode(
-                                value ? ThemeMode.dark : ThemeMode.light,
-                              );
-                            },
-                            activeColor: AppColors.primary,
-                          ),
-                          onTap: () {
-                            context.read<ThemeCubit>().setThemeMode(
-                              isDark ? ThemeMode.light : ThemeMode.dark,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.notifications_none_outlined,
-                      title: 'Preferências de notificações',
-                      onTap: () => context.push('/notification-preferences'),
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Política de privacidade',
-                      onTap: () => context.push('/privacy-policy'),
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.info_outline,
-                      title: 'Sobre nós',
-                      onTap: () => context.push('/about-us'),
-                    ),
-                    _buildOption(
-                      context,
-                      icon: Icons.logout,
-                      title: 'Sair da conta',
-                      isDestructive: true,
-                      onTap: () async {
-                        await getIt<AuthRepository>().signOut();
-                        if (context.mounted) context.go('/');
-                      },
-                    ),
-                    const SizedBox(height: 40),
-                  ],
+            return state.when(
+              initial: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (message) {
+                final fakeProfile = ProfileEntity(
+                  id: '',
+                  name: 'Usuário',
+                  avatarUrl: null,
+                  coverUrl: null,
+                  jobTitle: 'Informações indisponíveis',
+                  bio: null,
+                  missionName: null,
+                  email: null,
+                  phone: null,
+                  cpf: null,
+                  ssn: null,
+                  zipCode: null,
+                  state: null,
+                  city: null,
+                  street: null,
+                  number: null,
+                  neighborhood: null,
+                  complement: null,
+                  birthDate: null,
+                  nationality: null,
+                  passport: null,
+                  foodPreferences: const [],
+                  medicalRestrictions: const [],
+                  connectionsCount: 0,
+                  postsCount: 0,
+                  missionsCount: 0,
+                  isGuide: false,
                 );
+                return _buildSettingsContent(context, fakeProfile, hasError: true);
               },
-              orElse: () => const Center(child: CircularProgressIndicator()),
+              loaded: (profile, _, isMe, __, ___, ____, _____, ______) {
+                return _buildSettingsContent(context, profile);
+              },
             );
           },
         ),
@@ -139,7 +76,127 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildUserHeader(BuildContext context, profile) {
+  Widget _buildSettingsContent(BuildContext context, ProfileEntity profile, {bool hasError = false}) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        _buildUserHeader(context, profile, hasError: hasError),
+        Divider(
+          height: 1,
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
+        ),
+        BlocBuilder<DocumentsCubit, DocumentsState>(
+          builder: (context, state) {
+            return _buildOption(
+              context,
+              icon: Icons.description_outlined,
+              title: 'Meus documentos',
+              onTap: hasError
+                  ? () => _showOfflineWarning(context)
+                  : () => context.push('/documents'),
+              hasBadge: state.hasPendingAction,
+            );
+          },
+        ),
+        _buildOption(
+          context,
+          icon: Icons.person_outline,
+          title: 'Dados da conta',
+          onTap: hasError
+              ? () => _showOfflineWarning(context)
+              : () => context.push('/account-data'),
+        ),
+        _buildOption(
+          context,
+          icon: Icons.restaurant_menu_outlined,
+          title: 'Preferências alimentares',
+          onTap: hasError
+              ? () => _showOfflineWarning(context)
+              : () => context.push('/food-preferences'),
+        ),
+        _buildOption(
+          context,
+          icon: Icons.medical_services_outlined,
+          title: 'Restrições médicas',
+          onTap: hasError
+              ? () => _showOfflineWarning(context)
+              : () => context.push('/medical-restrictions'),
+        ),
+        BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, mode) {
+            final systemIsDark =
+                MediaQuery.platformBrightnessOf(context) ==
+                Brightness.dark;
+            final isDark =
+                mode == ThemeMode.dark ||
+                (mode == ThemeMode.system && systemIsDark);
+            return _buildOption(
+              context,
+              icon:
+                  isDark ? Icons.dark_mode : Icons.light_mode,
+              title: isDark ? 'Modo Escuro' : 'Modo Claro',
+              trailing: Switch(
+                value: isDark,
+                onChanged: (value) {
+                  context.read<ThemeCubit>().setThemeMode(
+                    value ? ThemeMode.dark : ThemeMode.light,
+                  );
+                },
+                activeColor: AppColors.primary,
+              ),
+              onTap: () {
+                context.read<ThemeCubit>().setThemeMode(
+                  isDark ? ThemeMode.light : ThemeMode.dark,
+                );
+              },
+            );
+          },
+        ),
+        _buildOption(
+          context,
+          icon: Icons.notifications_none_outlined,
+          title: 'Preferências de notificações',
+          onTap: hasError
+              ? () => _showOfflineWarning(context)
+              : () => context.push('/notification-preferences'),
+        ),
+        _buildOption(
+          context,
+          icon: Icons.privacy_tip_outlined,
+          title: 'Política de privacidade',
+          onTap: () => context.push('/privacy-policy'),
+        ),
+        _buildOption(
+          context,
+          icon: Icons.info_outline,
+          title: 'Sobre nós',
+          onTap: () => context.push('/about-us'),
+        ),
+        _buildOption(
+          context,
+          icon: Icons.logout,
+          title: 'Sair da conta',
+          isDestructive: true,
+          onTap: () async {
+            await getIt<AuthRepository>().signOut();
+            if (context.mounted) context.go('/');
+          },
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  void _showOfflineWarning(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Este recurso está temporariamente indisponível devido a falha de conexão.'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
+  Widget _buildUserHeader(BuildContext context, ProfileEntity profile, {bool hasError = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -193,33 +250,46 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  profile.missionName ?? '',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.2,
-                  ),
-                ),
-                Text(
-                  profile.email ?? '',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.2,
-                  ),
-                ),
-                Text(
-                  profile.phone ?? '',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.2,
-                  ),
-                ),
+                if (hasError)
+                  Text(
+                    'Erro ao carregar dados online',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else ...[
+                  if (profile.missionName != null && profile.missionName!.isNotEmpty)
+                    Text(
+                      profile.missionName!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        height: 1.2,
+                      ),
+                    ),
+                  if (profile.email != null && profile.email!.isNotEmpty)
+                    Text(
+                      profile.email!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        height: 1.2,
+                      ),
+                    ),
+                  if (profile.phone != null && profile.phone!.isNotEmpty)
+                    Text(
+                      profile.phone!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        height: 1.2,
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

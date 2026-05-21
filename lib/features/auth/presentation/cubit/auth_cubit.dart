@@ -54,8 +54,13 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (error) =>
-          emit(AuthState.error(error.toString().replaceAll('Exception: ', ''))),
+      (error) {
+        if (error is EmailNotConfirmedException) {
+          emit(AuthState.emailVerificationRequired(email));
+        } else {
+          emit(AuthState.error(error.toString().replaceAll('Exception: ', '')));
+        }
+      },
       (user) {
         if (user.isFirstAccess) {
           emit(AuthState.requireFirstAccessPasswordChange(user));
@@ -92,11 +97,14 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (error) =>
-          emit(AuthState.error(error.toString().replaceAll('Exception: ', ''))),
+      (error) {
+        if (error is EmailNotConfirmedException) {
+          emit(AuthState.emailVerificationRequired(email));
+        } else {
+          emit(AuthState.error(error.toString().replaceAll('Exception: ', '')));
+        }
+      },
       (user) {
-        // Could emit a specific state like "VerificationNeeded" if email confirm is on
-        // For now, assuming direct login or success message
         emit(AuthState.authenticated(user));
       },
     );
@@ -168,5 +176,14 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     await _authRepository.signOut();
     emit(const AuthState.unauthenticated());
+  }
+
+  Future<void> resendConfirmationEmail(String email) async {
+    emit(const AuthState.loading());
+    final result = await _authRepository.resendSignUpEmail(email);
+    result.fold(
+      (error) => emit(AuthState.error(error.toString().replaceAll('Exception: ', ''))),
+      (_) => emit(AuthState.emailVerificationRequired(email)),
+    );
   }
 }

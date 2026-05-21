@@ -22,9 +22,71 @@ import 'package:agrobravo/features/profile/presentation/pages/about_us_page.dart
 import 'package:agrobravo/features/profile/presentation/pages/profile_tab.dart';
 import 'package:agrobravo/features/home/presentation/pages/member_details_page.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  late final StreamSubscription<dynamic> _subscription;
+
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic _) => notifyListeners(),
+        );
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  refreshListenable: GoRouterRefreshStream(getIt<AuthCubit>().stream),
+  redirect: (context, state) {
+    final authState = getIt<AuthCubit>().state;
+
+    // Caminhos públicos que não exigem autenticação
+    final isLoggingIn = state.matchedLocation == '/' ||
+                        state.matchedLocation == '/reset-password';
+
+    final isAuthenticated = authState.maybeWhen(
+      authenticated: (_) => true,
+      orElse: () => false,
+    );
+
+    final isRequiringPasswordChange = authState.maybeWhen(
+      requireFirstAccessPasswordChange: (_) => true,
+      orElse: () => false,
+    );
+
+    // Se estiver carregando, mantém a rota atual
+    final isLoading = authState.maybeWhen(
+      loading: () => true,
+      orElse: () => false,
+    );
+    if (isLoading) return null;
+
+    if (!isAuthenticated && !isRequiringPasswordChange) {
+      // Se não estiver logado e tentar entrar em tela restrita, vai para login (/)
+      if (!isLoggingIn) {
+        return '/';
+      }
+    } else {
+      // Se estiver logado e na tela de login, vai para /home
+      if (isLoggingIn) {
+        return '/home';
+      }
+    }
+
+    return null;
+  },
+
   routes: [
     GoRoute(
       path: '/',

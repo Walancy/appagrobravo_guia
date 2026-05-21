@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,14 +15,25 @@ class LoginForm extends StatefulWidget {
   final VoidCallback onForgotPasswordNavigation;
   final VoidCallback
   onLoginNavigation; // Navegação para Login (ex: sucesso -> login)
+  final VoidCallback onRegisterNavigation; // Navegação para Registro
+
+  // Ações de Submissão com Dados
   final void Function(String email, String password, bool rememberMe)?
   onLoginAction;
+  final void Function(
+    String name,
+    String email,
+    String password,
+    String confirmPassword,
+  )?
+  onRegisterAction;
   final void Function(String email)? onRecoverPasswordAction;
   final void Function(String password, String confirmPassword)?
   onResetPasswordAction;
   final void Function(String code)? onVerifyOtpAction;
   final void Function(String password, String confirmPassword)?
   onCreatePasswordAction;
+  final void Function(String email)? onResendEmailAction;
   final String? errorMessage; // Nova prop para erros
 
 
@@ -30,11 +42,14 @@ class LoginForm extends StatefulWidget {
     required this.authMode,
     required this.onForgotPasswordNavigation,
     required this.onLoginNavigation,
+    required this.onRegisterNavigation,
     this.onLoginAction,
+    this.onRegisterAction,
     this.onRecoverPasswordAction,
     this.onResetPasswordAction,
     this.onVerifyOtpAction,
     this.onCreatePasswordAction,
+    this.onResendEmailAction,
     this.errorMessage,
   });
 
@@ -55,11 +70,25 @@ class _LoginFormState extends State<LoginForm> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _termsAccepted = false;
+  int _resendTimer = 0;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _loadRememberedCredentials();
+    if (widget.authMode == AuthMode.emailVerification) {
+      _startResendTimer(60);
+    }
+  }
+
+  @override
+  void didUpdateWidget(LoginForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.authMode != oldWidget.authMode &&
+        widget.authMode == AuthMode.emailVerification) {
+      _startResendTimer(60);
+    }
   }
 
   Future<void> _loadRememberedCredentials() async {
@@ -81,12 +110,29 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     _confirmPasswordController.dispose();
     _otpController.dispose();
     super.dispose();
+  }
+
+  void _startResendTimer([int seconds = 60]) {
+    setState(() {
+      _resendTimer = seconds;
+    });
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendTimer == 0) {
+        timer.cancel();
+      } else {
+        setState(() {
+          _resendTimer--;
+        });
+      }
+    });
   }
 
   @override
@@ -136,6 +182,8 @@ class _LoginFormState extends State<LoginForm> {
     switch (widget.authMode) {
       case AuthMode.login:
         return _buildLoginContent();
+      case AuthMode.register:
+        return _buildRegisterContent();
       case AuthMode.forgotPassword:
         return _buildForgotPasswordContent();
       case AuthMode.otpVerification:
@@ -160,6 +208,7 @@ class _LoginFormState extends State<LoginForm> {
         label: 'E-mail:',
         hint: 'example@gmail.com',
         controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
@@ -211,6 +260,95 @@ class _LoginFormState extends State<LoginForm> {
             _emailController.text,
             _passwordController.text,
             _rememberMe,
+          );
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildRegisterContent() {
+    return [
+      AppTextField(
+        isLightModeOnDarkBackground: true,
+        label: 'Nome e sobrenome:',
+        hint: 'Seu nome e sobrenome',
+        controller: _nameController,
+        textCapitalization: TextCapitalization.words,
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      AppTextField(
+        isLightModeOnDarkBackground: true,
+        label: 'E-mail:',
+        hint: 'example@gmail.com',
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      AppTextField(
+        isLightModeOnDarkBackground: true,
+        label: 'Senha:',
+        hint: '**********',
+        obscureText: _obscurePassword,
+        controller: _passwordController,
+        suffixIcon: _buildVisibilityIcon(true),
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      AppTextField(
+        isLightModeOnDarkBackground: true,
+        label: 'Confirmar senha:',
+        hint: '**********',
+        obscureText: _obscureConfirmPassword,
+        controller: _confirmPasswordController,
+        suffixIcon: _buildVisibilityIcon(false),
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Row(
+        children: [
+          _buildCheckbox(
+            value: _termsAccepted,
+            onChanged: (v) => setState(() => _termsAccepted = v ?? false),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _termsAccepted = !_termsAccepted),
+              child: RichText(
+                text: TextSpan(
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.surface,
+                    fontSize: 13,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Ao criar, você concorda com '),
+                    const TextSpan(
+                      text: 'nossos termos e condições',
+                      style: TextStyle(
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: AppSpacing.md),
+      PrimaryButton(
+        label: 'Criar',
+        onPressed: () {
+          if (!_termsAccepted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Aceite os termos para continuar')),
+            );
+            return;
+          }
+          widget.onRegisterAction?.call(
+            _nameController.text,
+            _emailController.text,
+            _passwordController.text,
+            _confirmPasswordController.text,
           );
         },
       ),
@@ -300,6 +438,7 @@ class _LoginFormState extends State<LoginForm> {
         label: 'E-mail:',
         hint: 'example@gmail.com',
         controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
       ),
       const SizedBox(height: AppSpacing.md),
       PrimaryButton(
@@ -382,9 +521,44 @@ class _LoginFormState extends State<LoginForm> {
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: AppSpacing.md),
+      if (_resendTimer > 0)
+        Text(
+          'Reenviar e-mail em ${_resendTimer}s',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.surface.withOpacity(0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        )
+      else
+        TextButton(
+          onPressed: () {
+            final email = _emailController.text.trim();
+            if (email.isNotEmpty) {
+              widget.onResendEmailAction?.call(email);
+              _startResendTimer();
+            }
+          },
+          child: Text(
+            'Reenviar e-mail de confirmação',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: const Color(0xFF00E676),
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+              decorationColor: const Color(0xFF00E676),
+            ),
+          ),
+        ),
+      const SizedBox(height: AppSpacing.md),
       PrimaryButton(
         label: 'Voltar para login',
-        onPressed: widget.onLoginNavigation,
+        onPressed: () {
+          _timer?.cancel();
+          setState(() {
+            _resendTimer = 0;
+          });
+          widget.onLoginNavigation();
+        },
       ),
     ];
   }

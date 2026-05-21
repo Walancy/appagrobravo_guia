@@ -25,5 +25,14 @@ abstract class AuthRepository {
   Future<Either<Exception, void>> updateFirstAccess(String userId, bool isFirstAccess);
   Future<Either<Exception, void>> signInWithGoogle();
   Future<Either<Exception, void>> signInWithApple();
+  Future<Either<Exception, void>> resendSignUpEmail(String email);
   Stream<AuthChangeEvent> get onAuthStateChange;
 }
+
+class EmailNotConfirmedException implements Exception {
+  final String message;
+  EmailNotConfirmedException([this.message = 'E-mail não confirmado. Verifique sua caixa de entrada.']);
+  @override
+  String toString() => message;
+}
+

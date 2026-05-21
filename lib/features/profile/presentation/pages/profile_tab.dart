@@ -229,7 +229,43 @@ class _ProfileTabState extends State<ProfileTab> {
             return state.when(
               initial: () => const SizedBox.shrink(),
               loading: () => const ProfileShimmer(),
-              error: (message) => Center(child: Text(message)),
+              error: (message) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 48,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Não foi possível carregar o perfil. Verifique sua conexão.',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.bodyLarge,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<ProfileCubit>().loadProfile(widget.userId);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                          ),
+                        ),
+                        child: Text(
+                          'Tentar Novamente',
+                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               loaded: (profile, posts, isMe, isEditing, isUpdatingAvatar, isUpdatingCover, pendingAvatar, pendingCover) {
                 Future<void> pickAndUploadImage(bool isAvatar) async {
                   final picker = ImagePicker();

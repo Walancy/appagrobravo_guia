@@ -55,7 +55,7 @@ extension AuthStatePatterns on AuthState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Authenticated value)?  authenticated,TResult Function( _Unauthenticated value)?  unauthenticated,TResult Function( _Error value)?  error,TResult Function( _PasswordResetEmailSent value)?  passwordResetEmailSent,TResult Function( _OtpVerified value)?  otpVerified,TResult Function( _PasswordRecovery value)?  passwordRecovery,TResult Function( _RequireFirstAccessPasswordChange value)?  requireFirstAccessPasswordChange,TResult Function( _PasswordUpdated value)?  passwordUpdated,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Authenticated value)?  authenticated,TResult Function( _Unauthenticated value)?  unauthenticated,TResult Function( _Error value)?  error,TResult Function( _PasswordResetEmailSent value)?  passwordResetEmailSent,TResult Function( _OtpVerified value)?  otpVerified,TResult Function( _PasswordRecovery value)?  passwordRecovery,TResult Function( _RequireFirstAccessPasswordChange value)?  requireFirstAccessPasswordChange,TResult Function( _PasswordUpdated value)?  passwordUpdated,TResult Function( _EmailVerificationRequired value)?  emailVerificationRequired,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
@@ -68,7 +68,8 @@ return passwordResetEmailSent(_that);case _OtpVerified() when otpVerified != nul
 return otpVerified(_that);case _PasswordRecovery() when passwordRecovery != null:
 return passwordRecovery(_that);case _RequireFirstAccessPasswordChange() when requireFirstAccessPasswordChange != null:
 return requireFirstAccessPasswordChange(_that);case _PasswordUpdated() when passwordUpdated != null:
-return passwordUpdated(_that);case _:
+return passwordUpdated(_that);case _EmailVerificationRequired() when emailVerificationRequired != null:
+return emailVerificationRequired(_that);case _:
   return orElse();
 
 }
@@ -86,7 +87,7 @@ return passwordUpdated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Authenticated value)  authenticated,required TResult Function( _Unauthenticated value)  unauthenticated,required TResult Function( _Error value)  error,required TResult Function( _PasswordResetEmailSent value)  passwordResetEmailSent,required TResult Function( _OtpVerified value)  otpVerified,required TResult Function( _PasswordRecovery value)  passwordRecovery,required TResult Function( _RequireFirstAccessPasswordChange value)  requireFirstAccessPasswordChange,required TResult Function( _PasswordUpdated value)  passwordUpdated,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Authenticated value)  authenticated,required TResult Function( _Unauthenticated value)  unauthenticated,required TResult Function( _Error value)  error,required TResult Function( _PasswordResetEmailSent value)  passwordResetEmailSent,required TResult Function( _OtpVerified value)  otpVerified,required TResult Function( _PasswordRecovery value)  passwordRecovery,required TResult Function( _RequireFirstAccessPasswordChange value)  requireFirstAccessPasswordChange,required TResult Function( _PasswordUpdated value)  passwordUpdated,required TResult Function( _EmailVerificationRequired value)  emailVerificationRequired,}){
 final _that = this;
 switch (_that) {
 case _Initial():
@@ -99,7 +100,8 @@ return passwordResetEmailSent(_that);case _OtpVerified():
 return otpVerified(_that);case _PasswordRecovery():
 return passwordRecovery(_that);case _RequireFirstAccessPasswordChange():
 return requireFirstAccessPasswordChange(_that);case _PasswordUpdated():
-return passwordUpdated(_that);case _:
+return passwordUpdated(_that);case _EmailVerificationRequired():
+return emailVerificationRequired(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -116,7 +118,7 @@ return passwordUpdated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Authenticated value)?  authenticated,TResult? Function( _Unauthenticated value)?  unauthenticated,TResult? Function( _Error value)?  error,TResult? Function( _PasswordResetEmailSent value)?  passwordResetEmailSent,TResult? Function( _OtpVerified value)?  otpVerified,TResult? Function( _PasswordRecovery value)?  passwordRecovery,TResult? Function( _RequireFirstAccessPasswordChange value)?  requireFirstAccessPasswordChange,TResult? Function( _PasswordUpdated value)?  passwordUpdated,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Authenticated value)?  authenticated,TResult? Function( _Unauthenticated value)?  unauthenticated,TResult? Function( _Error value)?  error,TResult? Function( _PasswordResetEmailSent value)?  passwordResetEmailSent,TResult? Function( _OtpVerified value)?  otpVerified,TResult? Function( _PasswordRecovery value)?  passwordRecovery,TResult? Function( _RequireFirstAccessPasswordChange value)?  requireFirstAccessPasswordChange,TResult? Function( _PasswordUpdated value)?  passwordUpdated,TResult? Function( _EmailVerificationRequired value)?  emailVerificationRequired,}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
@@ -129,7 +131,8 @@ return passwordResetEmailSent(_that);case _OtpVerified() when otpVerified != nul
 return otpVerified(_that);case _PasswordRecovery() when passwordRecovery != null:
 return passwordRecovery(_that);case _RequireFirstAccessPasswordChange() when requireFirstAccessPasswordChange != null:
 return requireFirstAccessPasswordChange(_that);case _PasswordUpdated() when passwordUpdated != null:
-return passwordUpdated(_that);case _:
+return passwordUpdated(_that);case _EmailVerificationRequired() when emailVerificationRequired != null:
+return emailVerificationRequired(_that);case _:
   return null;
 
 }
@@ -146,7 +149,7 @@ return passwordUpdated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( UserEntity user)?  authenticated,TResult Function()?  unauthenticated,TResult Function( String message)?  error,TResult Function()?  passwordResetEmailSent,TResult Function()?  otpVerified,TResult Function()?  passwordRecovery,TResult Function( UserEntity user)?  requireFirstAccessPasswordChange,TResult Function()?  passwordUpdated,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( UserEntity user)?  authenticated,TResult Function()?  unauthenticated,TResult Function( String message)?  error,TResult Function()?  passwordResetEmailSent,TResult Function()?  otpVerified,TResult Function()?  passwordRecovery,TResult Function( UserEntity user)?  requireFirstAccessPasswordChange,TResult Function()?  passwordUpdated,TResult Function( String email)?  emailVerificationRequired,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
@@ -158,7 +161,8 @@ return passwordResetEmailSent();case _OtpVerified() when otpVerified != null:
 return otpVerified();case _PasswordRecovery() when passwordRecovery != null:
 return passwordRecovery();case _RequireFirstAccessPasswordChange() when requireFirstAccessPasswordChange != null:
 return requireFirstAccessPasswordChange(_that.user);case _PasswordUpdated() when passwordUpdated != null:
-return passwordUpdated();case _:
+return passwordUpdated();case _EmailVerificationRequired() when emailVerificationRequired != null:
+return emailVerificationRequired(_that.email);case _:
   return orElse();
 
 }
@@ -176,7 +180,7 @@ return passwordUpdated();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( UserEntity user)  authenticated,required TResult Function()  unauthenticated,required TResult Function( String message)  error,required TResult Function()  passwordResetEmailSent,required TResult Function()  otpVerified,required TResult Function()  passwordRecovery,required TResult Function( UserEntity user)  requireFirstAccessPasswordChange,required TResult Function()  passwordUpdated,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( UserEntity user)  authenticated,required TResult Function()  unauthenticated,required TResult Function( String message)  error,required TResult Function()  passwordResetEmailSent,required TResult Function()  otpVerified,required TResult Function()  passwordRecovery,required TResult Function( UserEntity user)  requireFirstAccessPasswordChange,required TResult Function()  passwordUpdated,required TResult Function( String email)  emailVerificationRequired,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial();case _Loading():
@@ -188,7 +192,8 @@ return passwordResetEmailSent();case _OtpVerified():
 return otpVerified();case _PasswordRecovery():
 return passwordRecovery();case _RequireFirstAccessPasswordChange():
 return requireFirstAccessPasswordChange(_that.user);case _PasswordUpdated():
-return passwordUpdated();case _:
+return passwordUpdated();case _EmailVerificationRequired():
+return emailVerificationRequired(_that.email);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,7 +210,7 @@ return passwordUpdated();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( UserEntity user)?  authenticated,TResult? Function()?  unauthenticated,TResult? Function( String message)?  error,TResult? Function()?  passwordResetEmailSent,TResult? Function()?  otpVerified,TResult? Function()?  passwordRecovery,TResult? Function( UserEntity user)?  requireFirstAccessPasswordChange,TResult? Function()?  passwordUpdated,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( UserEntity user)?  authenticated,TResult? Function()?  unauthenticated,TResult? Function( String message)?  error,TResult? Function()?  passwordResetEmailSent,TResult? Function()?  otpVerified,TResult? Function()?  passwordRecovery,TResult? Function( UserEntity user)?  requireFirstAccessPasswordChange,TResult? Function()?  passwordUpdated,TResult? Function( String email)?  emailVerificationRequired,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
@@ -217,7 +222,8 @@ return passwordResetEmailSent();case _OtpVerified() when otpVerified != null:
 return otpVerified();case _PasswordRecovery() when passwordRecovery != null:
 return passwordRecovery();case _RequireFirstAccessPasswordChange() when requireFirstAccessPasswordChange != null:
 return requireFirstAccessPasswordChange(_that.user);case _PasswordUpdated() when passwordUpdated != null:
-return passwordUpdated();case _:
+return passwordUpdated();case _EmailVerificationRequired() when emailVerificationRequired != null:
+return emailVerificationRequired(_that.email);case _:
   return null;
 
 }
@@ -664,5 +670,71 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _EmailVerificationRequired implements AuthState {
+  const _EmailVerificationRequired(this.email);
+  
+
+ final  String email;
+
+/// Create a copy of AuthState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$EmailVerificationRequiredCopyWith<_EmailVerificationRequired> get copyWith => __$EmailVerificationRequiredCopyWithImpl<_EmailVerificationRequired>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmailVerificationRequired&&(identical(other.email, email) || other.email == email));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,email);
+
+@override
+String toString() {
+  return 'AuthState.emailVerificationRequired(email: $email)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$EmailVerificationRequiredCopyWith<$Res> implements $AuthStateCopyWith<$Res> {
+  factory _$EmailVerificationRequiredCopyWith(_EmailVerificationRequired value, $Res Function(_EmailVerificationRequired) _then) = __$EmailVerificationRequiredCopyWithImpl;
+@useResult
+$Res call({
+ String email
+});
+
+
+
+
+}
+/// @nodoc
+class __$EmailVerificationRequiredCopyWithImpl<$Res>
+    implements _$EmailVerificationRequiredCopyWith<$Res> {
+  __$EmailVerificationRequiredCopyWithImpl(this._self, this._then);
+
+  final _EmailVerificationRequired _self;
+  final $Res Function(_EmailVerificationRequired) _then;
+
+/// Create a copy of AuthState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? email = null,}) {
+  return _then(_EmailVerificationRequired(
+null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
 
 // dart format on

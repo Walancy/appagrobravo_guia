@@ -589,9 +589,11 @@ class FeedRepositoryImpl implements FeedRepository {
               .from('users')
               .select('tipouser')
               .eq('id', userId)
-              .single();
+              .maybeSingle();
 
-      final roles = List<String>.from(userProfile['tipouser'] ?? []);
+      final roles = userProfile != null && userProfile['tipouser'] != null
+          ? List<String>.from(userProfile['tipouser'])
+          : <String>[];
       if (roles.contains('MASTER') || roles.contains('COLABORADOR')) {
         await _saveCanUserPostToCache(true);
         return const Right(true);
@@ -868,8 +870,10 @@ class FeedRepositoryImpl implements FeedRepository {
               .from('users')
               .select('tipouser')
               .eq('id', userId)
-              .single();
-      final roles = List<String>.from(userProfile['tipouser'] ?? []);
+              .maybeSingle();
+      final roles = userProfile != null && userProfile['tipouser'] != null
+          ? List<String>.from(userProfile['tipouser'])
+          : <String>[];
       if (roles.contains('MASTER') || roles.contains('COLABORADOR')) {
         return const Right(null);
       }

@@ -15,4 +15,6 @@ class AuthState with _$AuthState {
   const factory AuthState.passwordRecovery() = _PasswordRecovery;
   const factory AuthState.requireFirstAccessPasswordChange(UserEntity user) = _RequireFirstAccessPasswordChange;
   const factory AuthState.passwordUpdated() = _PasswordUpdated;
+  const factory AuthState.emailVerificationRequired(String email) = _EmailVerificationRequired;
 }
+

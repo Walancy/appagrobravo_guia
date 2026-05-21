@@ -106,6 +106,8 @@ class _LoginPageState extends State<LoginPage>
     switch (_authMode) {
       case AuthMode.login:
         return 'Login';
+      case AuthMode.register:
+        return 'Criar conta';
       case AuthMode.otpVerification:
         return 'Verificação de código';
       case AuthMode.createPassword:
@@ -163,6 +165,9 @@ class _LoginPageState extends State<LoginPage>
           passwordUpdated: () {
             _switchMode(AuthMode.success);
           },
+          emailVerificationRequired: (email) {
+            _switchMode(AuthMode.emailVerification);
+          },
         );
       },
       child: Scaffold(
@@ -205,7 +210,8 @@ class _LoginPageState extends State<LoginPage>
                   return const SizedBox.shrink();
 
                 final showSocials =
-                    _authMode == AuthMode.login;
+                    _authMode == AuthMode.login ||
+                    _authMode == AuthMode.register;
 
                 return Align(
                   alignment: Alignment.bottomCenter,
@@ -280,6 +286,8 @@ class _LoginPageState extends State<LoginPage>
                                                 ),
                                             onLoginNavigation: () =>
                                                 _switchMode(AuthMode.login),
+                                            onRegisterNavigation: () =>
+                                                _switchMode(AuthMode.register),
                                             onLoginAction:
                                                 (email, password, rememberMe) {
                                                   context
@@ -290,6 +298,21 @@ class _LoginPageState extends State<LoginPage>
                                                         rememberMe: rememberMe,
                                                       );
                                                 },
+                                            onRegisterAction: (
+                                              name,
+                                              email,
+                                              password,
+                                              confirm,
+                                            ) {
+                                              context
+                                                  .read<AuthCubit>()
+                                                  .register(
+                                                    name,
+                                                    email,
+                                                    password,
+                                                    confirm,
+                                                  );
+                                            },
                                             onRecoverPasswordAction: (email) {
                                               setState(() {
                                                 _recoveryEmail = email;
@@ -315,13 +338,18 @@ class _LoginPageState extends State<LoginPage>
                                             onCreatePasswordAction:
                                                 (password, confirm) {
                                                   context
-                                                      .read<AuthCubit>()
-                                                      .updatePassword(
-                                                        password,
-                                                        confirm,
-                                                        isFirstAccess: true,
-                                                      );
-                                                },
+                                                  .read<AuthCubit>()
+                                                  .updatePassword(
+                                                    password,
+                                                    confirm,
+                                                    isFirstAccess: true,
+                                                  );
+                                            },
+                                            onResendEmailAction: (email) {
+                                              context
+                                                  .read<AuthCubit>()
+                                                  .resendConfirmationEmail(email);
+                                            },
                                           ),
                                         ),
                                       ),
@@ -397,7 +425,17 @@ class _LoginPageState extends State<LoginPage>
   Widget _buildFooterLink() {
     switch (_authMode) {
       case AuthMode.login:
-        return const SizedBox.shrink();
+        return _buildTextLink(
+          'Não possui uma conta? ',
+          'Crie uma',
+          () => _switchMode(AuthMode.register),
+        );
+      case AuthMode.register:
+        return _buildTextLink(
+          'Já possui uma conta? ',
+          'Faça login',
+          () => _switchMode(AuthMode.login),
+        );
       case AuthMode.forgotPassword:
         return _buildSingleLink(
           'Voltar para login',

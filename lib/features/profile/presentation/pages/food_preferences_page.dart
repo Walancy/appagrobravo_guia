@@ -89,7 +89,48 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
             );
           },
           builder: (context, state) {
-            return state.maybeWhen(
+            return state.when(
+              initial: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (message) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 48,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Não foi possível carregar os dados. Verifique sua conexão.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<ProfileCubit>().loadProfile();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                            ),
+                          ),
+                          child: Text(
+                            'Tentar Novamente',
+                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
               loaded: (profile, _, __, ___, ____, _____, ______, _______) {
                 return Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -179,7 +220,6 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                   ),
                 );
               },
-              orElse: () => const Center(child: CircularProgressIndicator()),
             );
           },
         ),

@@ -115,198 +115,238 @@ class _AccountDataPageState extends State<AccountDataPage> {
             );
           },
           builder: (context, state) {
-            return state.maybeWhen(
+            return state.when(
+              initial: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (message) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 48,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Não foi possível carregar os dados. Verifique sua conexão.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<ProfileCubit>().loadProfile();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                            ),
+                          ),
+                          child: Text(
+                            'Tentar Novamente',
+                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
               loaded: (profile, _, __, ___, ____, _____, ______, _______) {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => FocusScope.of(context).unfocus(),
                   child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Informações Pessoais',
-                        style: AppTextStyles.h3.copyWith(fontSize: 18),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildTextField(
-                        context,
-                        _nameController,
-                        'Nome Completo',
-                      ),
-                      _buildTextField(
-                        context,
-                        _phoneController,
-                        'Telefone',
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [_phoneMaskFormatter],
-                      ),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Informações Pessoais',
+                          style: AppTextStyles.h3.copyWith(fontSize: 18),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildTextField(
+                          context,
+                          _nameController,
+                          'Nome Completo',
+                        ),
+                        _buildTextField(
+                          context,
+                          _phoneController,
+                          'Telefone',
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [_phoneMaskFormatter],
+                        ),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              context,
-                              _cpfController,
-                              'CPF',
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: _buildTextField(
-                              context,
-                              _ssnController,
-                              'SSN',
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: AppSpacing.md),
-                      _buildDatePicker(context, 'Data de Nascimento'),
-
-                      const SizedBox(height: AppSpacing.lg),
-                      Text(
-                        'Endereço',
-                        style: AppTextStyles.h3.copyWith(fontSize: 18),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildTextField(
-                        context,
-                        _zipCodeController,
-                        'CEP',
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              context,
-                              _stateController,
-                              'Estado',
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: _buildTextField(
-                              context,
-                              _cityController,
-                              'Cidade',
-                            ),
-                          ),
-                        ],
-                      ),
-                      _buildTextField(
-                        context,
-                        _neighborhoodController,
-                        'Bairro',
-                      ),
-                      _buildTextField(context, _streetController, 'Rua'),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              context,
-                              _numberController,
-                              'Número',
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            flex: 2,
-                            child: _buildTextField(
-                              context,
-                              _complementController,
-                              'Complemento',
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: AppSpacing.lg),
-                      Text(
-                        'Documentação Internacional',
-                        style: AppTextStyles.h3.copyWith(fontSize: 18),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildTextField(
-                        context,
-                        _nationalityController,
-                        'Nacionalidade',
-                      ),
-                      _buildTextField(
-                        context,
-                        _passportController,
-                        'Passaporte',
-                      ),
-
-                      const SizedBox(height: AppSpacing.xl),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final data = {
-                              'name': _nameController.text,
-                              'phone': _phoneController.text,
-                              'cpf': _cpfController.text,
-                              'ssn': _ssnController.text,
-
-                              'zipCode': _zipCodeController.text,
-                              'state': _stateController.text,
-                              'city': _cityController.text,
-                              'street': _streetController.text,
-                              'number': _numberController.text,
-                              'neighborhood': _neighborhoodController.text,
-                              'complement': _complementController.text,
-                              'nationality': _nationalityController.text,
-                              'passport': _passportController.text,
-                              if (_birthDate != null) 'birthDate': _birthDate,
-                            };
-                            context.read<ProfileCubit>().updateAccountData(
-                              data,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Dados atualizados com sucesso!'),
-                                backgroundColor: AppColors.primary,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusLg,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                context,
+                                _cpfController,
+                                'CPF',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                               ),
                             ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Salvar Alterações',
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: _buildTextField(
+                                context,
+                                _ssnController,
+                                'SSN',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppSpacing.md),
+                        _buildDatePicker(context, 'Data de Nascimento'),
+
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Endereço',
+                          style: AppTextStyles.h3.copyWith(fontSize: 18),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildTextField(
+                          context,
+                          _zipCodeController,
+                          'CEP',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                context,
+                                _stateController,
+                                'Estado',
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: _buildTextField(
+                                context,
+                                _cityController,
+                                'Cidade',
+                              ),
+                            ),
+                          ],
+                        ),
+                        _buildTextField(
+                          context,
+                          _neighborhoodController,
+                          'Bairro',
+                        ),
+                        _buildTextField(context, _streetController, 'Rua'),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                context,
+                                _numberController,
+                                'Número',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              flex: 2,
+                              child: _buildTextField(
+                                context,
+                                _complementController,
+                                'Complemento',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Documentação Internacional',
+                          style: AppTextStyles.h3.copyWith(fontSize: 18),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildTextField(
+                          context,
+                          _nationalityController,
+                          'Nacionalidade',
+                        ),
+                        _buildTextField(
+                          context,
+                          _passportController,
+                          'Passaporte',
+                        ),
+
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final data = {
+                                'name': _nameController.text,
+                                'phone': _phoneController.text,
+                                'cpf': _cpfController.text,
+                                'ssn': _ssnController.text,
+
+                                'zipCode': _zipCodeController.text,
+                                'state': _stateController.text,
+                                'city': _cityController.text,
+                                'street': _streetController.text,
+                                'number': _numberController.text,
+                                'neighborhood': _neighborhoodController.text,
+                                'complement': _complementController.text,
+                                'nationality': _nationalityController.text,
+                                'passport': _passportController.text,
+                                if (_birthDate != null) 'birthDate': _birthDate,
+                              };
+                              context.read<ProfileCubit>().updateAccountData(
+                                data,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Dados atualizados com sucesso!'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.radiusLg,
+                                ),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Salvar Alterações',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                    ],
-                  ),
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                    ),
                   ),
                 );
               },
-              orElse: () => const Center(child: CircularProgressIndicator()),
             );
           },
         ),

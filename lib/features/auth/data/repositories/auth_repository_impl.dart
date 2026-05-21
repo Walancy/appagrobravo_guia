@@ -79,7 +79,12 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(userModel.toEntity());
     } on AuthException catch (e) {
       log('Auth Error: ${e.message}');
-      return Left(Exception(e.message));
+      if (e.message.toLowerCase().contains('email not confirmed') ||
+          e.message.toLowerCase().contains('confirmar seu e-mail') ||
+          e.message.toLowerCase().contains('email_not_confirmed')) {
+        return Left(EmailNotConfirmedException());
+      }
+      return Left(_mapAuthException(e));
     } catch (e) {
       log('Unexpected Error: $e');
       return Left(Exception('Erro inesperado ao fazer login.'));
@@ -106,6 +111,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response.user == null) {
         return Left(Exception('Cadastro falhou.'));
+      }
+
+      if (response.session == null) {
+        // E-mail de confirmação é obrigatório e foi enviado, portanto não há sessão ativa ainda
+        return Left(EmailNotConfirmedException());
       }
 
       // Opcional: Inserir manualmente se não houver trigger
@@ -136,7 +146,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Right(userModel.toEntity());
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro inesperado ao cadastrar.'));
     }
@@ -201,7 +211,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _supabaseClient.auth.resetPasswordForEmail(email);
       return const Right(null);
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro ao solicitar redefinição de senha.'));
     }
@@ -215,7 +225,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return const Right(null);
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro ao atualizar a senha.'));
     }
@@ -235,7 +245,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(Exception('Token inválido ou expirado.'));
       }
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro ao verificar código.'));
     }
@@ -263,7 +273,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return const Right(null);
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro ao fazer login com Google.'));
     }
@@ -278,11 +288,54 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return const Right(null);
     } on AuthException catch (e) {
-      return Left(Exception(e.message));
+      return Left(_mapAuthException(e));
     }
   }
 
   @override
   Stream<AuthChangeEvent> get onAuthStateChange =>
       _supabaseClient.auth.onAuthStateChange.map((data) => data.event);
+
+  @override
+  Future<Either<Exception, void>> resendSignUpEmail(String email) async {
+    try {
+      await _supabaseClient.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(_mapAuthException(e));
+    } catch (e) {
+      return Left(Exception('Erro ao reenviar e-mail de confirmação.'));
+    }
+  }
+
+  Exception _mapAuthException(AuthException e) {
+    final message = e.message;
+
+    // Tradução de limites de taxa (Resend Rate Limit)
+    if (message.contains('For security purposes, you can only request this after')) {
+      final regex = RegExp(r'\d+');
+      final match = regex.firstMatch(message);
+      if (match != null) {
+        final seconds = match.group(0);
+        return Exception('Por motivos de segurança, você só pode solicitar o reenvio após $seconds segundos.');
+      } else {
+        return Exception('Por motivos de segurança, aguarde um momento antes de solicitar novamente.');
+      }
+    }
+
+    // Tradução de credenciais inválidas
+    if (message == 'Invalid login credentials') {
+      return Exception('E-mail ou senha incorretos.');
+    }
+
+    // Tradução de e-mail já cadastrado
+    if (message == 'User already registered') {
+      return Exception('Este e-mail já está cadastrado.');
+    }
+
+    return Exception(message);
+  }
 }

@@ -105,15 +105,53 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<Either<Exception, ProfileEntity>> getProfile(String userId) async {
+    final currentUserId = _supabaseClient.auth.currentUser?.id;
     try {
-      final userResponse =
+      var userResponse =
           await _supabaseClient
               .from('users')
               .select(
                 'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser',
               )
               .eq('id', userId)
-              .single();
+              .maybeSingle();
+
+      if (userResponse == null && userId == currentUserId) {
+        final currentUser = _supabaseClient.auth.currentUser;
+        if (currentUser != null) {
+          final metaName = currentUser.userMetadata?['name'] ?? currentUser.userMetadata?['full_name'];
+          final email = currentUser.email;
+          try {
+            await _supabaseClient.from('users').insert({
+              'id': userId,
+              'nome': metaName ?? email?.split('@').first ?? 'Usuário',
+              'email': email,
+              'tipouser': ['CLIENTE'],
+            });
+            userResponse = await _supabaseClient
+                .from('users')
+                .select(
+                  'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser',
+                )
+                .eq('id', userId)
+                .maybeSingle();
+          } catch (insertError) {
+            debugPrint('Erro ao inserir usuario auto-cadastro: $insertError');
+          }
+        }
+      }
+
+      if (userResponse == null) {
+        if (userId == currentUserId) {
+          final fallback = _createFallbackProfile(userId);
+          await _saveProfileToCache(fallback);
+          return Right(fallback);
+        } else {
+          return Left(Exception('Perfil não encontrado para o usuário $userId'));
+        }
+      }
+
+      final userData = userResponse;
 
       // 2. Fetch Posts Count
       final postsResponse = await _supabaseClient
@@ -166,7 +204,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       // Step D: MASTER/COLABORADOR veem todas as missões ativas (sem vínculo de grupo)
-      final userRoles = (userResponse['tipouser'] as List?)?.cast<String>() ?? [];
+      final userRoles = (userData['tipouser'] as List?)?.cast<String>() ?? [];
       final isAdminRole = userRoles.any((r) => r == 'MASTER' || r == 'COLABORADOR');
       if (missionIdSet.isEmpty && isAdminRole) {
         final allMissionsRes = await _supabaseClient
@@ -209,7 +247,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       // 5. Fetch Connection Status relative to current user
       ConnectionStatus connectionStatus = ConnectionStatus.none;
-      final currentUserId = _supabaseClient.auth.currentUser?.id;
       if (currentUserId != null && currentUserId != userId) {
         final statusRes =
             await _supabaseClient
@@ -235,41 +272,41 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       final profile = ProfileEntity(
-        id: userResponse['id'],
-        name: userResponse['nome'] ?? 'Sem nome',
-        avatarUrl: userResponse['foto'],
-        coverUrl: userResponse['capa_perfil'],
-        jobTitle: userResponse['cargo'],
-        bio: userResponse['observacoes'],
+        id: userData['id'],
+        name: userData['nome'] ?? 'Sem nome',
+        avatarUrl: userData['foto'],
+        coverUrl: userData['capa_perfil'],
+        jobTitle: userData['cargo'],
+        bio: userData['observacoes'],
         missionName: missionName,
-        email: userResponse['email'],
-        phone: userResponse['telefone'],
-        cpf: userResponse['cpf'],
-        ssn: userResponse['ssn'],
-        zipCode: userResponse['cep'],
-        state: userResponse['estado'],
-        city: userResponse['cidade'],
-        street: userResponse['rua'],
-        number: userResponse['numero'],
-        neighborhood: userResponse['bairro'],
-        complement: userResponse['complemento'],
+        email: userData['email'],
+        phone: userData['telefone'],
+        cpf: userData['cpf'],
+        ssn: userData['ssn'],
+        zipCode: userData['cep'],
+        state: userData['estado'],
+        city: userData['cidade'],
+        street: userData['rua'],
+        number: userData['numero'],
+        neighborhood: userData['bairro'],
+        complement: userData['complemento'],
         birthDate:
-            userResponse['datanascimento'] != null
-                ? DateTime.tryParse(userResponse['datanascimento'])
-                : (userResponse['data_nascimento'] != null
-                    ? DateTime.tryParse(userResponse['data_nascimento'])
+            userData['datanascimento'] != null
+                ? DateTime.tryParse(userData['datanascimento'])
+                : (userData['data_nascimento'] != null
+                    ? DateTime.tryParse(userData['data_nascimento'])
                     : null),
-        nationality: userResponse['nacionalidade'],
-        passport: userResponse['n_passaporte'],
+        nationality: userData['nationality'] ?? userData['nacionalidade'],
+        passport: userData['n_passaporte'],
         foodPreferences:
-            (userResponse['restricoes_alimentares'] as List?)?.cast<String>(),
+            (userData['restricoes_alimentares'] as List?)?.cast<String>(),
         medicalRestrictions:
-            (userResponse['restricoes_medicas'] as List?)?.cast<String>(),
+            (userData['restricoes_medicas'] as List?)?.cast<String>(),
         connectionsCount: connectionsCount,
         postsCount: postsCount,
         missionsCount: missionsCount,
         isGuide: () {
-          final roles = (userResponse['tipouser'] as List?)?.cast<String>() ?? [];
+          final roles = (userData['tipouser'] as List?)?.cast<String>() ?? [];
           return roles.any((r) => r == 'GUIA' || r == 'COLABORADOR' || r == 'MASTER');
         }(),
         connectionStatus: connectionStatus,
@@ -284,8 +321,48 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (cachedProfile != null) {
         return Right(cachedProfile);
       }
+      if (userId == currentUserId) {
+        final fallback = _createFallbackProfile(userId);
+        return Right(fallback);
+      }
       return Left(Exception('Erro ao buscar perfil e sem cache: $e'));
     }
+  }
+
+  ProfileEntity _createFallbackProfile(String userId) {
+    final currentUser = _supabaseClient.auth.currentUser;
+    final email = currentUser?.email;
+    final metaName = currentUser?.userMetadata?['name'] ?? currentUser?.userMetadata?['full_name'];
+    return ProfileEntity(
+      id: userId,
+      name: metaName ?? email?.split('@').first ?? 'Usuário',
+      avatarUrl: null,
+      coverUrl: null,
+      jobTitle: 'Cliente',
+      bio: null,
+      missionName: null,
+      email: email,
+      phone: null,
+      cpf: null,
+      ssn: null,
+      zipCode: null,
+      state: null,
+      city: null,
+      street: null,
+      number: null,
+      neighborhood: null,
+      complement: null,
+      birthDate: null,
+      nationality: null,
+      passport: null,
+      foodPreferences: const [],
+      medicalRestrictions: const [],
+      connectionsCount: 0,
+      postsCount: 0,
+      missionsCount: 0,
+      isGuide: false,
+      connectionStatus: ConnectionStatus.none,
+    );
   }
 
   Future<void> _saveUserPostsToCache(
