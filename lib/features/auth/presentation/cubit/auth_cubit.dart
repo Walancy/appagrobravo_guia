@@ -14,6 +14,21 @@ class AuthCubit extends Cubit<AuthState> {
       if (event == AuthChangeEvent.passwordRecovery) {
         emit(const AuthState.passwordRecovery());
       }
+
+      // Captura o retorno do OAuth (Google / Apple).
+      // O Supabase dispara signedIn quando o deep link de callback é processado.
+      // Executamos checkAuthStatus() para replicar exatamente o mesmo fluxo
+      // do login por e-mail: busca perfil em public.users, salva cache e
+      // emite AuthState.authenticated(user) ou requireFirstAccessPasswordChange.
+      if (event == AuthChangeEvent.signedIn) {
+        final alreadyAuthenticated = state.maybeWhen(
+          authenticated: (_) => true,
+          orElse: () => false,
+        );
+        if (!alreadyAuthenticated) {
+          checkAuthStatus();
+        }
+      }
     });
   }
 
@@ -159,18 +174,25 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> loginWithGoogle() async {
-    emit(const AuthState.loading());
+    // Não emitimos loading aqui: o browser será aberto e o app ficará em
+    // background. Quando o usuário retornar, o listener de signedIn no
+    // construtor chamará checkAuthStatus() e gerenciará o estado.
+    // Emitimos erro apenas se o repositório falhar imediatamente (ex: browser
+    // não pôde ser aberto).
     final result = await _authRepository.signInWithGoogle();
-    result.fold((error) => emit(AuthState.error(error.toString())), (_) {
-      // Since it's OAuth, the browser will redirect.
-      // We stay in loading state until the app is resumed and Supabase triggers auth state change.
-    });
+    result.fold(
+      (error) => emit(AuthState.error(error.toString())),
+      (_) {},
+    );
   }
 
   Future<void> loginWithApple() async {
-    emit(const AuthState.loading());
+    // Mesma lógica do loginWithGoogle: estado gerenciado pelo listener de signedIn.
     final result = await _authRepository.signInWithApple();
-    result.fold((error) => emit(AuthState.error(error.toString())), (_) {});
+    result.fold(
+      (error) => emit(AuthState.error(error.toString())),
+      (_) {},
+    );
   }
 
   Future<void> logout() async {

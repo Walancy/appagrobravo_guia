@@ -55,5 +55,16 @@
 	<string>O AgroBravo acessa sua galeria para selecionar imagens de comprovantes, documentos e enviar fotos no chat.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>O AgroBravo pode salvar imagens na sua galeria.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.agrobravoappguia</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
