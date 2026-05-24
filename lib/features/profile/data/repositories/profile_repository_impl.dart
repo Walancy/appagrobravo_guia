@@ -126,7 +126,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
               'id': userId,
               'nome': metaName ?? email?.split('@').first ?? 'Usuário',
               'email': email,
-              'tipouser': ['CLIENTE'],
+              'tipouser': ['GUIA_PENDENTE'],
             });
             userResponse = await _supabaseClient
                 .from('users')
@@ -307,7 +307,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         missionsCount: missionsCount,
         isGuide: () {
           final roles = (userData['tipouser'] as List?)?.cast<String>() ?? [];
-          return roles.any((r) => r == 'GUIA' || r == 'COLABORADOR' || r == 'MASTER');
+          return roles.any((r) => r == 'GUIA' || r == 'GUIA_PENDENTE' || r == 'COLABORADOR' || r == 'MASTER');
         }(),
         connectionStatus: connectionStatus,
       );

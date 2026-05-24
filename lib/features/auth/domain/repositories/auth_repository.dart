@@ -19,6 +19,8 @@ abstract class AuthRepository {
 
   Future<Option<UserEntity>> getCurrentUser();
 
+  Future<Either<Exception, void>> deleteAccount();
+
   Future<Either<Exception, void>> resetPassword(String email);
   Future<Either<Exception, void>> verifyOTP(String email, String token);
   Future<Either<Exception, void>> updatePassword(String newPassword);

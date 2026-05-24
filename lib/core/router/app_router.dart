@@ -29,39 +29,45 @@ import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
-  late final StreamSubscription<dynamic> _subscription;
+  StreamSubscription<dynamic>? _subscription;
 
   GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
+    _subscribe(stream);
+  }
+
+  void _subscribe(Stream<dynamic> stream) {
+    _subscription?.cancel();
     _subscription = stream.asBroadcastStream().listen(
           (dynamic _) => notifyListeners(),
         );
   }
 
+  void updateStream(Stream<dynamic> newStream) {
+    _subscribe(newStream);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
-    _subscription.cancel();
+    _subscription?.cancel();
     super.dispose();
   }
 }
 
+final routerRefreshStream = GoRouterRefreshStream(getIt<AuthCubit>().stream);
+
 final appRouter = GoRouter(
   initialLocation: '/',
-  refreshListenable: GoRouterRefreshStream(getIt<AuthCubit>().stream),
+  refreshListenable: routerRefreshStream,
   redirect: (context, state) {
     final authState = getIt<AuthCubit>().state;
 
-    // Caminhos públicos que não exigem autenticação
-    final isLoggingIn = state.matchedLocation == '/' ||
+    // Rota atual é pública (login ou esqueci senha / redefinir)
+    final isPublicRoute = state.matchedLocation == '/' ||
                         state.matchedLocation == '/reset-password';
 
     final isAuthenticated = authState.maybeWhen(
       authenticated: (_) => true,
-      orElse: () => false,
-    );
-
-    final isRequiringPasswordChange = authState.maybeWhen(
-      requireFirstAccessPasswordChange: (_) => true,
       orElse: () => false,
     );
 
@@ -72,15 +78,15 @@ final appRouter = GoRouter(
     );
     if (isLoading) return null;
 
-    if (!isAuthenticated && !isRequiringPasswordChange) {
-      // Se não estiver logado e tentar entrar em tela restrita, vai para login (/)
-      if (!isLoggingIn) {
-        return '/';
+    if (isAuthenticated) {
+      // Se o usuário estiver logado e cair em páginas públicas, manda para a home
+      if (isPublicRoute) {
+        return '/home';
       }
     } else {
-      // Se estiver logado e na tela de login, vai para /home
-      if (isLoggingIn) {
-        return '/home';
+      // Se não estiver logado e cair em qualquer outra tela (restrita), manda para o login (/)
+      if (!isPublicRoute) {
+        return '/';
       }
     }
 

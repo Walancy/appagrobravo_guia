@@ -8,6 +8,8 @@ import 'package:agrobravo/features/auth/data/models/user_model.dart';
 import 'dart:developer';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:crypto/crypto.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 @LazySingleton(as: AuthRepository)
 class AuthRepositoryImpl implements AuthRepository {
@@ -282,13 +284,41 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Exception, void>> signInWithApple() async {
     try {
-      await _supabaseClient.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: kIsWeb ? null : 'io.supabase.agrobravoappguia://login-callback/',
-      );
-      return const Right(null);
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        final rawNonce = _supabaseClient.auth.generateRawNonce();
+        final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+        final credential = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+          nonce: hashedNonce,
+        );
+
+        final idToken = credential.identityToken;
+        if (idToken == null) {
+          return Left(Exception('Não foi possível obter o token de identidade da Apple.'));
+        }
+
+        await _supabaseClient.auth.signInWithIdToken(
+          provider: OAuthProvider.apple,
+          idToken: idToken,
+          nonce: rawNonce,
+        );
+        return const Right(null);
+      } else {
+        // Android ou Web: usa o fluxo de redirecionamento Web OAuth
+        await _supabaseClient.auth.signInWithOAuth(
+          OAuthProvider.apple,
+          redirectTo: kIsWeb ? null : 'io.supabase.agrobravoappguia://login-callback/',
+        );
+        return const Right(null);
+      }
     } on AuthException catch (e) {
       return Left(_mapAuthException(e));
+    } catch (e) {
+      return Left(Exception('Erro ao fazer login com a Apple: $e'));
     }
   }
 
@@ -308,6 +338,17 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(_mapAuthException(e));
     } catch (e) {
       return Left(Exception('Erro ao reenviar e-mail de confirmação.'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, void>> deleteAccount() async {
+    try {
+      await _supabaseClient.rpc('delete_user_account');
+      return const Right(null);
+    } catch (e) {
+      log('Erro ao excluir conta: $e');
+      return Left(Exception('Erro ao excluir conta no servidor: $e'));
     }
   }
 

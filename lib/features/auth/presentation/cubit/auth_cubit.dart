@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:agrobravo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dartz/dartz.dart';
 
 @LazySingleton()
 class AuthCubit extends Cubit<AuthState> {
@@ -13,6 +14,10 @@ class AuthCubit extends Cubit<AuthState> {
     _authRepository.onAuthStateChange.listen((event) {
       if (event == AuthChangeEvent.passwordRecovery) {
         emit(const AuthState.passwordRecovery());
+      }
+
+      if (event == AuthChangeEvent.signedOut) {
+        emit(const AuthState.unauthenticated());
       }
 
       // Captura o retorno do OAuth (Google / Apple).
@@ -198,6 +203,21 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     await _authRepository.signOut();
     emit(const AuthState.unauthenticated());
+  }
+
+  Future<Either<Exception, void>> deleteAccount() async {
+    emit(const AuthState.loading());
+    final result = await _authRepository.deleteAccount();
+    return result.fold(
+      (error) {
+        emit(AuthState.error(error.toString()));
+        return Left(error);
+      },
+      (_) async {
+        await logout();
+        return const Right(null);
+      },
+    );
   }
 
   Future<void> resendConfirmationEmail(String email) async {

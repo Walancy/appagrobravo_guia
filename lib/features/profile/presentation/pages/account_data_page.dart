@@ -10,6 +10,7 @@ import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
 
 class AccountDataPage extends StatefulWidget {
   const AccountDataPage({super.key});
@@ -96,6 +97,69 @@ class _AccountDataPageState extends State<AccountDataPage> {
         _birthDate = picked;
       });
     }
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Excluir Conta'),
+          content: const Text(
+            'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext); // Fecha o dialog
+                
+                // Mostrar indicador de progresso
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (loadingContext) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+
+                final authCubit = context.read<AuthCubit>();
+                final result = await authCubit.deleteAccount();
+                
+                if (context.mounted) {
+                  Navigator.pop(context); // Remove o loading indicador
+                  result.fold(
+                    (error) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro ao excluir conta: $error'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    },
+                    (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sua conta foi excluída com sucesso.'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+              child: const Text(
+                'Sim, excluir',
+                style: TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -336,6 +400,29 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               'Salvar Alterações',
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: TextButton(
+                            onPressed: () => _showDeleteAccountDialog(context),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.error,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.radiusLg,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              'Excluir conta',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.error,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

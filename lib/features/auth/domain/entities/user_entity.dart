@@ -17,6 +17,7 @@ abstract class UserEntity with _$UserEntity {
 
   bool get isGuide =>
       roles.contains('GUIA') ||
+      roles.contains('GUIA_PENDENTE') ||
       roles.contains('COLABORADOR') ||
       roles.contains('MASTER');
   bool get isUserApp => roles.contains('USER_APP');

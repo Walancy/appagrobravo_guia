@@ -59,6 +59,8 @@ dependencies:
   rxdart: ^0.28.0
   mask_text_input_formatter: ^2.9.0
   currency_text_input_formatter: ^2.3.0
+  sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
