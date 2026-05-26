@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 @LazySingleton(as: AuthRepository)
 class AuthRepositoryImpl implements AuthRepository {
@@ -269,15 +270,45 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Exception, void>> signInWithGoogle() async {
     try {
-      await _supabaseClient.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.agrobravoappguia://login-callback/',
+      if (kIsWeb) {
+        await _supabaseClient.auth.signInWithOAuth(OAuthProvider.google);
+        return const Right(null);
+      }
+
+      final googleSignIn = GoogleSignIn(
+        scopes: ['profile', 'email'],
+        clientId: defaultTargetPlatform == TargetPlatform.iOS
+            ? '175750237033-1nc7m8nsj7s3d1d6ql6mki91nmpk4pkp.apps.googleusercontent.com'
+            : null,
+        serverClientId: '175750237033-u5p4jglif68kv2gtioqhvknkr4dd732n.apps.googleusercontent.com',
       );
+
+      await googleSignIn.signOut().catchError((_) => null);
+      
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        return Left(Exception('Login cancelado pelo usuário.'));
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        return Left(Exception('Não foi possível obter o token de identidade do Google.'));
+      }
+
+      await _supabaseClient.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
       return const Right(null);
     } on AuthException catch (e) {
       return Left(_mapAuthException(e));
     } catch (e) {
-      return Left(Exception('Erro ao fazer login com Google.'));
+      return Left(Exception('Erro ao fazer login com Google: $e'));
     }
   }
 

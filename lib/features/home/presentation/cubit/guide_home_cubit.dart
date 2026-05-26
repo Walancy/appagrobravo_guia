@@ -10,6 +10,7 @@ part 'guide_home_cubit.freezed.dart';
 @injectable
 class GuideHomeCubit extends Cubit<GuideHomeState> {
   final ItineraryRepository _repository;
+  List<GuideMission> _allMissions = [];
 
   GuideHomeCubit(this._repository) : super(const GuideHomeState.initial());
 
@@ -19,7 +20,20 @@ class GuideHomeCubit extends Cubit<GuideHomeState> {
 
     result.fold(
       (failure) => emit(GuideHomeState.error(failure.toString())),
-      (missions) => emit(GuideHomeState.loaded(missions)),
+      (missions) {
+        _allMissions = missions;
+        emit(GuideHomeState.loaded(_allMissions));
+      },
     );
+  }
+
+  void setStatusFilter(String? status) {
+    final filtered = status == null
+        ? _allMissions
+        : _allMissions
+            .where((gm) =>
+                gm.mission.status?.toUpperCase() == status.toUpperCase())
+            .toList();
+    emit(GuideHomeState.loaded(filtered, activeFilter: status));
   }
 }

@@ -15,6 +15,13 @@ class GuideMissionCard extends StatelessWidget {
     required this.onViewGroups,
   });
 
+  static const _statusConfig = <String, Map<String, dynamic>>{
+    'ATIVA': {'label': 'Ativa', 'color': Color(0xFF00B289)},
+    'PLANEJADA': {'label': 'Planejada', 'color': Color(0xFF3B82F6)},
+    'CONCLUIDA': {'label': 'Concluída', 'color': Color(0xFF9CA3AF)},
+    'CANCELADA': {'label': 'Cancelada', 'color': Color(0xFFEF4444)},
+  };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -26,6 +33,12 @@ class GuideMissionCard extends StatelessWidget {
     if (mission.startDate != null && mission.endDate != null) {
       duration = mission.endDate!.difference(mission.startDate!).inDays;
     }
+
+    final statusKey = mission.status?.toUpperCase();
+    final statusCfg = _statusConfig[statusKey];
+    final statusLabel = statusCfg?['label'] as String?;
+    final statusColor =
+        statusCfg?['color'] as Color? ?? const Color(0xFFF59E0B);
 
     return Container(
       decoration: BoxDecoration(color: theme.colorScheme.surface),
@@ -102,10 +115,36 @@ class GuideMissionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (duration != null)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Status badge
+                  if (statusLabel != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: statusColor.withOpacity(0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  if (duration != null) ...[
+                    const SizedBox(height: 6),
                     Text(
                       'Dias de viagem',
                       style: AppTextStyles.bodySmall.copyWith(
@@ -124,7 +163,8 @@ class GuideMissionCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -217,3 +257,4 @@ class GuideMissionCard extends StatelessWidget {
     );
   }
 }
+

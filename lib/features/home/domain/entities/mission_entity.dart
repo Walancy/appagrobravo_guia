@@ -14,6 +14,7 @@ abstract class MissionEntity with _$MissionEntity {
     String? groupName,
     String? groupLogo,
     int? pendingDocsCount,
+    String? status,
     @Default(false) bool passaporteObrigatorio,
     @Default(false) bool vistoObrigatorio,
     @Default(false) bool vacinaObrigatoria,

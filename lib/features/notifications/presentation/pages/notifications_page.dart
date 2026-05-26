@@ -314,6 +314,18 @@ class _NotificationItem extends StatelessWidget {
               '/user-feed/${notification.postOwnerId}?postId=${notification.postId}',
             );
           }
+        } else if (notification.type == NotificationType.message) {
+          final senderId = notification.senderId;
+          if (senderId != null) {
+            context.push(
+              '/chat/dm/$senderId',
+              extra: {
+                'name': notification.userName,
+                'role': '',
+                'avatarUrl': notification.userAvatar,
+              },
+            );
+          }
         }
       },
       child: Container(
@@ -391,6 +403,11 @@ class _NotificationItem extends StatelessWidget {
         icon = Icons.explore_rounded;
         bgColor = AppColors.secondary.withOpacity(0.1);
         iconColor = AppColors.secondary;
+        break;
+      case NotificationType.message:
+        icon = Icons.chat_bubble_rounded;
+        bgColor = Colors.blue.withOpacity(0.1);
+        iconColor = Colors.blue;
         break;
       default:
         break;

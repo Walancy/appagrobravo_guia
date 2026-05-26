@@ -408,19 +408,23 @@ class _ChatPageState extends State<ChatPage>
 
           Expanded(
             child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _error != null
+                _error != null
                     ? _buildError()
                     : TabBarView(
                       controller: _tabController,
-                      children: [
-                        _buildTravelersList(),
-                        _buildGuidesList(),
-                        widget.groupId != null
-                            ? _buildDirectGroupChat()
-                            : _buildGroupsList(),
-                      ],
+                      children: _isLoading
+                          ? [
+                            const _ChatTabSkeleton(),
+                            const _ChatTabSkeleton(),
+                            const _ChatTabSkeleton(),
+                          ]
+                          : [
+                            _buildTravelersList(),
+                            _buildGuidesList(),
+                            widget.groupId != null
+                                ? _buildDirectGroupChat()
+                                : _buildGroupsList(),
+                          ],
                     ),
           ),
         ],
@@ -1563,6 +1567,114 @@ class _ChatListTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Chat Tab Skeleton ────────────────────────────────────────────────────────
+
+class _ChatTabSkeleton extends StatefulWidget {
+  const _ChatTabSkeleton();
+
+  @override
+  State<_ChatTabSkeleton> createState() => _ChatTabSkeletonState();
+}
+
+class _ChatTabSkeletonState extends State<_ChatTabSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        final baseColor = isDark
+            ? Color.lerp(const Color(0xFF2A2A2A), const Color(0xFF3A3A3A), _animation.value)!
+            : Color.lerp(const Color(0xFFE8E8E8), const Color(0xFFF5F5F5), _animation.value)!;
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: 8,
+          physics: const NeverScrollableScrollPhysics(),
+          separatorBuilder: (_, __) => Divider(
+            height: 1,
+            indent: 72,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+          ),
+          itemBuilder: (_, __) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                // Avatar placeholder
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name line
+                      Container(
+                        height: 13,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: baseColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Message line
+                      Container(
+                        height: 11,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: baseColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Time placeholder
+                Container(
+                  height: 10,
+                  width: 28,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

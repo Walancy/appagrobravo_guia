@@ -23,6 +23,7 @@ abstract class NotificationModel with _$NotificationModel {
     String? titulo,
     String? icone,
     @JsonKey(name: 'grupo_id') String? grupoId,
+    @JsonKey(name: 'batepapo_id') String? batepapoId,
     // Joined data from users table (if any)
     @JsonKey(ignore: true) String? userName,
     @JsonKey(ignore: true) String? userAvatar,
@@ -76,6 +77,8 @@ abstract class NotificationModel with _$NotificationModel {
         // Just a generic notification from a user (e.g. mention without postId or message)
         type = NotificationType.missionUpdate;
       }
+    } else if (subject == 'mensagem' || subject.contains('mensagem')) {
+      type = NotificationType.message;
     } else if (missionId != null || grupoId != null) {
       if (subject.contains('guia') || title.contains('guia')) {
         type = NotificationType.guideAlert;
@@ -117,6 +120,8 @@ abstract class NotificationModel with _$NotificationModel {
       solicitacaoUserId: solicitacaoUserId,
       docId: docId,
       postOwnerId: null, // Will be set in repository
+      batepapoId: batepapoId,
+      senderId: solicitacaoUserId, // remetente da DM é guardado em solicitacao_user_id
       message: finalMessage,
       createdAt: createdAt,
       isRead: (lido ?? false) || (solicitacaoRespondida ?? false),

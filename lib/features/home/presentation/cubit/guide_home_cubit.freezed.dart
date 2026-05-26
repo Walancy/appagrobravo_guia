@@ -128,12 +128,12 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<GuideMission> missions)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<GuideMission> missions,  String? activeFilter)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
-return loaded(_that.missions);case _Error() when error != null:
+return loaded(_that.missions,_that.activeFilter);case _Error() when error != null:
 return error(_that.message);case _:
   return orElse();
 
@@ -152,12 +152,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<GuideMission> missions)  loaded,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<GuideMission> missions,  String? activeFilter)  loaded,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial();case _Loading():
 return loading();case _Loaded():
-return loaded(_that.missions);case _Error():
+return loaded(_that.missions,_that.activeFilter);case _Error():
 return error(_that.message);case _:
   throw StateError('Unexpected subclass');
 
@@ -175,12 +175,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<GuideMission> missions)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<GuideMission> missions,  String? activeFilter)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
-return loaded(_that.missions);case _Error() when error != null:
+return loaded(_that.missions,_that.activeFilter);case _Error() when error != null:
 return error(_that.message);case _:
   return null;
 
@@ -257,7 +257,7 @@ String toString() {
 
 
 class _Loaded implements GuideHomeState {
-  const _Loaded(final  List<GuideMission> missions): _missions = missions;
+  const _Loaded(final  List<GuideMission> missions, {this.activeFilter = null}): _missions = missions;
   
 
  final  List<GuideMission> _missions;
@@ -267,6 +267,7 @@ class _Loaded implements GuideHomeState {
   return EqualUnmodifiableListView(_missions);
 }
 
+@JsonKey() final  String? activeFilter;
 
 /// Create a copy of GuideHomeState
 /// with the given fields replaced by the non-null parameter values.
@@ -278,16 +279,16 @@ _$LoadedCopyWith<_Loaded> get copyWith => __$LoadedCopyWithImpl<_Loaded>(this, _
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&const DeepCollectionEquality().equals(other._missions, _missions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&const DeepCollectionEquality().equals(other._missions, _missions)&&(identical(other.activeFilter, activeFilter) || other.activeFilter == activeFilter));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_missions));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_missions),activeFilter);
 
 @override
 String toString() {
-  return 'GuideHomeState.loaded(missions: $missions)';
+  return 'GuideHomeState.loaded(missions: $missions, activeFilter: $activeFilter)';
 }
 
 
@@ -298,7 +299,7 @@ abstract mixin class _$LoadedCopyWith<$Res> implements $GuideHomeStateCopyWith<$
   factory _$LoadedCopyWith(_Loaded value, $Res Function(_Loaded) _then) = __$LoadedCopyWithImpl;
 @useResult
 $Res call({
- List<GuideMission> missions
+ List<GuideMission> missions, String? activeFilter
 });
 
 
@@ -315,10 +316,11 @@ class __$LoadedCopyWithImpl<$Res>
 
 /// Create a copy of GuideHomeState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? missions = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? missions = null,Object? activeFilter = freezed,}) {
   return _then(_Loaded(
 null == missions ? _self._missions : missions // ignore: cast_nullable_to_non_nullable
-as List<GuideMission>,
+as List<GuideMission>,activeFilter: freezed == activeFilter ? _self.activeFilter : activeFilter // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

@@ -13,6 +13,8 @@ import 'package:agrobravo/features/documents/presentation/pages/document_details
 import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
+import 'package:agrobravo/features/chat/presentation/pages/individual_chat_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/food_preferences_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/medical_restrictions_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/notification_preferences_page.dart';
@@ -233,6 +235,20 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
         return NoTransitionPage(child: MemberDetailsPage(memberData: extra));
+      },
+    ),
+    GoRoute(
+      path: '/chat/dm/:userId',
+      pageBuilder: (context, state) {
+        final userId = state.pathParameters['userId']!;
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final guide = GuideEntity(
+          id: userId,
+          name: extra['name'] as String? ?? 'Usuário',
+          role: extra['role'] as String? ?? '',
+          avatarUrl: extra['avatarUrl'] as String?,
+        );
+        return NoTransitionPage(child: IndividualChatPage(guide: guide));
       },
     ),
   ],

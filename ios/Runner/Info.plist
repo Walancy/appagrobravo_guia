@@ -65,6 +65,14 @@
 				<string>io.supabase.agrobravoappguia</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.175750237033-1nc7m8nsj7s3d1d6ql6mki91nmpk4pkp</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

@@ -668,6 +668,69 @@ class ChatRepositoryImpl implements ChatRepository {
       'imagem': imageUrl,
       'id_mensagem_respondida': replyToId,
     });
+
+    // Criar notificação apenas para DMs (mensagens privadas)
+    if (!isGroup) {
+      _createDMNotification(realChatId, user.id).catchError((_) {});
+    }
+  }
+
+  Future<void> _createDMNotification(
+    String batePapoId,
+    String senderId,
+  ) async {
+    try {
+      // 1. Buscar nome do remetente (com cache local)
+      final senderName = await _getSenderName(senderId);
+
+      // 2. Buscar o outro participante da conversa
+      final chat =
+          await _supabaseClient
+              .from('batePapo')
+              .select('lider_id, user_id, grupo_id, missao_id')
+              .eq('id', batePapoId)
+              .single();
+
+      final liderIdRaw = chat['lider_id'] as String?;
+      final userIdRaw = chat['user_id'] as String?;
+      final recipientId =
+          liderIdRaw == senderId ? userIdRaw : liderIdRaw;
+
+      if (recipientId == null) return;
+
+      // 3. Inserir notificação para o destinatário
+      await _supabaseClient.from('notificacoes').insert({
+        'user_id': recipientId,
+        'assunto': 'MENSAGEM',
+        'titulo': 'Nova mensagem',
+        'mensagem': '$senderName enviou uma mensagem para você',
+        'batepapo_id': batePapoId,
+        'grupo_id': chat['grupo_id'],
+        'missao_id': chat['missao_id'],
+        'solicitacao_user_id': senderId, // usado para navegar de volta ao remetente
+        'lido': false,
+      });
+    } catch (_) {
+      // Notificação é best-effort — não interrompe o fluxo de envio
+    }
+  }
+
+  String? _cachedSenderName;
+
+  Future<String> _getSenderName(String userId) async {
+    if (_cachedSenderName != null) return _cachedSenderName!;
+    try {
+      final res =
+          await _supabaseClient
+              .from('users')
+              .select('nome')
+              .eq('id', userId)
+              .single();
+      _cachedSenderName = res['nome'] as String? ?? 'Guia';
+      return _cachedSenderName!;
+    } catch (_) {
+      return 'Guia';
+    }
   }
 
   Future<void> _saveGroupDetailsToCache(

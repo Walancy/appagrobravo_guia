@@ -63,7 +63,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                               child: CircularProgressIndicator(),
                             ),
                         error: (msg) => Center(child: Text(msg)),
-                        loaded: (missions) {
+                        loaded: (missions, activeFilter) {
                           if (missions.isEmpty) {
                             return const Center(
                               child: Text("Nenhuma missão encontrada."),

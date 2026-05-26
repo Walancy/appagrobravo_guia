@@ -13,6 +13,13 @@ class GuideHomePage extends StatelessWidget {
   final Function(String)? onGroupSelected;
   const GuideHomePage({super.key, this.onGroupSelected});
 
+  static const _filters = [
+    {'label': 'Todas', 'value': null},
+    {'label': 'Ativa', 'value': 'ATIVA'},
+    {'label': 'Planejada', 'value': 'PLANEJADA'},
+    {'label': 'Concluída', 'value': 'CONCLUIDA'},
+  ];
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -22,48 +29,96 @@ class GuideHomePage extends StatelessWidget {
           return state.maybeWhen(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (msg) => Center(child: Text(msg)),
-            loaded: (missions) {
-              if (missions.isEmpty) {
-                return EmptyMissionState(
-                  icon: Icons.assignment_outlined,
-                  title: 'Nenhuma missão encontrada',
-                  description: 'Você não possui missões ativas vinculadas à sua conta no momento.',
-                  actionLabel: 'Recarregar',
-                  onActionPressed: () => context.read<GuideHomeCubit>().loadMissions(),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-                itemCount: missions.length + 2,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return const HeaderSpacer();
-                  }
-                  if (index == 1) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Text(
-                        "Selecione uma missão",
-                        style: AppTextStyles.h2.copyWith(
-                          fontSize: 16,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final guideMission = missions[index - 2];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: GuideMissionCard(
-                      guideMission: guideMission,
-                      onViewGroups:
-                          () => _showGroupsModal(context, guideMission.groups),
+            loaded: (missions, activeFilter) {
+              final cubit = context.read<GuideHomeCubit>();
+              return Column(
+                children: [
+                  // Espaço abaixo da AppBar (mesmo height que o HeaderSpacer usa)
+                  const HeaderSpacer(),
+                  // Filter chips bar — agora visível abaixo da AppBar
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filters.length,
+                      separatorBuilder: (_, _x) => const SizedBox(width: 8),
+                      itemBuilder: (context, i) {
+                        final f = _filters[i];
+                        final fValue = f['value'];
+                        final isSelected = activeFilter == fValue;
+                        return FilterChip(
+                          label: Text(f['label'] as String),
+                          selected: isSelected,
+                          onSelected: (_) => cubit.setStatusFilter(
+                            isSelected ? null : fValue as String?,
+                          ),
+                          showCheckmark: false,
+                          labelStyle: AppTextStyles.bodySmall.copyWith(
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                          selectedColor: const Color(0xFF00B289),
+                          side: BorderSide.none,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 8),
+                  // Mission list
+                  Expanded(
+                    child: missions.isEmpty
+                        ? EmptyMissionState(
+                            icon: Icons.assignment_outlined,
+                            title: 'Nenhuma missão encontrada',
+                            description: activeFilter == null
+                                ? 'Você não possui missões ativas vinculadas à sua conta no momento.'
+                                : 'Nenhuma missão com status "${_filters.firstWhere((f) => f['value'] == activeFilter)['label']}" encontrada.',
+                            actionLabel: 'Recarregar',
+                            onActionPressed: () => cubit.loadMissions(),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+                            itemCount: missions.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      16, 4, 16, 12),
+                                  child: Text(
+                                    'Selecione uma missão',
+                                    style: AppTextStyles.h2.copyWith(
+                                      fontSize: 16,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final guideMission = missions[index - 1];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: GuideMissionCard(
+                                  guideMission: guideMission,
+                                  onViewGroups: () => _showGroupsModal(
+                                      context, guideMission.groups),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               );
             },
             orElse: () => const SizedBox.shrink(),
@@ -72,6 +127,7 @@ class GuideHomePage extends StatelessWidget {
       ),
     );
   }
+
 
   void _showGroupsModal(
     BuildContext context,
@@ -86,7 +142,7 @@ class GuideHomePage extends StatelessWidget {
             child: GroupsListModal(
               groups: groups,
               onGroupSelected: (groupId) {
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context);
                 onGroupSelected?.call(groupId);
               },
             ),
@@ -94,3 +150,4 @@ class GuideHomePage extends StatelessWidget {
     );
   }
 }
+

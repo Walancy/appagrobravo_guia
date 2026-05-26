@@ -514,6 +514,7 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
           id: missionJson['id'].toString(),
           name: missionJson['nome'] ?? 'Sem nome',
           logo: missionJson['logo'],
+          status: missionJson['status'] as String?,
           location:
               missionJson['continente'] ??
               (missionJson['paises'] is List &&
