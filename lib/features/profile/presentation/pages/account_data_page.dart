@@ -11,6 +11,7 @@ import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
 
 class AccountDataPage extends StatefulWidget {
   const AccountDataPage({super.key});
@@ -99,67 +100,54 @@ class _AccountDataPageState extends State<AccountDataPage> {
     }
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
+  void _showDeleteAccountDialog(BuildContext context) async {
+    final confirm = await showModalBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Excluir Conta'),
-          content: const Text(
-            'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext); // Fecha o dialog
-                
-                // Mostrar indicador de progresso
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-
-                final authCubit = context.read<AuthCubit>();
-                final result = await authCubit.deleteAccount();
-                
-                if (context.mounted) {
-                  Navigator.pop(context); // Remove o loading indicador
-                  result.fold(
-                    (error) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Erro ao excluir conta: $error'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    },
-                    (_) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Sua conta foi excluída com sucesso.'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
-                    },
-                  );
-                }
-              },
-              child: const Text(
-                'Sim, excluir',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
-        );
-      },
+      backgroundColor: Colors.transparent,
+      builder: (context) => const CustomConfirmBottomSheet(
+        title: 'Excluir Conta',
+        message: 'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
+        confirmLabel: 'Sim, excluir',
+        cancelLabel: 'Cancelar',
+        confirmColor: AppColors.error,
+      ),
     );
+
+    if (confirm == true && context.mounted) {
+      // Mostrar indicador de progresso
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (loadingContext) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final authCubit = context.read<AuthCubit>();
+      final result = await authCubit.deleteAccount();
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Remove o loading indicador
+        result.fold(
+          (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao excluir conta: $error'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          },
+          (_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sua conta foi excluída com sucesso.'),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          },
+        );
+      }
+    }
   }
 
   @override

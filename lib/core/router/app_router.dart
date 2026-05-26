@@ -23,6 +23,8 @@ import 'package:agrobravo/features/profile/presentation/pages/privacy_policy_pag
 import 'package:agrobravo/features/profile/presentation/pages/about_us_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/profile_tab.dart';
 import 'package:agrobravo/features/home/presentation/pages/member_details_page.dart';
+import 'package:agrobravo/features/home/presentation/pages/incident_list_page.dart';
+import 'package:agrobravo/features/home/presentation/pages/expense_list_page.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -249,6 +251,20 @@ final appRouter = GoRouter(
           avatarUrl: extra['avatarUrl'] as String?,
         );
         return NoTransitionPage(child: IndividualChatPage(guide: guide));
+      },
+    ),
+    GoRoute(
+      path: '/incident-list/:groupId',
+      pageBuilder: (context, state) {
+        final groupId = state.pathParameters['groupId']!;
+        return NoTransitionPage(child: IncidentListPage(groupId: groupId));
+      },
+    ),
+    GoRoute(
+      path: '/expense-list/:groupId',
+      pageBuilder: (context, state) {
+        final groupId = state.pathParameters['groupId']!;
+        return NoTransitionPage(child: ExpenseListPage(groupId: groupId));
       },
     ),
   ],

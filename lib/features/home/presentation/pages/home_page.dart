@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
+import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
 
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/tokens/assets.gen.dart';
@@ -75,9 +76,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showMissionAlert(BuildContext context, MissionEntity mission) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
           (dialogContext) => MissionAlertDialog(
             mission: mission,
@@ -470,32 +472,23 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _confirmDeletePost(BuildContext context, String postId) {
+  void _confirmDeletePost(BuildContext context, String postId) async {
     final feedCubit = context.read<FeedCubit>();
-    showDialog(
+    final confirm = await showModalBottomSheet<bool>(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('Excluir Publicação'),
-            content: const Text(
-              'Tem certeza que deseja excluir esta publicação?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  feedCubit.deletePost(postId);
-                },
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Excluir'),
-              ),
-            ],
-          ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => const CustomConfirmBottomSheet(
+        title: 'Excluir Publicação',
+        message: 'Tem certeza que deseja excluir esta publicação?',
+        confirmLabel: 'Excluir',
+        cancelLabel: 'Cancelar',
+        confirmColor: Colors.red,
+      ),
     );
+
+    if (confirm == true) {
+      feedCubit.deletePost(postId);
+    }
   }
 
   Widget _buildBottomNav() {

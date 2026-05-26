@@ -13,7 +13,6 @@ import 'package:agrobravo/features/home/presentation/widgets/new_post_bottom_she
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart';
-import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:agrobravo/core/formatters/centavos_input_formatter.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
@@ -39,8 +38,6 @@ class GuideDashboardPage extends StatefulWidget {
 class _GuideDashboardPageState extends State<GuideDashboardPage> {
   ItineraryGroupEntity? _group;
   List<ItineraryItemEntity> _upcomingEvents = [];
-  int _travelerCount = 0;
-  double _groupBalance = 0.0;
   List<Map<String, dynamic>> _travelers = [];
   List<Map<String, dynamic>> _guides = [];
   List<Map<String, dynamic>> _filteredTravelers = [];
@@ -121,15 +118,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   })
                   .toList();
 
-          // 3. Traveler Count
-          final countRes = results[2];
-          if (countRes is int) {
-            _travelerCount = countRes;
-          } else if (countRes is PostgrestResponse) {
-            _travelerCount = countRes.count ?? 0;
-          } else {
-            _travelerCount = 0;
-          }
+          // 3. Traveler Count (exibição removida do card)
+          final _ = results[2];
 
           // 4 & 5. Finances
           final groupFinanceRes = results[3] as Map<String, dynamic>?;
@@ -158,7 +148,6 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             }
           }
 
-          _groupBalance = totalBudget - totalSpent;
           _isLoading = false;
         });
 
@@ -304,9 +293,11 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     child: _buildMainCard(context),
                   ),
                   const SizedBox(height: 24),
+                  if (_upcomingEvents.isNotEmpty) ...[
+                    _buildUpcomingEvents(context),
+                    const SizedBox(height: 24),
+                  ],
                   _buildQuickActions(context),
-                  const SizedBox(height: 24),
-                  _buildUpcomingEvents(context),
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -329,257 +320,133 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme.of(context).cardColor,
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child:
-                            _group?.logo != null
-                                ? Image.network(
-                                  _group!.logo!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          const Icon(
-                                            Icons.group,
-                                            color: AppColors.primary,
-                                            size: 32,
-                                          ),
-                                )
-                                : const Icon(
-                                  Icons.group,
-                                  color: AppColors.primary,
-                                  size: 32,
-                                ),
-                      ),
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).cardColor,
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor,
                     ),
-                    Positioned(
-                      bottom: -8,
-                      left: -20,
-                      right: -20,
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: widget.onSwitchGroup,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                  ),
+                  child: ClipOval(
+                    child:
+                        _group?.logo != null
+                            ? Image.network(
+                              _group!.logo!,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
+                                      const Icon(
+                                        Icons.group,
+                                        color: AppColors.primary,
+                                        size: 32,
+                                      ),
+                            )
+                            : const Icon(
+                              Icons.group,
+                              color: AppColors.primary,
+                              size: 32,
                             ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00B289),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Theme.of(context).cardColor,
-                                width: 2,
+                  ),
+                ),
+                Positioned(
+                  bottom: -8,
+                  left: -20,
+                  right: -20,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: widget.onSwitchGroup,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00B289),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Theme.of(context).cardColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.sync, size: 12, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              'Trocar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.sync, size: 12, color: Colors.white),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Trocar',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Grupo',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        _group?.name ?? 'Grupo sem nome',
-                        style: AppTextStyles.h3.copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_rounded,
-                            size: 16,
-                            color: const Color(0xFF00B289),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              _group?.missionLocation ?? 'Itinerário ativo',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontSize: 13,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                _buildAvatarStackCompact(),
-              ],
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(height: 1),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Saldo do grupo',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        NumberFormat.simpleCurrency(
-                          locale: 'pt_BR',
-                        ).format(_groupBalance),
-                        style: AppTextStyles.h2.copyWith(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () => _showRegisterExpenseModal(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Registrar gasto',
-                        style: AppTextStyles.button.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.output_rounded, size: 18),
-                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Grupo',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    _group?.name ?? 'Grupo sem nome',
+                    style: AppTextStyles.h3.copyWith(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: const Color(0xFF00B289),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          _group?.missionLocation ?? 'Itinerário ativo',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  void _showRegisterExpenseModal(BuildContext context) {
-    if (_group?.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro: Grupo não encontrado.')),
-      );
-      return;
-    }
-
-    showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder:
-          (context) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _RegisterExpenseDialog(
-              groupId: _group!.id,
-              repository: getIt<DashboardActionsRepository>(),
-            ),
-          ),
-    ).then((value) {
-      if (value == true) {
-        _loadData();
-      }
-    });
-  }
-
-  Widget _buildAvatarStackCompact() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text(
-          '$_travelerCount',
-          style: AppTextStyles.h3.copyWith(
-            fontSize: 20,
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'viajantes',
-          style: AppTextStyles.bodySmall.copyWith(
-            fontSize: 12,
-            color: Colors.grey,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 
@@ -616,30 +483,40 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   () => widget.onTabChange?.call(1),
                 ),
               ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildActionItem(
                   context,
                   'Lembrete',
                   Icons.notifications_active_outlined,
                   AppColors.primary,
-                  () => showDialog(
+                  () => showModalBottomSheet(
                     context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
                     builder:
                         (context) => ReminderModal(groupId: widget.groupId),
                   ),
                 ),
               ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildActionItem(
                   context,
                   'Incidente',
                   Icons.warning_amber_rounded,
                   AppColors.primary,
-                  () => showDialog(
-                    context: context,
-                    builder:
-                        (context) => IncidentModal(groupId: widget.groupId),
-                  ),
+                  () => context.push('/incident-list/${widget.groupId}').then((_) => _loadData()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildActionItem(
+                  context,
+                  'Gastos',
+                  Icons.output_rounded,
+                  AppColors.primary,
+                  () => context.push('/expense-list/${widget.groupId}').then((_) => _loadData()),
                 ),
               ),
             ],
@@ -661,8 +538,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
       child: Column(
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: double.infinity,
+            height: 64,
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
@@ -678,6 +555,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               color: Theme.of(context).textTheme.bodySmall?.color,
               fontSize: 12,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1322,25 +1201,42 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   }
 }
 
-class _RegisterExpenseDialog extends StatefulWidget {
+class RegisterExpenseDialog extends StatefulWidget {
   final String groupId;
   final DashboardActionsRepository repository;
+  final Map<String, dynamic>? expenseToEdit;
 
-  const _RegisterExpenseDialog({
+  const RegisterExpenseDialog({
     required this.groupId,
     required this.repository,
+    this.expenseToEdit,
   });
 
   @override
-  State<_RegisterExpenseDialog> createState() => _RegisterExpenseDialogState();
+  State<RegisterExpenseDialog> createState() => RegisterExpenseDialogState();
 }
 
-class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
+class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Refeição';
   List<String> _attachedFilePaths = [];
+  List<String> _existingReceiptUrls = [];
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.expenseToEdit != null) {
+      final expense = widget.expenseToEdit!;
+      _descriptionController.text = expense['local'] ?? '';
+      _selectedCategory = expense['categoria'] ?? 'Refeição';
+      _existingReceiptUrls = List<String>.from(expense['comprovantes_urls'] as List? ?? []);
+
+      final amount = double.tryParse(expense['valor_gasto']?.toString() ?? '0') ?? 0.0;
+      _amountController.text = CentavosInputFormatter().formatter.format(amount);
+    }
+  }
 
   final List<String> _categories = [
     'Refeição',
@@ -1372,317 +1268,402 @@ class _RegisterExpenseDialogState extends State<_RegisterExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24.0, 12.0, 24.0, 24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Barra de arrastar (Drag Handle)
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[800] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.expenseToEdit != null ? 'Editar gasto' : 'Registrar gasto',
+                      style: AppTextStyles.h2.copyWith(fontSize: 22),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AppTextField(
+                  label: 'Valor do gasto',
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    CentavosInputFormatter(),
+                  ],
+                  textStyle: AppTextStyles.h1.copyWith(
+                    fontSize: 32,
+                    color: AppColors.primary,
+                  ),
+                  hint: 'R\$ 0,00',
+                ),
+                const SizedBox(height: 24),
                 Text(
-                  'Registrar gasto',
-                  style: AppTextStyles.h2.copyWith(fontSize: 22),
+                  'Categoria',
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children:
+                        _categories
+                            .map(
+                              (cat) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  showCheckmark: false,
+                                  avatar: Icon(
+                                    _getCategoryIcon(cat),
+                                    size: 18,
+                                    color:
+                                        _selectedCategory == cat
+                                            ? AppColors.primary
+                                            : Colors.grey,
+                                  ),
+                                  label: Text(cat),
+                                  selected: _selectedCategory == cat,
+                                  onSelected:
+                                      (val) =>
+                                          setState(() => _selectedCategory = cat),
+                                  selectedColor: AppColors.primary.withOpacity(0.2),
+                                  labelStyle: TextStyle(
+                                    color:
+                                        _selectedCategory == cat
+                                            ? AppColors.primary
+                                            : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                    fontWeight:
+                                        _selectedCategory == cat
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                  ),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.1),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppSpacing.radiusMd,
+                                    ),
+                                  ),
+                                  side: BorderSide.none,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            AppTextField(
-              label: 'Valor do gasto',
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                CentavosInputFormatter(),
-              ],
-              textStyle: AppTextStyles.h1.copyWith(
-                fontSize: 32,
-                color: AppColors.primary,
-              ),
-              hint: 'R\$ 0,00',
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Categoria',
-              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children:
-                    _categories
-                        .map(
-                          (cat) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              showCheckmark: false,
-                              avatar: Icon(
-                                _getCategoryIcon(cat),
-                                size: 18,
-                                color:
-                                    _selectedCategory == cat
-                                        ? AppColors.primary
-                                        : Colors.grey,
-                              ),
-                              label: Text(cat),
-                              selected: _selectedCategory == cat,
-                              onSelected:
-                                  (val) =>
-                                      setState(() => _selectedCategory = cat),
-                              selectedColor: AppColors.primary.withOpacity(0.2),
-                              labelStyle: TextStyle(
-                                color:
-                                    _selectedCategory == cat
-                                        ? AppColors.primary
-                                        : Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                fontWeight:
-                                    _selectedCategory == cat
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).dividerColor.withOpacity(0.1),
+                const SizedBox(height: 24),
+                AppTextField(
+                  label: 'Descrição / Local',
+                  controller: _descriptionController,
+                  hint: 'Ex: Almoço no aeroporto',
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Comprovante(s)',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                          if (_existingReceiptUrls.isNotEmpty)
+                            Column(
+                              children: _existingReceiptUrls.map((url) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        AppSpacing.radiusMd,
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.primary.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.description_outlined,
+                                          size: 20,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Comprovante salvo',
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => setState(
+                                            () => _existingReceiptUrls.remove(url),
+                                          ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          if (_attachedFilePaths.isNotEmpty)
+                            Column(
+                              children: _attachedFilePaths.map((path) {
+                                final fileName = path.split('/').last;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        AppSpacing.radiusMd,
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.primary.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.description_outlined,
+                                          size: 20,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            fileName,
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap:
+                                              () => setState(
+                                                () => _attachedFilePaths.remove(path),
+                                              ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final picker = ImagePicker();
+                              final isCamera = await showModalBottomSheet<bool>(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder:
+                                    (context) => NewPostBottomSheet(
+                                      onSourceSelected:
+                                          (camera) =>
+                                              Navigator.pop(context, camera),
+                                    ),
+                              );
+     
+                              if (isCamera != null) {
+                                final source =
+                                    isCamera
+                                        ? ImageSource.camera
+                                        : ImageSource.gallery;
+                                try {
+                                  final image = await picker.pickImage(
+                                    source: source,
+                                  );
+                                  if (image != null) {
+                                    setState(() {
+                                      _attachedFilePaths.add(image.path);
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Erro ao selecionar arquivo.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.attach_file_rounded, size: 20),
+                            label: Text((_attachedFilePaths.isEmpty && _existingReceiptUrls.isEmpty) ? 'Anexar Comprovante' : 'Adicionar outro anexo'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                   AppSpacing.radiusMd,
                                 ),
                               ),
-                              side: BorderSide.none,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
-                        )
-                        .toList(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            AppTextField(
-              label: 'Descrição / Local',
-              controller: _descriptionController,
-              hint: 'Ex: Almoço no aeroporto',
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Comprovante(s)',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Colors.grey,
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      if (_attachedFilePaths.isNotEmpty)
-                        Column(
-                          children: _attachedFilePaths.map((path) {
-                            final fileName = path.split('/').last;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    AppSpacing.radiusMd,
-                                  ),
-                                  border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.description_outlined,
-                                      size: 20,
-                                      color: AppColors.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        fileName,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap:
-                                          () => setState(
-                                            () => _attachedFilePaths.remove(path),
-                                          ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 18,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_amountController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Informe um valor válido')),
                             );
-                          }).toList(),
-                        ),
-                        
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final picker = ImagePicker();
-                          final isCamera = await showModalBottomSheet<bool>(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            builder:
-                                (context) => NewPostBottomSheet(
-                                  onSourceSelected:
-                                      (camera) =>
-                                          Navigator.pop(context, camera),
-                                ),
-                          );
-
-                          if (isCamera != null) {
-                            final source =
-                                isCamera
-                                    ? ImageSource.camera
-                                    : ImageSource.gallery;
-                            try {
-                              final image = await picker.pickImage(
-                                source: source,
-                              );
-                              if (image != null) {
-                                setState(() {
-                                  _attachedFilePaths.add(image.path);
-                                });
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
+                            return;
+                          }
+    
+                          final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
+                          final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
+                          
+                          if (amount <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Informe um valor válido')),
+                            );
+                            return;
+                          }
+    
+                          setState(() => _isLoading = true);
+    
+                          final result = widget.expenseToEdit != null
+                              ? await widget.repository.updateExpense(
+                                  id: widget.expenseToEdit!['id'],
+                                  groupId: widget.groupId,
+                                  amount: amount,
+                                  category: _selectedCategory,
+                                  description: _descriptionController.text.trim(),
+                                  existingReceiptUrls: _existingReceiptUrls,
+                                  newLocalReceiptPaths: _attachedFilePaths,
+                                )
+                              : await widget.repository.registerExpense(
+                                  groupId: widget.groupId,
+                                  amount: amount,
+                                  category: _selectedCategory,
+                                  description: _descriptionController.text.trim(),
+                                  receiptPaths: _attachedFilePaths,
+                                );
+    
+                          if (mounted) {
+                            setState(() => _isLoading = false);
+                            
+                            result.fold(
+                              (failure) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(content: Text('Erro: ${failure.toString().replaceAll('Exception: ', '')}')),
+                                );
+                              },
+                              (_) {
+                                Navigator.pop(context, true);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      'Erro ao selecionar arquivo.',
+                                      widget.expenseToEdit != null
+                                          ? 'Gasto atualizado com sucesso!'
+                                          : 'Gasto registrado com sucesso!',
                                     ),
                                   ),
                                 );
-                              }
-                            }
+                              },
+                            );
                           }
                         },
-                        icon: const Icon(Icons.attach_file_rounded, size: 20),
-                        label: Text(_attachedFilePaths.isEmpty ? 'Anexar Comprovante' : 'Adicionar outro anexo'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.primary),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusMd,
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ],
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    ),
+                    elevation: 0,
                   ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          widget.expenseToEdit != null ? 'Salvar alterações' : 'Confirmar Registro',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                        ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () async {
-                      if (_amountController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Informe um valor válido')),
-                        );
-                        return;
-                      }
-
-                      final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
-                      final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
-                      
-                      if (amount <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Informe um valor válido')),
-                        );
-                        return;
-                      }
-
-                      setState(() => _isLoading = true);
-
-                      final result = await widget.repository.registerExpense(
-                        groupId: widget.groupId,
-                        amount: amount,
-                        category: _selectedCategory,
-                        description: _descriptionController.text.trim(),
-                        receiptPaths: _attachedFilePaths,
-                      );
-
-                      if (mounted) {
-                        setState(() => _isLoading = false);
-                        
-                        result.fold(
-                          (failure) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erro: ${failure.toString().replaceAll('Exception: ', '')}')),
-                            );
-                          },
-                          (_) {
-                            Navigator.pop(context, true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Gasto registrado com sucesso!'),
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                ),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Confirmar Registro',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                    ),
-            ),
-          ],
+          ),
         ),
       ),
     );

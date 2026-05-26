@@ -129,22 +129,13 @@ class _ItineraryContentState extends State<ItineraryContent> {
   }
 
   void _showFilterModal() async {
-    final result = await showDialog<ItineraryFilters>(
+    final result = await showModalBottomSheet<ItineraryFilters>(
       context: context,
-      builder:
-          (context) => Dialog(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: ItineraryFilterModal(
-              initialFilters: _filters,
-            ),
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ItineraryFilterModal(
+        initialFilters: _filters,
+      ),
     );
 
     if (result != null) {
@@ -155,15 +146,16 @@ class _ItineraryContentState extends State<ItineraryContent> {
   }
 
   void _showSwitchModal() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder:
-          (context) => GroupSwitchModal(
-            onGroupSelected: (groupId) {
-              Navigator.pop(context);
-              widget.onGroupChanged(groupId);
-            },
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GroupSwitchModal(
+        onGroupSelected: (groupId) {
+          Navigator.pop(context);
+          widget.onGroupChanged(groupId);
+        },
+      ),
     );
   }
 

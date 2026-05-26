@@ -27,225 +27,242 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
   Widget build(BuildContext context) {
     final daysToStart =
         widget.mission.startDate?.difference(DateTime.now()).inDays ?? 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Atenção',
-                  style: AppTextStyles.h1.copyWith(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24.0, 12.0, 24.0, 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Barra de arrastar (Drag Handle)
+              Center(
+                child: Container(
                   width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Você foi adicionado em um grupo de uma missão',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Divider(
-              height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Location and Date
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.mission.location ?? 'Destino não definido',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                if (widget.mission.startDate != null)
-                  RichText(
-                    text: TextSpan(
-                      style: AppTextStyles.bodyMedium,
-                      children: [
-                        const TextSpan(text: 'Inicio em: '),
-                        TextSpan(
-                          text: '$daysToStart dias',
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // Mission Info
-            _buildInfoRow(
-              label: 'Missão:',
-              value: widget.mission.name,
-              iconUrl: widget.mission.logo,
-              fallbackIcon: Icons.travel_explore,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Group Info
-            _buildInfoRow(
-              label: 'Grupo:',
-              value: widget.mission.groupName ?? 'Sem grupo',
-              iconUrl: widget.mission.groupLogo,
-              fallbackIcon: Icons.groups_outlined,
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-            Divider(
-              height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // Pending Docs Warning
-            if ((widget.mission.pendingDocsCount ?? 0) > 0)
+              const SizedBox(height: 16),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Atenção',
+                    style: AppTextStyles.h1.copyWith(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Você foi adicionado em um grupo de uma missão',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Divider(
+                height: 1,
+                color: Theme.of(context).dividerColor.withOpacity(0.5),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Location and Date
+              Row(
                 children: [
                   const Icon(
-                    Icons.warning_amber_rounded,
-                    color: AppColors.error,
-                    size: 28,
+                    Icons.location_on_outlined,
+                    color: AppColors.primary,
+                    size: 20,
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Você possui ${widget.mission.pendingDocsCount} documentos pendentes para essa missão!',
+                      widget.mission.location ?? 'Destino não definido',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  if (widget.mission.startDate != null)
+                    RichText(
+                      text: TextSpan(
+                        style: AppTextStyles.bodyMedium,
+                        children: [
+                          const TextSpan(text: 'Inicio em: '),
+                          TextSpan(
+                            text: '$daysToStart dias',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Mission Info
+              _buildInfoRow(
+                label: 'Missão:',
+                value: widget.mission.name,
+                iconUrl: widget.mission.logo,
+                fallbackIcon: Icons.travel_explore,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Group Info
+              _buildInfoRow(
+                label: 'Grupo:',
+                value: widget.mission.groupName ?? 'Sem grupo',
+                iconUrl: widget.mission.groupLogo,
+                fallbackIcon: Icons.groups_outlined,
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+              Divider(
+                height: 1,
+                color: Theme.of(context).dividerColor.withOpacity(0.5),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Pending Docs Warning
+              if ((widget.mission.pendingDocsCount ?? 0) > 0)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.error,
+                      size: 28,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        'Você possui ${widget.mission.pendingDocsCount} documentos pendentes para essa missão!',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Don't show again checkbox
+              Row(
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: _dontShowAgain,
+                      activeColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      onChanged: (val) {
+                        setState(() => _dontShowAgain = val ?? false);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _dontShowAgain = !_dontShowAgain),
+                    child: Text(
+                      'Não mostrar novamente',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
                       ),
                     ),
                   ),
                 ],
               ),
 
-            const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.lg),
+              Divider(
+                height: 1,
+                color: Theme.of(context).dividerColor.withOpacity(0.5),
+              ),
+              const SizedBox(height: AppSpacing.xl),
 
-            // Don't show again checkbox
-            Row(
-              children: [
-                SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: Checkbox(
-                    value: _dontShowAgain,
-                    activeColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    onChanged: (val) {
-                      setState(() => _dontShowAgain = val ?? false);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => setState(() => _dontShowAgain = !_dontShowAgain),
-                  child: Text(
-                    'Não mostrar novamente',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-            Divider(
-              height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      widget.onDismiss?.call(_dontShowAgain);
-                      Navigator.pop(context);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFF00A38E)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        widget.onDismiss?.call(_dontShowAgain);
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: Color(0xFF00A38E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      'Fechar',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
+                      child: Text(
+                        'Fechar',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      widget.onDismiss?.call(_dontShowAgain);
-                      widget.onDocumentsTap();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        widget.onDismiss?.call(_dontShowAgain);
+                        widget.onDocumentsTap();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Ver documentos',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-                    child: const Text(
-                      'Ver documentos',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
