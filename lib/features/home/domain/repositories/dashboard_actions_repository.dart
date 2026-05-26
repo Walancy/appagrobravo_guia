@@ -12,13 +12,6 @@ abstract class DashboardActionsRepository {
     List<String> photoPaths = const [],
   });
 
-  Future<Either<Exception, void>> requestReport({
-    required String groupId,
-    required bool includeActivities,
-    required bool includeIncidents,
-    required bool includeExpenses,
-  });
-
   Future<Either<Exception, void>> registerExpense({
     required String groupId,
     required double amount,

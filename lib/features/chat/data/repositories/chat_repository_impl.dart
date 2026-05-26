@@ -78,10 +78,10 @@ class ChatRepositoryImpl implements ChatRepository {
           imageUrl: map['imageUrl'],
           startDate:
               map['startDate'] != null
-                  ? DateTime.parse(map['startDate'])
+                  ? DateTime.parse(map['startDate']).toLocal()
                   : null,
           endDate:
-              map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
+              map['endDate'] != null ? DateTime.parse(map['endDate']).toLocal() : null,
           memberCount: map['memberCount'] ?? 0,
         );
 
@@ -101,7 +101,7 @@ class ChatRepositoryImpl implements ChatRepository {
             {};
         final lastMessageTimes =
             (json['lastMessageTimes'] as Map<String, dynamic>?)?.map(
-              (k, v) => MapEntry(k, DateTime.parse(v as String)),
+              (k, v) => MapEntry(k, DateTime.parse(v as String).toLocal()),
             ) ??
             {};
 
@@ -207,15 +207,15 @@ class ChatRepositoryImpl implements ChatRepository {
 
         // Priority: Group Dates -> Mission Dates (fallback)
         if (g['data_inicio'] != null) {
-          start = DateTime.tryParse(g['data_inicio']);
+          start = DateTime.tryParse(g['data_inicio'])?.toLocal();
         } else if (missionData != null && missionData['data_inicio'] != null) {
-          start = DateTime.tryParse(missionData['data_inicio']);
+          start = DateTime.tryParse(missionData['data_inicio'])?.toLocal();
         }
 
         if (g['data_fim'] != null) {
-          end = DateTime.tryParse(g['data_fim']);
+          end = DateTime.tryParse(g['data_fim'])?.toLocal();
         } else if (missionData != null && missionData['data_fim'] != null) {
-          end = DateTime.tryParse(missionData['data_fim']);
+          end = DateTime.tryParse(missionData['data_fim'])?.toLocal();
         }
 
         allChats.add(
@@ -319,7 +319,7 @@ class ChatRepositoryImpl implements ChatRepository {
             if (response['created_at'] != null) {
               lastMessageTimes[identifier] = DateTime.parse(
                 response['created_at'],
-              );
+              ).toLocal();
             }
           }
         } catch (_) {}
@@ -395,7 +395,7 @@ class ChatRepositoryImpl implements ChatRepository {
           return MessageEntity(
             id: json['id'],
             text: json['text'],
-            timestamp: DateTime.parse(json['timestamp']),
+            timestamp: DateTime.parse(json['timestamp']).toLocal(),
             type: MessageType.values[json['typeIndex'] ?? 0],
             userName: json['userName'],
             userAvatarUrl: json['userAvatarUrl'],
@@ -486,7 +486,7 @@ class ChatRepositoryImpl implements ChatRepository {
           MessageEntity(
             id: msg['id'],
             text: msg['mensagem'] ?? '',
-            timestamp: DateTime.parse(msg['created_at']),
+            timestamp: DateTime.parse(msg['created_at']).toLocal(),
             type: type,
             userName: userData?['nome'],
             userAvatarUrl: userData?['foto'],
@@ -1378,11 +1378,11 @@ class ChatRepositoryImpl implements ChatRepository {
               imageUrl: g['logo'] ?? mission?['logo'],
               startDate:
                   g['data_inicio'] != null
-                      ? DateTime.tryParse(g['data_inicio'])
+                      ? DateTime.tryParse(g['data_inicio'])?.toLocal()
                       : null,
               endDate:
                   g['data_fim'] != null
-                      ? DateTime.tryParse(g['data_fim'])
+                      ? DateTime.tryParse(g['data_fim'])?.toLocal()
                       : null,
             );
           }).toList();

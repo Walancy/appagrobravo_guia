@@ -117,6 +117,22 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (response.session == null) {
+        // O Supabase não lança AuthException quando o e-mail já está cadastrado
+        // e a confirmação de e-mail está ativa — ele retorna session=null silenciosamente.
+        // Verificamos na tabela users se o e-mail já existe antes de tratar como
+        // novo cadastro aguardando confirmação.
+        try {
+          final existing = await _supabaseClient
+              .from('users')
+              .select('id')
+              .eq('email', email)
+              .maybeSingle();
+          if (existing != null) {
+            return Left(Exception('Este e-mail já está cadastrado.'));
+          }
+        } catch (checkError) {
+          log('Erro ao verificar e-mail duplicado: $checkError');
+        }
         // E-mail de confirmação é obrigatório e foi enviado, portanto não há sessão ativa ainda
         return Left(EmailNotConfirmedException());
       }

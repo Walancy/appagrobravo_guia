@@ -344,7 +344,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                                     ChatBubble(
                                       message: msg.text,
                                       time:
-                                          '${msg.timestamp.hour}:${msg.timestamp.minute.toString().padLeft(2, '0')}',
+                                          '${msg.timestamp.toLocal().hour}:${msg.timestamp.toLocal().minute.toString().padLeft(2, '0')}',
                                       type: _mapMessageType(msg.type),
                                       userName: msg.userName,
                                       userAvatarUrl: msg.userAvatarUrl,
@@ -486,10 +486,11 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   }
 
   String _formatDateHeader(DateTime date) {
+    final localDate = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = DateTime(now.year, now.month, now.day - 1);
-    final messageDate = DateTime(date.year, date.month, date.day);
+    final messageDate = DateTime(localDate.year, localDate.month, localDate.day);
 
     if (messageDate == today) {
       return 'Hoje';

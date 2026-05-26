@@ -13,7 +13,6 @@ import 'package:agrobravo/features/home/presentation/widgets/new_post_bottom_she
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart';
-import 'package:agrobravo/features/home/presentation/widgets/report_modal.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:agrobravo/core/formatters/centavos_input_formatter.dart';
@@ -627,18 +626,6 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                     context: context,
                     builder:
                         (context) => ReminderModal(groupId: widget.groupId),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _buildActionItem(
-                  context,
-                  'Relatório',
-                  Icons.assignment_outlined,
-                  AppColors.primary,
-                  () => showDialog(
-                    context: context,
-                    builder: (context) => ReportModal(groupId: widget.groupId),
                   ),
                 ),
               ),

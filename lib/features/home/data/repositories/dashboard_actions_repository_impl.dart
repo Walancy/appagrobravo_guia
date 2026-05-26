@@ -55,32 +55,6 @@ class DashboardActionsRepositoryImpl implements DashboardActionsRepository {
       return Left(Exception('Erro ao registrar incidente: $e'));
     }
   }
-
-  @override
-  Future<Either<Exception, void>> requestReport({
-    required String groupId,
-    required bool includeActivities,
-    required bool includeIncidents,
-    required bool includeExpenses,
-  }) async {
-    try {
-      final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) return Left(Exception('Usuário não autenticado.'));
-
-      await _supabaseClient.from('relatorios_solicitados').insert({
-        'grupo_id': groupId,
-        'guia_id': userId,
-        'incluir_atividades': includeActivities,
-        'incluir_incidentes': includeIncidents,
-        'incluir_despesas': includeExpenses,
-      });
-
-      return const Right(null);
-    } catch (e) {
-      return Left(Exception('Erro ao solicitar relatório: $e'));
-    }
-  }
-
   @override
   Future<Either<Exception, void>> registerExpense({
     required String groupId,

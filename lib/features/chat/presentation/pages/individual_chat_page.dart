@@ -280,7 +280,7 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                                 return ChatBubble(
                                   message: msg.text,
                                   time:
-                                      '${msg.timestamp.hour}:${msg.timestamp.minute.toString().padLeft(2, '0')}',
+                                      '${msg.timestamp.toLocal().hour}:${msg.timestamp.toLocal().minute.toString().padLeft(2, '0')}',
                                   type: _mapMessageType(msg.type),
                                   userName: msg.userName,
                                   userAvatarUrl: msg.userAvatarUrl,

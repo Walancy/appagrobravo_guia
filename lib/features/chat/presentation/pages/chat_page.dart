@@ -294,7 +294,7 @@ class _ChatPageState extends State<ChatPage>
       if (msg != null) {
         msgs[entityId] = msg['mensagem'] as String? ?? '📎 Arquivo';
         if (msg['created_at'] != null) {
-          times[entityId] = DateTime.parse(msg['created_at']);
+          times[entityId] = DateTime.parse(msg['created_at']).toLocal();
         }
       }
 
@@ -355,7 +355,7 @@ class _ChatPageState extends State<ChatPage>
                   setState(() {
                     _lastMessages[entityId] = text;
                     if (createdAt != null) {
-                      _lastMessageTimes[entityId] = DateTime.parse(createdAt);
+                      _lastMessageTimes[entityId] = DateTime.parse(createdAt).toLocal();
                     }
                     // Only increment if the sender is not the current user
                     final senderId = newRow['user_id'] as String?;
@@ -1406,15 +1406,16 @@ class _ChatListTile extends StatelessWidget {
   });
 
   String _formatTime(DateTime date) {
+    final localDate = date.toLocal();
     final now = DateTime.now();
-    if (now.day == date.day &&
-        now.month == date.month &&
-        now.year == date.year) {
-      return DateFormat('HH:mm').format(date);
-    } else if (now.difference(date).inDays < 2 && now.day != date.day) {
+    if (now.day == localDate.day &&
+        now.month == localDate.month &&
+        now.year == localDate.year) {
+      return DateFormat('HH:mm').format(localDate);
+    } else if (now.difference(localDate).inDays < 2 && now.day != localDate.day) {
       return 'Ontem';
     } else {
-      return DateFormat('dd/MM').format(date);
+      return DateFormat('dd/MM').format(localDate);
     }
   }
 
