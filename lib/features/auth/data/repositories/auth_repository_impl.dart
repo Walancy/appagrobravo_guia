@@ -173,6 +173,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId != null) {
+        await _supabaseClient
+            .from('users')
+            .update({'fcm_token': null})
+            .eq('id', userId);
+        log('FCM token limpo no banco para o usuário $userId antes do logout.');
+      }
+    } catch (e) {
+      log('Erro ao limpar FCM token no banco antes de deslogar: $e');
+    }
     await _supabaseClient.auth.signOut();
     // Clear cache on sign out
     final prefs = await SharedPreferences.getInstance();
