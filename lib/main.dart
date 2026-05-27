@@ -13,6 +13,8 @@ import 'package:agrobravo/features/notifications/presentation/cubit/notification
 import 'package:agrobravo/features/itinerary/presentation/cubit/itinerary_cubit.dart';
 import 'package:agrobravo/core/cubits/global_alert_cubit.dart';
 import 'package:agrobravo/core/cubits/theme_cubit.dart';
+import 'package:agrobravo/core/cubits/language_cubit.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -196,6 +198,7 @@ class AgroBravoApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => getIt<ThemeCubit>()),
+        BlocProvider(create: (context) => getIt<LanguageCubit>()),
         BlocProvider(
           create: (context) => getIt<AuthCubit>()..checkAuthStatus(),
         ),
@@ -206,91 +209,104 @@ class AgroBravoApp extends StatelessWidget {
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp.router(
-            title: 'AgroBravo',
-            debugShowCheckedModeBanner: false,
-            themeMode: themeMode,
-            theme: ThemeData(
-              primaryColor: AppColors.primary,
-              scaffoldBackgroundColor: AppColors.background,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: AppColors.primary,
-                primary: AppColors.primary,
-                secondary: AppColors.secondary,
-                surface: AppColors.surface,
-                onSurface: AppColors.textPrimary,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-              dividerColor: AppColors.backgroundLight,
-              dividerTheme: const DividerThemeData(
-                color: AppColors.backgroundLight,
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppColors.backgroundLight.withOpacity(0.08),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+          return BlocBuilder<LanguageCubit, Locale>(
+            builder: (context, locale) {
+              return MaterialApp.router(
+                title: 'AgroBravo',
+                debugShowCheckedModeBanner: false,
+                themeMode: themeMode,
+                theme: ThemeData(
+                  primaryColor: AppColors.primary,
+                  scaffoldBackgroundColor: AppColors.background,
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: AppColors.primary,
+                    primary: AppColors.primary,
+                    secondary: AppColors.secondary,
+                    surface: AppColors.surface,
+                    onSurface: AppColors.textPrimary,
+                    brightness: Brightness.light,
+                  ),
+                  useMaterial3: true,
+                  dividerColor: AppColors.backgroundLight,
+                  dividerTheme: const DividerThemeData(
+                    color: AppColors.backgroundLight,
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: AppColors.backgroundLight.withOpacity(0.08),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
+                darkTheme: ThemeData(
+                  primaryColor: AppColors.primary,
+                  scaffoldBackgroundColor: AppColors.backgroundDark,
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: AppColors.primary,
+                    primary: AppColors.primary,
+                    secondary: AppColors.secondary,
+                    surface: AppColors.surfaceDark,
+                    onSurface: AppColors.textPrimaryDark,
+                    brightness: Brightness.dark,
+                  ),
+                  useMaterial3: true,
+                  dividerColor: AppColors.backgroundLightDark,
+                  dividerTheme: const DividerThemeData(
+                    color: AppColors.backgroundLightDark,
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: AppColors.backgroundLightDark.withOpacity(0.08),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              primaryColor: AppColors.primary,
-              scaffoldBackgroundColor: AppColors.backgroundDark,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: AppColors.primary,
-                primary: AppColors.primary,
-                secondary: AppColors.secondary,
-                surface: AppColors.surfaceDark,
-                onSurface: AppColors.textPrimaryDark,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              dividerColor: AppColors.backgroundLightDark,
-              dividerTheme: const DividerThemeData(
-                color: AppColors.backgroundLightDark,
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppColors.backgroundLightDark.withOpacity(0.08),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-              ),
-            ),
-            locale: kDebugMode && kIsWeb ? DevicePreview.locale(context) : null,
-            builder: (context, child) {
-              Widget app = GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                child: child!,
+                locale: locale,
+                supportedLocales: const [
+                  Locale('pt', 'BR'),
+                  Locale('en', 'US'),
+                ],
+                localizationsDelegates: const [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                builder: (context, child) {
+                  Widget app = GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                    child: child!,
+                  );
+                  if (kDebugMode && kIsWeb) {
+                    app = DevicePreview.appBuilder(context, app);
+                  }
+                  return app;
+                },
+                routerConfig: appRouter,
               );
-              if (kDebugMode && kIsWeb) {
-                app = DevicePreview.appBuilder(context, app);
-              }
-              return app;
             },
-            routerConfig: appRouter,
           );
         },
       ),

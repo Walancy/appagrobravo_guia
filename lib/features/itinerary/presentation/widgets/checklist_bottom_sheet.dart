@@ -4,6 +4,7 @@ import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repository.dart';
 
 class ChecklistBottomSheet extends StatefulWidget {
@@ -126,7 +127,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Gerencie a presença de viajantes na atividade',
+                        context.t('Gerencie a presença de viajantes na atividade', 'Manage traveler attendance for the activity'),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: Colors.grey,
                         ),
@@ -189,7 +190,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             // Search
             AppTextField(
               controller: _searchController,
-              hint: 'Buscar por nome',
+              hint: context.t('Buscar por nome', 'Search by name'),
               prefixIcon: const Icon(Icons.search, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
@@ -200,9 +201,9 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _error != null
-                      ? Center(child: Text('Erro: $_error'))
+                      ? Center(child: Text('${context.t('Erro', 'Error')}: $_error'))
                       : _filteredTravelers.isEmpty
-                      ? const Center(child: Text('Nenhum viajante encontrado.'))
+                      ? Center(child: Text(context.t('Nenhum viajante encontrado.', 'No travelers found.')))
                       : GridView.builder(
                         padding: const EdgeInsets.only(bottom: 24),
                         gridDelegate:
@@ -229,8 +230,8 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   Widget _buildTravelerItem(Map<String, dynamic> traveler) {
     final isChecked = traveler['isChecked'] == true;
     final avatarUrl = traveler['avatar'];
-    final name = traveler['name'] ?? 'Viajante';
-    final role = traveler['role'] ?? 'Participante';
+    final name = traveler['name'] ?? context.t('Viajante', 'Traveler');
+    final role = traveler['role'] ?? context.t('Participante', 'Participant');
 
     return GestureDetector(
       onTap: () async {
@@ -257,7 +258,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
               traveler['isChecked'] = isChecked;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro ao atualizar presença: $failure')),
+              SnackBar(content: Text('${context.t('Erro ao atualizar presença', 'Error updating attendance')}: $failure')),
             );
           }
         }, (_) => null);

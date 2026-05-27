@@ -4,6 +4,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -95,12 +96,12 @@ class _IncidentModalState extends State<IncidentModal> {
     }
   }
 
-  final List<String> _types = [
-    'Médico',
-    'Logístico',
-    'Comportamental',
-    'Financeiro',
-    'Outros',
+  List<String> _getTypes(BuildContext context) => [
+    context.t('Médico', 'Medical'),
+    context.t('Logístico', 'Logistical'),
+    context.t('Comportamental', 'Behavioral'),
+    context.t('Financeiro', 'Financial'),
+    context.t('Outros', 'Other'),
   ];
 
   @override
@@ -151,7 +152,9 @@ class _IncidentModalState extends State<IncidentModal> {
                     children: [
                       Expanded(
                         child: Text(
-                          widget.incidentToEdit != null ? 'Editar incidente' : 'Registrar incidente',
+                          widget.incidentToEdit != null
+                              ? context.t('Editar incidente', 'Edit incident')
+                              : context.t('Registrar incidente', 'Register incident'),
                           style: AppTextStyles.h3.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -164,7 +167,7 @@ class _IncidentModalState extends State<IncidentModal> {
                     ],
                   ),
                   Text(
-                    'Descreva o que houve nos campos abaixo',
+                    context.t('Descreva o que houve nos campos abaixo', 'Describe what happened in the fields below'),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(
                         context,
@@ -173,24 +176,24 @@ class _IncidentModalState extends State<IncidentModal> {
                   ),
                   const SizedBox(height: 24),
                   _buildDropdown(
-                    'Tipo do incidente',
-                    'Selecione o tipo',
-                    _types,
+                    context.t('Tipo do incidente', 'Incident type'),
+                    context.t('Selecione o tipo', 'Select type'),
+                    _getTypes(context),
                     _selectedType,
                     (val) => setState(() => _selectedType = val),
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'Local',
+                    context.t('Local', 'Location'),
                     _locationController,
-                    hint: 'Digite o local',
+                    hint: context.t('Digite o local', 'Enter the location'),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          'Data',
+                          context.t('Data', 'Date'),
                           _dateController,
                           readOnly: true,
                           onTap: _pickDate,
@@ -200,7 +203,7 @@ class _IncidentModalState extends State<IncidentModal> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildTextField(
-                          'Hora',
+                          context.t('Hora', 'Time'),
                           _timeController,
                           readOnly: true,
                           onTap: _pickTime,
@@ -211,16 +214,16 @@ class _IncidentModalState extends State<IncidentModal> {
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'Descrição detalhada',
+                    context.t('Descrição detalhada', 'Detailed description'),
                     _descriptionController,
-                    hint: 'Descreva o incidente',
+                    hint: context.t('Descreva o incidente', 'Describe the incident'),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'Ação tomada',
+                    context.t('Ação tomada', 'Action taken'),
                     _actionController,
-                    hint: 'Descreva a ação tomada',
+                    hint: context.t('Descreva a ação tomada', 'Describe the action taken'),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 16),
@@ -228,7 +231,7 @@ class _IncidentModalState extends State<IncidentModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Foto(s)',
+                        context.t('Foto(s)', 'Photo(s)'),
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -259,10 +262,10 @@ class _IncidentModalState extends State<IncidentModal> {
                                   color: AppColors.primary,
                                 ),
                                 const SizedBox(width: 8),
-                                const Expanded(
+                                Expanded(
                                   child: Text(
-                                    'Foto salva anteriormente',
-                                    style: TextStyle(
+                                    context.t('Foto salva anteriormente', 'Previously saved photo'),
+                                    style: const TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -370,8 +373,8 @@ class _IncidentModalState extends State<IncidentModal> {
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Erro ao selecionar foto.'),
+                                    SnackBar(
+                                      content: Text(context.t('Erro ao selecionar foto.', 'Error selecting photo.')),
                                     ),
                                   );
                                 }
@@ -379,7 +382,7 @@ class _IncidentModalState extends State<IncidentModal> {
                             }
                           },
                           icon: const Icon(Icons.attach_file_rounded, size: 20),
-                          label: const Text('Anexar foto'),
+                          label: Text(context.t('Anexar foto', 'Attach photo')),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.primary),
@@ -411,7 +414,7 @@ class _IncidentModalState extends State<IncidentModal> {
                             side: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                           child: Text(
-                            'Voltar',
+                            context.t('Voltar', 'Back'),
                             style: AppTextStyles.button.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
@@ -429,9 +432,9 @@ class _IncidentModalState extends State<IncidentModal> {
                                       _actionController.text.isEmpty ||
                                       _locationController.text.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'Preencha os campos obrigatórios.',
+                                          context.t('Preencha os campos obrigatórios.', 'Please fill in the required fields.'),
                                         ),
                                       ),
                                     );
@@ -480,7 +483,7 @@ class _IncidentModalState extends State<IncidentModal> {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              'Erro: ${l.toString().replaceAll("Exception: ", "")}',
+                                              '${context.t('Erro', 'Error')}: ${l.toString().replaceAll("Exception: ", "")}',
                                             ),
                                           ),
                                         );
@@ -491,8 +494,8 @@ class _IncidentModalState extends State<IncidentModal> {
                                           SnackBar(
                                             content: Text(
                                               widget.incidentToEdit != null
-                                                  ? 'Incidente atualizado com sucesso!'
-                                                  : 'Incidente registrado com sucesso!',
+                                                  ? context.t('Incidente atualizado com sucesso!', 'Incident updated successfully!')
+                                                  : context.t('Incidente registrado com sucesso!', 'Incident reported successfully!'),
                                             ),
                                           ),
                                         );
@@ -518,8 +521,8 @@ class _IncidentModalState extends State<IncidentModal> {
                                 )
                               : Text(
                                   widget.incidentToEdit != null
-                                      ? 'Salvar alterações'
-                                      : 'Enviar relato',
+                                      ? context.t('Salvar alterações', 'Save changes')
+                                      : context.t('Enviar relato', 'Submit report'),
                                   style: AppTextStyles.button.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -638,7 +641,7 @@ class _AttachPhotoBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Text('Anexar foto', style: AppTextStyles.h3.copyWith(fontSize: 18)),
+          Text(context.t('Anexar foto', 'Attach photo'), style: AppTextStyles.h3.copyWith(fontSize: 18)),
           const SizedBox(height: AppSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -649,7 +652,7 @@ class _AttachPhotoBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Selecione uma opção',
+            context.t('Selecione uma opção', 'Select an option'),
             style: AppTextStyles.bodyMedium.copyWith(
               color: Colors.grey,
               fontWeight: FontWeight.w500,
@@ -661,14 +664,14 @@ class _AttachPhotoBottomSheet extends StatelessWidget {
             children: [
               _buildOption(
                 context: context,
-                label: 'Galeria',
+                label: context.t('Galeria', 'Gallery'),
                 icon: Icons.image_outlined,
                 onTap: () => onSourceSelected(false),
               ),
               const SizedBox(width: AppSpacing.xl),
               _buildOption(
                 context: context,
-                label: 'Câmera',
+                label: context.t('Câmera', 'Camera'),
                 icon: Icons.camera_alt_outlined,
                 onTap: () => onSourceSelected(true),
               ),

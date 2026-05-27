@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrobravo/core/components/documents_alert_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
 
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -88,6 +90,7 @@ class _HomePageState extends State<HomePage> {
                 mission.id,
                 permanently: permanently,
               );
+              context.read<DocumentsCubit>().dismissAlert();
             },
             onDocumentsTap: () {
               Navigator.pop(dialogContext);
@@ -101,38 +104,42 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<FeedCubit>()..loadFeed(),
-      child: BlocListener<FeedCubit, FeedState>(
+      child: BlocListener<DocumentsCubit, DocumentsState>(
         listener: (context, state) {
           state.maybeMap(
             loaded: (s) {
-              if (s.missionToAlert != null) {
-                _showMissionAlert(context, s.missionToAlert!);
+              if (_selectedGroupId != null && s.hasPendingAction && s.mission != null) {
+                _showMissionAlert(context, s.mission!);
               }
             },
             orElse: () {},
           );
         },
-        child: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: Colors.transparent,
-            statusBarIconBrightness:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Brightness.light
-                    : Brightness.dark,
-            systemNavigationBarIconBrightness:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Brightness.light
-                    : Brightness.dark,
-            systemNavigationBarDividerColor: Colors.transparent,
-            systemNavigationBarContrastEnforced: false,
-          ),
-          child: Scaffold(
-            extendBodyBehindAppBar: true,
-            appBar: _buildHeader(context),
-            body: _buildBody(),
-            bottomNavigationBar: _buildBottomNav(),
-          ),
+        child: Builder(
+          builder: (context) {
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                systemNavigationBarColor: Colors.transparent,
+                statusBarIconBrightness:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Brightness.light
+                        : Brightness.dark,
+                systemNavigationBarIconBrightness:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Brightness.light
+                        : Brightness.dark,
+                systemNavigationBarDividerColor: Colors.transparent,
+                systemNavigationBarContrastEnforced: false,
+              ),
+              child: Scaffold(
+                extendBodyBehindAppBar: true,
+                appBar: _buildHeader(context),
+                body: _buildBody(context),
+                bottomNavigationBar: _buildBottomNav(),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -253,7 +260,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
     if (_selectedIndex == 0) {
       if (_selectedGroupId != null) {
         return GuideDashboardPage(
@@ -282,6 +289,18 @@ class _HomePageState extends State<HomePage> {
             _selectedGroupId = groupId;
             _selectedIndex = 0; // Stay on home but show dashboard
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.read<FeedCubit>().state.maybeMap(
+                loaded: (s) {
+                  if (s.missionToAlert != null) {
+                    _showMissionAlert(context, s.missionToAlert!);
+                  }
+                },
+                orElse: () {},
+              );
+            }
+          });
         },
       );
     }
@@ -289,9 +308,12 @@ class _HomePageState extends State<HomePage> {
       if (_selectedGroupId == null) {
         return EmptyMissionState(
           icon: Icons.explore_off_outlined,
-          title: 'Nenhum itinerário ativo',
-          description: 'Selecione uma missão na aba Início para visualizar o itinerário.',
-          actionLabel: 'Selecionar Missão',
+          title: context.t('Nenhum itinerário ativo', 'No active itinerary'),
+          description: context.t(
+            'Selecione uma missão na aba Início para visualizar o itinerário.',
+            'Select a mission on the Home tab to view the itinerary.',
+          ),
+          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
           onActionPressed: () => setState(() => _selectedIndex = 0),
         );
       }
@@ -316,9 +338,12 @@ class _HomePageState extends State<HomePage> {
       if (_selectedGroupId == null) {
         return EmptyMissionState(
           icon: Icons.chat_bubble_outline_rounded,
-          title: 'Nenhum chat ativo',
-          description: 'Selecione uma missão na aba Início para conversar com os viajantes e guias.',
-          actionLabel: 'Selecionar Missão',
+          title: context.t('Nenhum chat ativo', 'No active chat'),
+          description: context.t(
+            'Selecione uma missão na aba Início para conversar com os viajantes e guias.',
+            'Select a mission on the Home tab to chat with travelers and guides.',
+          ),
+          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
           onActionPressed: () => setState(() => _selectedIndex = 0),
         );
       }
@@ -332,9 +357,12 @@ class _HomePageState extends State<HomePage> {
       if (_selectedGroupId == null) {
         return EmptyMissionState(
           icon: Icons.dynamic_feed_outlined,
-          title: 'Nenhum feed ativo',
-          description: 'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
-          actionLabel: 'Selecionar Missão',
+          title: context.t('Nenhum feed ativo', 'No active feed'),
+          description: context.t(
+            'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
+            'Select a mission on the Home tab to view and interact with posts.',
+          ),
+          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
           onActionPressed: () => setState(() => _selectedIndex = 0),
         );
       }
@@ -355,12 +383,23 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.zero,
                   children: [
                     const HeaderSpacer(extraHeight: 0),
+                    BlocBuilder<DocumentsCubit, DocumentsState>(
+                      builder: (context, state) {
+                        if (state.hasPendingDocuments) {
+                          return const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: DocumentsAlertCard(),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
                     ItineraryMicrocards(
                       onSeeAll: () => setState(() => _selectedIndex = 1),
                     ),
                     Center(
                       child: Text(
-                        'Nenhuma publicação encontrada.',
+                        context.t('Nenhuma publicação encontrada.', 'No posts found.'),
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
@@ -373,16 +412,29 @@ class _HomePageState extends State<HomePage> {
               onRefresh: () => context.read<FeedCubit>().loadFeed(),
               child: ListView.builder(
                 padding: EdgeInsets.zero,
-                itemCount: posts.length + 2,
+                itemCount: posts.length + 3,
                 itemBuilder: (context, index) {
                   if (index == 0) return const HeaderSpacer(extraHeight: 0);
                   if (index == 1) {
+                    return BlocBuilder<DocumentsCubit, DocumentsState>(
+                      builder: (context, state) {
+                        if (state.hasPendingDocuments) {
+                          return const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: DocumentsAlertCard(),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    );
+                  }
+                  if (index == 2) {
                     return ItineraryMicrocards(
                       onSeeAll: () => setState(() => _selectedIndex = 2),
                     );
                   }
 
-                  final post = posts[index - 2];
+                  final post = posts[index - 3];
                   final currentUserId =
                       getIt<FeedRepository>().getCurrentUserId();
                   final isOwner = post.userId == currentUserId;
@@ -463,8 +515,8 @@ class _HomePageState extends State<HomePage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Este dispositivo não suporta o uso da câmera.'),
+            SnackBar(
+              content: Text(context.t('Este dispositivo não suporta o uso da câmera.', 'This device does not support camera usage.')),
             ),
           );
         }
@@ -513,24 +565,24 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(0, Icons.home_outlined, Icons.home_outlined, 'Inicio'),
+          _buildNavItem(0, Icons.home_outlined, Icons.home_outlined, context.t('Início', 'Home')),
           _buildNavItem(
             1,
             Icons.explore_outlined,
             Icons.explore_outlined,
-            'Itinerário',
+            context.t('Itinerário', 'Itinerary'),
           ),
           _buildNavItem(
             2,
             Icons.chat_bubble_outline_rounded,
             Icons.chat_bubble_outline_rounded,
-            'Chats',
+            context.t('Chats', 'Chats'),
           ),
           _buildNavItem(
             3,
             Icons.dynamic_feed_outlined,
             Icons.dynamic_feed,
-            'Feed',
+            context.t('Feed', 'Feed'),
           ),
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {
@@ -538,7 +590,7 @@ class _HomePageState extends State<HomePage> {
                 4,
                 Icons.person_outline_rounded,
                 Icons.person_outline_rounded,
-                'Perfil',
+                context.t('Perfil', 'Profile'),
                 hasBadge: state.hasPendingAction,
               );
             },

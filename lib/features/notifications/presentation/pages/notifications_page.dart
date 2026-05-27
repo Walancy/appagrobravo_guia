@@ -4,6 +4,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/notifications/domain/entities/notification_entity.dart';
 import 'package:agrobravo/features/notifications/presentation/cubit/notifications_cubit.dart';
 import 'package:agrobravo/features/notifications/presentation/cubit/notifications_state.dart';
@@ -19,7 +20,7 @@ class NotificationsPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<NotificationsCubit>()..loadNotifications(),
       child: Scaffold(
-        appBar: const AppHeader(mode: HeaderMode.back, title: 'Notificações'),
+        appBar: AppHeader(mode: HeaderMode.back, title: context.t('Notificações', 'Notifications')),
         body: BlocBuilder<NotificationsCubit, NotificationsState>(
           builder: (context, state) {
             return state.when(
@@ -28,8 +29,8 @@ class NotificationsPage extends StatelessWidget {
               error: (message) => Center(child: Text(message)),
               loaded: (notifications) {
                 if (notifications.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhuma notificação encontrada'),
+                  return Center(
+                    child: Text(context.t('Nenhuma notificação encontrada', 'No notifications found')),
                   );
                 }
 
@@ -66,21 +67,21 @@ class NotificationsPage extends StatelessWidget {
                       _buildAllCaughtUpHeader(context, notifications),
 
                       if (last7Days.isNotEmpty) ...[
-                        _buildSectionHeader(context, 'Últimos 7 dias'),
+                        _buildSectionHeader(context, context.t('Últimos 7 dias', 'Last 7 days')),
                         ...last7Days.map(
                           (item) => _NotificationItem(notification: item),
                         ),
                       ],
 
                       if (last30Days.isNotEmpty) ...[
-                        _buildSectionHeader(context, 'Últimos 30 dias'),
+                        _buildSectionHeader(context, context.t('Últimos 30 dias', 'Last 30 days')),
                         ...last30Days.map(
                           (item) => _NotificationItem(notification: item),
                         ),
                       ],
 
                       if (older.isNotEmpty) ...[
-                        _buildSectionHeader(context, 'Mais antigas'),
+                        _buildSectionHeader(context, context.t('Mais antigas', 'Older')),
                         ...older.map(
                           (item) => _NotificationItem(notification: item),
                         ),
@@ -178,13 +179,13 @@ class NotificationsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Solicitações de conexão',
+                    context.t('Solicitações de conexão', 'Connection requests'),
                     style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    '${followRequests[0].userName}${followRequests.length > 1 ? ' + outras ${followRequests.length - 1} contas' : ''}',
+                    '${followRequests[0].userName}${followRequests.length > 1 ? ' + ${context.t("outras", "and")} ${followRequests.length - 1} ${context.t("contas", "others")}' : ''}',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Theme.of(
                         context,
@@ -237,13 +238,13 @@ class NotificationsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tudo atualizado',
+                  context.t('Tudo atualizado', 'All caught up'),
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  'Você viu todas as notificações',
+                  context.t('Você viu todas as notificações', 'You have seen all notifications'),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(
                       context,
@@ -456,10 +457,10 @@ class _NotificationItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text(
-            'Resolver',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          ),
+          child: Builder(builder: (context) => Text(
+            context.t('Resolver', 'Resolve'),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          )),
         ),
       );
     }
@@ -488,10 +489,10 @@ class _NotificationItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'Aceitar',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-              ),
+              child: Builder(builder: (context) => Text(
+                context.t('Aceitar', 'Accept'),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              )),
             ),
           ),
           const SizedBox(width: 8),

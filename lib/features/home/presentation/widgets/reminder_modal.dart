@@ -3,6 +3,7 @@ import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/notifications/domain/repositories/notifications_repository.dart';
 
 class ReminderModal extends StatefulWidget {
@@ -22,7 +23,7 @@ class _ReminderModalState extends State<ReminderModal> {
     if (text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Digite uma descrição.')));
+      ).showSnackBar(SnackBar(content: Text(context.t('Digite uma descrição.', 'Please enter a description.'))));
       return;
     }
 
@@ -32,7 +33,7 @@ class _ReminderModalState extends State<ReminderModal> {
       final repo = getIt<NotificationsRepository>();
       final result = await repo.sendGroupNotification(
         groupId: widget.groupId,
-        title: 'Lembrete do Guia',
+        title: context.t('Lembrete do Guia', 'Guide Reminder'),
         message: text,
       );
 
@@ -40,12 +41,12 @@ class _ReminderModalState extends State<ReminderModal> {
 
       result.fold(
         (l) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar: ${l.toString()}')),
+          SnackBar(content: Text(context.t('Erro ao enviar: ', 'Error sending: ') + l.toString())),
         ),
         (r) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lembrete enviado a todos!')),
+            SnackBar(content: Text(context.t('Lembrete enviado a todos!', 'Reminder sent to everyone!'))),
           );
         },
       );
@@ -53,7 +54,7 @@ class _ReminderModalState extends State<ReminderModal> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.t('Erro inesperado: ', 'Unexpected error: ') + e.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -105,7 +106,7 @@ class _ReminderModalState extends State<ReminderModal> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Novo lembrete',
+                        context.t('Novo lembrete', 'New reminder'),
                         style: AppTextStyles.h3.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -117,7 +118,7 @@ class _ReminderModalState extends State<ReminderModal> {
                     ],
                   ),
                   Text(
-                    'Envie um lembrete ao grupo',
+                    context.t('Envie um lembrete ao grupo', 'Send a reminder to the group'),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(
                         context,
@@ -126,9 +127,9 @@ class _ReminderModalState extends State<ReminderModal> {
                   ),
                   const SizedBox(height: 24),
                   AppTextField(
-                    label: 'Descrição',
+                    label: context.t('Descrição', 'Description'),
                     controller: _descriptionController,
-                    hint: 'Descreva',
+                    hint: context.t('Descreva', 'Describe'),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
@@ -145,7 +146,7 @@ class _ReminderModalState extends State<ReminderModal> {
                             side: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                           child: Text(
-                            'Voltar',
+                            context.t('Voltar', 'Back'),
                             style: AppTextStyles.button.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
@@ -174,7 +175,7 @@ class _ReminderModalState extends State<ReminderModal> {
                                     ),
                                   )
                                   : Text(
-                                    'Enviar',
+                                    context.t('Enviar', 'Send'),
                                     style: AppTextStyles.button.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,

@@ -8,6 +8,7 @@ import 'package:agrobravo/features/itinerary/domain/entities/itinerary_group.dar
 import 'package:agrobravo/features/home/presentation/widgets/guide_mission_card.dart';
 import 'package:agrobravo/features/home/presentation/widgets/groups_list_modal.dart';
 import 'package:agrobravo/core/components/empty_mission_state.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class GuideHomePage extends StatelessWidget {
   final Function(String)? onGroupSelected;
@@ -47,8 +48,21 @@ class GuideHomePage extends StatelessWidget {
                         final f = _filters[i];
                         final fValue = f['value'];
                         final isSelected = activeFilter == fValue;
+
+                        final labelPt = f['label'] as String;
+                        String labelText;
+                        if (labelPt == 'Todas') {
+                          labelText = context.t('Todas', 'All');
+                        } else if (labelPt == 'Ativa') {
+                          labelText = context.t('Ativa', 'Active');
+                        } else if (labelPt == 'Planejada') {
+                          labelText = context.t('Planejada', 'Planned');
+                        } else {
+                          labelText = context.t('Concluída', 'Completed');
+                        }
+
                         return FilterChip(
-                          label: Text(f['label'] as String),
+                          label: Text(labelText),
                           selected: isSelected,
                           onSelected: (_) => cubit.setStatusFilter(
                             isSelected ? null : fValue as String?,
@@ -76,14 +90,26 @@ class GuideHomePage extends StatelessWidget {
                   // Mission list
                   Expanded(
                     child: missions.isEmpty
-                        ? EmptyMissionState(
-                            icon: Icons.assignment_outlined,
-                            title: 'Nenhuma missão encontrada',
-                            description: activeFilter == null
-                                ? 'Você não possui missões ativas vinculadas à sua conta no momento.'
-                                : 'Nenhuma missão com status "${_filters.firstWhere((f) => f['value'] == activeFilter)['label']}" encontrada.',
-                            actionLabel: 'Recarregar',
-                            onActionPressed: () => cubit.loadMissions(),
+                        ? Builder(
+                            builder: (context) {
+                              final filterLabelPt = _filters.firstWhere((f) => f['value'] == activeFilter)['label'] as String;
+                              final filterLabelTranslated = filterLabelPt == 'Todas'
+                                  ? context.t('Todas', 'All')
+                                  : filterLabelPt == 'Ativa'
+                                      ? context.t('Ativa', 'Active')
+                                      : filterLabelPt == 'Planejada'
+                                          ? context.t('Planejada', 'Planned')
+                                          : context.t('Concluída', 'Completed');
+                              return EmptyMissionState(
+                                icon: Icons.assignment_outlined,
+                                title: context.t('Nenhuma missão encontrada', 'No missions found'),
+                                description: activeFilter == null
+                                    ? context.t('Você não possui missões ativas vinculadas à sua conta no momento.', 'You do not have active missions linked to your account at the moment.')
+                                    : context.t('Nenhuma missão com status "$filterLabelTranslated" encontrada.', 'No mission with status "$filterLabelTranslated" found.'),
+                                actionLabel: context.t('Recarregar', 'Reload'),
+                                onActionPressed: () => cubit.loadMissions(),
+                              );
+                            },
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
@@ -94,7 +120,7 @@ class GuideHomePage extends StatelessWidget {
                                   padding: const EdgeInsets.fromLTRB(
                                       16, 4, 16, 12),
                                   child: Text(
-                                    'Selecione uma missão',
+                                    context.t('Selecione uma missão', 'Select a mission'),
                                     style: AppTextStyles.h2.copyWith(
                                       fontSize: 16,
                                       color: Theme.of(context)
@@ -133,19 +159,17 @@ class GuideHomePage extends StatelessWidget {
     BuildContext context,
     List<ItineraryGroupEntity> groups,
   ) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
-          (context) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: EdgeInsets.zero,
-            child: GroupsListModal(
-              groups: groups,
-              onGroupSelected: (groupId) {
-                Navigator.pop(context);
-                onGroupSelected?.call(groupId);
-              },
-            ),
+          (context) => GroupsListModal(
+            groups: groups,
+            onGroupSelected: (groupId) {
+              Navigator.pop(context);
+              onGroupSelected?.call(groupId);
+            },
           ),
     );
   }

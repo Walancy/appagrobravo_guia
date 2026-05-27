@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class ProfileHeaderStats extends StatelessWidget {
   final int connections;
@@ -28,7 +28,7 @@ class ProfileHeaderStats extends StatelessWidget {
         GestureDetector(
           onTap: onConnectionsTap,
           behavior: HitTestBehavior.opaque,
-          child: _buildStatItem(context, '$connections', 'conexões'),
+          child: _buildStatItem(context, '$connections', context.t('conexões', 'connections')),
         ),
         GestureDetector(
           onTap: onPostsTap,
@@ -38,7 +38,7 @@ class ProfileHeaderStats extends StatelessWidget {
         GestureDetector(
           onTap: onMissionsTap,
           behavior: HitTestBehavior.opaque,
-          child: _buildStatItem(context, '$missions', 'Missões'),
+          child: _buildStatItem(context, '$missions', context.t('Missões', 'Missions')),
         ),
       ],
     );

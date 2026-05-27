@@ -173,38 +173,6 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
                 ),
 
               const SizedBox(height: AppSpacing.md),
-
-              // Don't show again checkbox
-              Row(
-                children: [
-                  SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: Checkbox(
-                      value: _dontShowAgain,
-                      activeColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      onChanged: (val) {
-                        setState(() => _dontShowAgain = val ?? false);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => setState(() => _dontShowAgain = !_dontShowAgain),
-                    child: Text(
-                      'Não mostrar novamente',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: AppSpacing.lg),
               Divider(
                 height: 1,

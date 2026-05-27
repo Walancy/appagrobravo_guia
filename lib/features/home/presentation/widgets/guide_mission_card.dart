@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/guide_mission.dart';
-import 'package:agrobravo/core/tokens/assets.gen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class GuideMissionCard extends StatelessWidget {
   final GuideMission guideMission;
@@ -78,7 +77,7 @@ class GuideMissionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Missão',
+                      context.t('Missão', 'Mission'),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey[500],
                         fontSize: 11,
@@ -104,7 +103,7 @@ class GuideMissionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          mission.location ?? 'Destino não informado',
+                          mission.location ?? context.t('Destino não informado', 'Destination not informed'),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Colors.grey[600],
                             fontSize: 13,
@@ -146,7 +145,7 @@ class GuideMissionCard extends StatelessWidget {
                   if (duration != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Dias de viagem',
+                      context.t('Dias de viagem', 'Travel days'),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey[500],
                         fontSize: 11,
@@ -155,7 +154,7 @@ class GuideMissionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 0),
                     Text(
-                      '$duration dias',
+                      context.t('$duration dias', '$duration days'),
                       style: AppTextStyles.h3.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -181,7 +180,11 @@ class GuideMissionCard extends StatelessWidget {
                       children: List.generate(
                         groupsCount > 3 ? 3 : groupsCount,
                         (index) {
-                          final groupLogo = guideMission.groups[index].logo;
+                          final group = guideMission.groups[index];
+                          final groupLogo = group.logo;
+                          final initials = group.name.isNotEmpty
+                              ? group.name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join()
+                              : '?';
                           return Padding(
                             padding: EdgeInsets.only(left: index * 18.0),
                             child: Container(
@@ -202,15 +205,18 @@ class GuideMissionCard extends StatelessWidget {
                                         )
                                         : null,
                               ),
-                              child:
-                                  groupLogo == null
-                                      ? Container(
-                                        padding: const EdgeInsets.all(4),
-                                        child: SvgPicture.asset(
-                                          Assets.images.logoColorida,
+                              child: groupLogo == null
+                                  ? Center(
+                                      child: Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary,
                                         ),
-                                      )
-                                      : null,
+                                      ),
+                                    )
+                                  : null,
                             ),
                           );
                         },
@@ -219,7 +225,7 @@ class GuideMissionCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$groupsCount grupos',
+                    context.t('$groupsCount grupos', '$groupsCount groups'),
                     style: AppTextStyles.h3.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -241,7 +247,7 @@ class GuideMissionCard extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Ver grupos',
+                    context.t('Ver grupos', 'View groups'),
                     style: AppTextStyles.button.copyWith(
                       color: Colors.white,
                       fontSize: 14,

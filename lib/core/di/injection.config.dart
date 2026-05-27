@@ -9,6 +9,7 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:agrobravo/core/cubits/language_cubit.dart' as _i27;
 import 'package:agrobravo/core/cubits/theme_cubit.dart' as _i811;
 import 'package:agrobravo/core/di/register_module.dart' as _i145;
 import 'package:agrobravo/features/auth/data/repositories/auth_repository_impl.dart'
@@ -75,6 +76,7 @@ extension GetItInjectableX on _i174.GetIt {
   }) {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    gh.factory<_i27.LanguageCubit>(() => _i27.LanguageCubit());
     gh.factory<_i811.ThemeCubit>(() => _i811.ThemeCubit());
     gh.lazySingleton<_i454.SupabaseClient>(() => registerModule.supabaseClient);
     gh.lazySingleton<_i321.ProfileRepository>(

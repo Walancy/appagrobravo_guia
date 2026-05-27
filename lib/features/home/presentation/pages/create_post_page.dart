@@ -6,6 +6,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
 import 'package:agrobravo/features/home/domain/entities/post_entity.dart';
@@ -104,7 +105,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro ao selecionar imagem')),
+            SnackBar(content: Text(context.t('Erro ao selecionar imagem', 'Error selecting image'))),
           );
         }
       }
@@ -170,7 +171,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
         setState(() => _isSharing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao ${_isEditing ? 'salvar' : 'publicar'}: $e'),
+            content: Text(
+              _isEditing
+                  ? '${context.t('Erro ao salvar', 'Error saving')}: $e'
+                  : '${context.t('Erro ao publicar', 'Error publishing')}: $e',
+            ),
           ),
         );
       },

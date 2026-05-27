@@ -7,6 +7,7 @@ import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/components/image_source_bottom_sheet.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../cubit/documents_cubit.dart';
 import '../../domain/entities/document_entity.dart';
 import '../../domain/entities/document_enums.dart';
@@ -48,15 +49,36 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     super.dispose();
   }
 
+  String _getTypeLabel(BuildContext context) {
+    switch (widget.type) {
+      case DocumentType.passaporte:
+        return context.t('Passaporte', 'Passport');
+      case DocumentType.visto:
+        return context.t('Visto', 'Visa');
+      case DocumentType.vacina:
+        return context.t('Carteira de Vacinação', 'Vaccination Card');
+      case DocumentType.seguro:
+        return context.t('Seguro Viagem', 'Travel Insurance');
+      case DocumentType.carteiraMotorista:
+        return context.t('Carteira de Motorista', "Driver's License");
+      case DocumentType.autorizacaoMenores:
+        return context.t('Autorização de Menores', 'Minor Authorization');
+      case DocumentType.outro:
+        return context.t('Outro', 'Other');
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
+    final hasImage =
+        _selectedFile != null || widget.currentDocument?.imageUrl != null;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => ImageSourceBottomSheet(
-        title: _selectedFile != null || widget.currentDocument?.imageUrl != null
-            ? 'Alterar foto do documento'
-            : 'Tirar foto do documento',
+        title: hasImage
+            ? context.t('Alterar foto do documento', 'Change document photo')
+            : context.t('Tirar foto do documento', 'Take document photo'),
       ),
     );
 
@@ -71,8 +93,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   Future<void> _onSave(BuildContext context) async {
     if (_selectedFile == null && widget.currentDocument?.imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, selecione uma foto do documento'),
+        SnackBar(
+          content: Text(
+            context.t(
+              'Por favor, selecione uma foto do documento',
+              'Please select a photo of the document',
+            ),
+          ),
         ),
       );
       return;
@@ -80,9 +107,6 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
 
     setState(() => _isUploading = true);
 
-    // Using the cubit from context. In the router we'll need to make sure
-    // it's either provided or we use a static method.
-    // Actually, it's better to use getIt or provide it.
     final cubit = widget.cubit ?? getIt<DocumentsCubit>();
 
     try {
@@ -94,16 +118,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           expiryDate: _selectedDate,
         );
       } else if (widget.currentDocument != null) {
-        // Only metadata update support? The repository current impl expects a file.
-        // For now, if user doesn't pick a new file, we might just stay as is,
-        // OR we need to update the repository to allow metadata-only updates.
-        // Users requested "preview of sent document" and "new screen".
-        // Let's assume they might want to just see it or change metadata.
-        // However, the current requirement is to upload.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Selecione uma nova imagem para atualizar o documento.',
+              context.t(
+                'Selecione uma nova imagem para atualizar o documento.',
+                'Select a new image to update the document.',
+              ),
             ),
           ),
         );
@@ -116,9 +137,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.t('Erro ao salvar: $e', 'Error saving: $e'),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -128,143 +153,150 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppHeader(mode: HeaderMode.back, title: widget.type.label),
+      appBar: AppHeader(
+        mode: HeaderMode.back,
+        title: _getTypeLabel(context),
+      ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusHeader(),
-            const SizedBox(height: AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusHeader(context),
+              const SizedBox(height: AppSpacing.lg),
 
-            Text(
-              'Imagem do Documento',
-              style: AppTextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _buildImagePreview(),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton.icon(
-              onPressed: _pickImage,
-              icon: const Icon(Icons.camera_alt, size: 20),
-              label: Text(
-                _selectedFile != null ||
-                        widget.currentDocument?.imageUrl != null
-                    ? 'Alterar Foto'
-                    : 'Tirar Foto',
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Número do Documento',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _numberController,
-              decoration: InputDecoration(
-                hintText: 'Ex: CD123456',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              Text(
+                context.t('Imagem do Documento', 'Document Image'),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
               ),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Data de Validade',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            InkWell(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate:
-                      _selectedDate ??
-                      DateTime.now().add(const Duration(days: 365)),
-                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate: DateTime.now().add(const Duration(days: 3650)),
-                );
-                if (date != null) setState(() => _selectedDate = date);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
+              const SizedBox(height: AppSpacing.sm),
+              _buildImagePreview(context),
+              const SizedBox(height: AppSpacing.sm),
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.camera_alt, size: 20),
+                label: Text(
+                  _selectedFile != null ||
+                          widget.currentDocument?.imageUrl != null
+                      ? context.t('Alterar Foto', 'Change Photo')
+                      : context.t('Tirar Foto', 'Take Photo'),
                 ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor.withOpacity(0.2),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                context.t('Número do Documento', 'Document Number'),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _numberController,
+                decoration: InputDecoration(
+                  hintText: context.t('Ex: CD123456', 'E.g.: CD123456'),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _selectedDate == null
-                          ? 'Selecionar data'
-                          : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 48),
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _isUploading ? null : () => _onSave(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  elevation: 0,
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                context.t('Data de Validade', 'Expiry Date'),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                child: _isUploading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Salvar e Enviar para Análise',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate:
+                        _selectedDate ??
+                        DateTime.now().add(const Duration(days: 365)),
+                    firstDate:
+                        DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                  );
+                  if (date != null) setState(() => _selectedDate = date);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.2),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Theme.of(context).colorScheme.surface,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate == null
+                            ? context.t('Selecionar data', 'Select date')
+                            : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                        style: AppTextStyles.bodyMedium,
                       ),
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-          ],
+
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _isUploading ? null : () => _onSave(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isUploading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          context.t(
+                            'Salvar e Enviar para Análise',
+                            'Save and Submit for Review',
+                          ),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildStatusHeader() {
+  Widget _buildStatusHeader(BuildContext context) {
     if (widget.currentDocument == null) {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -278,7 +310,10 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Este documento ainda não foi enviado. Envie agora para análise.',
+                context.t(
+                  'Este documento ainda não foi enviado. Envie agora para análise.',
+                  'This document has not been submitted yet. Submit it now for review.',
+                ),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Colors.orange[800],
                   fontWeight: FontWeight.w500,
@@ -291,20 +326,20 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     }
 
     Color statusColor = Colors.orange;
-    String statusText = 'Pendente de análise';
+    String statusText = context.t('Pendente de análise', 'Pending review');
     IconData icon = Icons.access_time;
 
     if (widget.currentDocument!.status == DocumentStatus.aprovado) {
       statusColor = AppColors.primary;
-      statusText = 'Documento aprovado';
+      statusText = context.t('Documento aprovado', 'Document approved');
       icon = Icons.check_circle_outline;
     } else if (widget.currentDocument!.status == DocumentStatus.recusado) {
       statusColor = AppColors.error;
-      statusText = 'Documento recusado';
+      statusText = context.t('Documento recusado', 'Document rejected');
       icon = Icons.error_outline;
     } else if (widget.currentDocument!.status == DocumentStatus.expirado) {
       statusColor = AppColors.error;
-      statusText = 'Documento expirado';
+      statusText = context.t('Documento expirado', 'Document expired');
       icon = Icons.warning_amber_outlined;
     }
 
@@ -338,7 +373,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Text(
-              'Motivo: ${widget.currentDocument!.rejectionReason}',
+              '${context.t('Motivo', 'Reason')}: ${widget.currentDocument!.rejectionReason}',
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
@@ -347,7 +382,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     );
   }
 
-  Widget _buildImagePreview() {
+  Widget _buildImagePreview(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 220,
@@ -373,19 +408,24 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                       errorBuilder: (context, error, stackTrace) =>
                           const Icon(Icons.broken_image_outlined, size: 50),
                     )
-                  : const Center(
+                  : Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.image_search,
                             size: 48,
                             color: AppColors.textSecondary,
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
-                            'Nenhuma imagem enviada',
-                            style: TextStyle(color: AppColors.textSecondary),
+                            context.t(
+                              'Nenhuma imagem enviada',
+                              'No image submitted',
+                            ),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),

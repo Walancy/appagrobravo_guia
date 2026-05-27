@@ -8,6 +8,7 @@ import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
@@ -104,11 +105,14 @@ class _AccountDataPageState extends State<AccountDataPage> {
     final confirm = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CustomConfirmBottomSheet(
-        title: 'Excluir Conta',
-        message: 'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
-        confirmLabel: 'Sim, excluir',
-        cancelLabel: 'Cancelar',
+      builder: (context) => CustomConfirmBottomSheet(
+        title: context.t('Excluir Conta', 'Delete Account'),
+        message: context.t(
+          'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
+          'Are you sure you want to permanently delete your account? This action is irreversible and all your data will be erased.',
+        ),
+        confirmLabel: context.t('Sim, excluir', 'Yes, delete'),
+        cancelLabel: context.t('Cancelar', 'Cancel'),
         confirmColor: AppColors.error,
       ),
     );
@@ -132,15 +136,15 @@ class _AccountDataPageState extends State<AccountDataPage> {
           (error) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Erro ao excluir conta: $error'),
+                content: Text(context.t('Erro ao excluir conta: $error', 'Error deleting account: $error')),
                 backgroundColor: AppColors.error,
               ),
             );
           },
           (_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sua conta foi excluída com sucesso.'),
+              SnackBar(
+                content: Text(context.t('Sua conta foi excluída com sucesso.', 'Your account has been successfully deleted.')),
                 backgroundColor: AppColors.primary,
               ),
             );
@@ -156,7 +160,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
       create: (context) => getIt<ProfileCubit>()..loadProfile(),
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: const AppHeader(mode: HeaderMode.back, title: 'Dados da conta'),
+        appBar: AppHeader(mode: HeaderMode.back, title: context.t('Dados da conta', 'Account details')),
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
             state.maybeWhen(
@@ -184,7 +188,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Não foi possível carregar os dados. Verifique sua conexão.',
+                          context.t('Não foi possível carregar os dados. Verifique sua conexão.', 'Could not load data. Check your connection.'),
                           textAlign: TextAlign.center,
                           style: AppTextStyles.bodyLarge,
                         ),
@@ -200,7 +204,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                             ),
                           ),
                           child: Text(
-                            'Tentar Novamente',
+                            context.t('Tentar Novamente', 'Try Again'),
                             style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                           ),
                         ),
@@ -219,19 +223,19 @@ class _AccountDataPageState extends State<AccountDataPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Informações Pessoais',
+                          context.t('Informações Pessoais', 'Personal Information'),
                           style: AppTextStyles.h3.copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         _buildTextField(
                           context,
                           _nameController,
-                          'Nome Completo',
+                          context.t('Nome Completo', 'Full Name'),
                         ),
                         _buildTextField(
                           context,
                           _phoneController,
-                          'Telefone',
+                          context.t('Telefone', 'Phone'),
                           keyboardType: TextInputType.phone,
                           inputFormatters: [_phoneMaskFormatter],
                         ),
@@ -261,18 +265,18 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         ),
 
                         const SizedBox(height: AppSpacing.md),
-                        _buildDatePicker(context, 'Data de Nascimento'),
+                        _buildDatePicker(context, context.t('Data de Nascimento', 'Date of Birth')),
 
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Endereço',
+                          context.t('Endereço', 'Address'),
                           style: AppTextStyles.h3.copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         _buildTextField(
                           context,
                           _zipCodeController,
-                          'CEP',
+                          context.t('CEP', 'Zip Code'),
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         ),
@@ -282,7 +286,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               child: _buildTextField(
                                 context,
                                 _stateController,
-                                'Estado',
+                                context.t('Estado', 'State'),
                               ),
                             ),
                             const SizedBox(width: AppSpacing.md),
@@ -290,7 +294,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               child: _buildTextField(
                                 context,
                                 _cityController,
-                                'Cidade',
+                                context.t('Cidade', 'City'),
                               ),
                             ),
                           ],
@@ -298,16 +302,16 @@ class _AccountDataPageState extends State<AccountDataPage> {
                         _buildTextField(
                           context,
                           _neighborhoodController,
-                          'Bairro',
+                          context.t('Bairro', 'Neighborhood'),
                         ),
-                        _buildTextField(context, _streetController, 'Rua'),
+                        _buildTextField(context, _streetController, context.t('Rua', 'Street')),
                         Row(
                           children: [
                             Expanded(
                               child: _buildTextField(
                                 context,
                                 _numberController,
-                                'Número',
+                                context.t('Número', 'Number'),
                                 keyboardType: TextInputType.number,
                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                               ),
@@ -318,7 +322,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               child: _buildTextField(
                                 context,
                                 _complementController,
-                                'Complemento',
+                                context.t('Complemento', 'Complement'),
                               ),
                             ),
                           ],
@@ -326,19 +330,19 @@ class _AccountDataPageState extends State<AccountDataPage> {
 
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Documentação Internacional',
+                          context.t('Documentação Internacional', 'International Documentation'),
                           style: AppTextStyles.h3.copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         _buildTextField(
                           context,
                           _nationalityController,
-                          'Nacionalidade',
+                          context.t('Nacionalidade', 'Nationality'),
                         ),
                         _buildTextField(
                           context,
                           _passportController,
-                          'Passaporte',
+                          context.t('Passaporte', 'Passport'),
                         ),
 
                         const SizedBox(height: AppSpacing.xl),
@@ -352,7 +356,6 @@ class _AccountDataPageState extends State<AccountDataPage> {
                                 'phone': _phoneController.text,
                                 'cpf': _cpfController.text,
                                 'ssn': _ssnController.text,
-
                                 'zipCode': _zipCodeController.text,
                                 'state': _stateController.text,
                                 'city': _cityController.text,
@@ -364,12 +367,10 @@ class _AccountDataPageState extends State<AccountDataPage> {
                                 'passport': _passportController.text,
                                 if (_birthDate != null) 'birthDate': _birthDate,
                               };
-                              context.read<ProfileCubit>().updateAccountData(
-                                data,
-                              );
+                              context.read<ProfileCubit>().updateAccountData(data);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Dados atualizados com sucesso!'),
+                                SnackBar(
+                                  content: Text(context.t('Dados atualizados com sucesso!', 'Data updated successfully!')),
                                   backgroundColor: AppColors.primary,
                                 ),
                               );
@@ -385,7 +386,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               elevation: 0,
                             ),
                             child: Text(
-                              'Salvar Alterações',
+                              context.t('Salvar Alterações', 'Save Changes'),
                               style: AppTextStyles.bodyLarge.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -408,7 +409,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                               ),
                             ),
                             child: Text(
-                              'Excluir conta',
+                              context.t('Excluir conta', 'Delete account'),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.error,
                                 fontWeight: FontWeight.bold,
@@ -478,7 +479,7 @@ class _AccountDataPageState extends State<AccountDataPage> {
                 children: [
                   Text(
                     _birthDate == null
-                        ? 'Selecionar data'
+                        ? context.t('Selecionar data', 'Select date')
                         : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,

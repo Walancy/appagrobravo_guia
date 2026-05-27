@@ -879,7 +879,7 @@ class FeedRepositoryImpl implements FeedRepository {
       }
 
       // 1. Get the most recent group participation
-      final groupResponse =
+      var groupResponse =
           await _supabaseClient
               .from('gruposParticipantes')
               .select(
@@ -889,6 +889,22 @@ class FeedRepositoryImpl implements FeedRepository {
               .order('id', ascending: false)
               .limit(1)
               .maybeSingle();
+
+      if (groupResponse == null) {
+        final leaderResponse = await _supabaseClient
+            .from('lideresGrupo')
+            .select(
+              'grupo_id, grupos:grupos!lideresMissao_grupo_id_fkey (nome, data_inicio, data_fim, logo, missoes:missao_id (id, nome, logo, continente, paises, documentos_exigidos))',
+            )
+            .eq('lider_id', userId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (leaderResponse != null) {
+          groupResponse = leaderResponse;
+        }
+      }
 
       if (groupResponse == null) {
         await _saveMissionAlertToCache(null);
@@ -927,52 +943,35 @@ class FeedRepositoryImpl implements FeedRepository {
       final docsList = docsResponse as List;
       final approvedTypes =
           docsList
-              .where((d) => d['status'] == 'APROVADO')
+              .where((d) => d['status'] == 'APROVADO' || d['status'] == 'PENDENTE')
               .map((d) => d['tipo'] as String)
               .toSet();
 
-      final List<dynamic> docsExigidos =
-          missionData['documentos_exigidos'] ?? [];
-      final bool passReq = docsExigidos.contains('PASSAPORTE');
-      final bool visaReq = docsExigidos.contains('VISTO');
-      final bool vacReq = docsExigidos.contains('VACINA');
-      final bool segReq = docsExigidos.contains('SEGURO');
-      final bool cnhReq = docsExigidos.contains('CARTEIRA_MOTORISTA');
-      final bool autReq = docsExigidos.contains('AUTORIZACAO_MENORES');
-
-      final requiredTypes = [
-        if (passReq) 'PASSAPORTE',
-        if (visaReq) 'VISTO',
-        if (vacReq) 'VACINA',
-        if (segReq) 'SEGURO',
-        if (cnhReq) 'CARTEIRA_MOTORISTA',
-        if (autReq) 'AUTORIZACAO_MENORES',
-      ];
-
-      // If no flags are set, fallback to a default set (backwards compatibility)
-      final effectiveRequiredTypes =
-          requiredTypes.isEmpty
-              ? ['PASSAPORTE', 'VISTO', 'VACINA', 'SEGURO']
-              : requiredTypes;
+      final docsReq = missionData['documentos_exigidos'] as List? ?? [];
+      final passReq = docsReq.contains('PASSAPORTE');
+      final visaReq = docsReq.contains('VISTO');
+      final vacReq = docsReq.contains('VACINA');
+      final segReq = docsReq.contains('SEGURO');
+      final cnhReq = docsReq.contains('CARTEIRA_MOTORISTA');
+      final autReq = docsReq.contains('AUTORIZACAO_MENORES');
 
       int pendingCount = 0;
-      for (var type in effectiveRequiredTypes) {
-        if (!approvedTypes.contains(type)) {
-          pendingCount++;
-        }
-      }
+      if (passReq && !approvedTypes.contains('PASSAPORTE')) pendingCount++;
+      if (visaReq && !approvedTypes.contains('VISTO')) pendingCount++;
+      if (vacReq && !approvedTypes.contains('VACINA')) pendingCount++;
+      // O seguro viagem é gerado pelo painel administrativo, então não é exigido do viajante
+      if (cnhReq && !approvedTypes.contains('CARTEIRA_MOTORISTA')) pendingCount++;
+      if (autReq && !approvedTypes.contains('AUTORIZACAO_MENORES')) pendingCount++;
 
-      // 3. Ensure a notification record exists for this mission addition
       try {
-        final existingNotification =
-            await _supabaseClient
-                .from('notificacoes')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('assunto', 'missionUpdate')
-                .eq('grupo_id', groupResponse['grupo_id'])
-                .limit(1)
-                .maybeSingle();
+        final existingNotification = await _supabaseClient
+            .from('notificacoes')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('assunto', 'missionUpdate')
+            .eq('missao_id', missionData['id'])
+            .limit(1)
+            .maybeSingle();
 
         if (existingNotification == null) {
           await _supabaseClient.from('notificacoes').insert({

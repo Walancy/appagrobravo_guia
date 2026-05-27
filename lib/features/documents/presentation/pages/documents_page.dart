@@ -6,6 +6,7 @@ import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
 import '../cubit/documents_cubit.dart';
@@ -21,9 +22,9 @@ class DocumentsPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<DocumentsCubit>()..loadDocuments(),
       child: Scaffold(
-        appBar: const AppHeader(
+        appBar: AppHeader(
           mode: HeaderMode.back,
-          title: 'Meus documentos',
+          title: context.t('Meus documentos', 'My documents'),
         ),
         body: BlocBuilder<DocumentsCubit, DocumentsState>(
           builder: (context, state) {
@@ -63,12 +64,15 @@ class DocumentsPage extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           Text(
-            'Pendências e Atualizações',
+            context.t('Pendências e Atualizações', 'Pending & Updates'),
             style: AppTextStyles.h3.copyWith(fontSize: 18),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Mantenha seus documentos em dia para sua viagem.',
+            context.t(
+              'Mantenha seus documentos em dia para sua viagem.',
+              'Keep your documents up to date for your trip.',
+            ),
             style: AppTextStyles.bodySmall,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -104,6 +108,42 @@ class _DocumentTypeButton extends StatelessWidget {
     this.mission,
   });
 
+  String _getTypeLabel(BuildContext context, DocumentType type) {
+    switch (type) {
+      case DocumentType.passaporte:
+        return context.t('Passaporte', 'Passport');
+      case DocumentType.visto:
+        return context.t('Visto', 'Visa');
+      case DocumentType.vacina:
+        return context.t('Carteira de Vacinação', 'Vaccination Card');
+      case DocumentType.seguro:
+        return context.t('Seguro Viagem', 'Travel Insurance');
+      case DocumentType.carteiraMotorista:
+        return context.t('Carteira de Motorista', 'Driver\'s License');
+      case DocumentType.autorizacaoMenores:
+        return context.t('Autorização de Menores', 'Minor Authorization');
+      case DocumentType.outro:
+        return context.t('Outro', 'Other');
+    }
+  }
+
+  String _getStatusText(BuildContext context) {
+    if (document == null) return context.t('Pendente de envio', 'Pending upload');
+    if (document!.status == DocumentStatus.pendente) {
+      return context.t('Aguardando aprovação', 'Awaiting approval');
+    }
+    if (document!.status == DocumentStatus.aprovado) {
+      return context.t('Documento em dia', 'Document up to date');
+    }
+    if (document!.status == DocumentStatus.recusado) {
+      return context.t('Recusado - Clique para reenviar', 'Rejected - Tap to resubmit');
+    }
+    if (document!.status == DocumentStatus.expirado) {
+      return context.t('Expirado - Clique para atualizar', 'Expired - Tap to update');
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     // Calculate Age
@@ -134,7 +174,8 @@ class _DocumentTypeButton extends StatelessWidget {
           isTypeMandatory = mission!.vacinaObrigatoria;
           break;
         case DocumentType.seguro:
-          isTypeMandatory = mission!.seguroObrigatorio;
+          // O seguro viagem é gerado pelo painel administrativo, então não é exigido do viajante
+          isTypeMandatory = false;
           break;
         case DocumentType.carteiraMotorista:
           isTypeMandatory = mission!.carteiraObrigatoria;
@@ -147,17 +188,8 @@ class _DocumentTypeButton extends StatelessWidget {
           break;
       }
     } else {
-      // Fallback baseline if mission info not loaded
-      final baselineMandatory = [
-        DocumentType.passaporte,
-        DocumentType.visto,
-        DocumentType.vacina,
-        DocumentType.seguro,
-      ];
-      isTypeMandatory = baselineMandatory.contains(type);
-      if (type == DocumentType.autorizacaoMenores) {
-        isTypeMandatory = isUnder18;
-      }
+      // Se não estiver em nenhuma missão não precisamos cobrar os documentos
+      isTypeMandatory = false;
     }
 
     bool isPending = false;
@@ -246,13 +278,13 @@ class _DocumentTypeButton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      type.label,
+                      _getTypeLabel(context, type),
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      _getStatusText(),
+                      _getStatusText(context),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: (isPending || isAlert)
                             ? statusColor
@@ -289,18 +321,6 @@ class _DocumentTypeButton extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getStatusText() {
-    if (document == null) return 'Pendente de envio';
-    if (document!.status == DocumentStatus.pendente)
-      return 'Aguardando aprovação';
-    if (document!.status == DocumentStatus.aprovado) return 'Documento em dia';
-    if (document!.status == DocumentStatus.recusado)
-      return 'Recusado - Clique para reenviar';
-    if (document!.status == DocumentStatus.expirado)
-      return 'Expirado - Clique para atualizar';
-    return '';
   }
 
   IconData _getIcon(DocumentType type) {

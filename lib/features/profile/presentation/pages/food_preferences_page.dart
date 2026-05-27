@@ -5,6 +5,7 @@ import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 
@@ -62,9 +63,9 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
       value: _cubit,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: const AppHeader(
+        appBar: AppHeader(
           mode: HeaderMode.back,
-          title: 'Preferências alimentares',
+          title: context.t('Preferências alimentares', 'Food preferences'),
         ),
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
@@ -106,7 +107,7 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Não foi possível carregar os dados. Verifique sua conexão.',
+                          context.t('Não foi possível carregar os dados. Verifique sua conexão.', 'Could not load data. Check your connection.'),
                           textAlign: TextAlign.center,
                           style: AppTextStyles.bodyLarge,
                         ),
@@ -122,7 +123,7 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                             ),
                           ),
                           child: Text(
-                            'Tentar Novamente',
+                            context.t('Tentar Novamente', 'Try Again'),
                             style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                           ),
                         ),
@@ -138,12 +139,15 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Conte-nos sobre seus gostos',
+                        context.t('Conte-nos sobre seus gostos', 'Tell us about your tastes'),
                         style: AppTextStyles.h3,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Adicione tags para indicar suas preferências alimentares (ex: Vegetariano, Sem Pimenta).',
+                        context.t(
+                          'Adicione tags para indicar suas preferências alimentares (ex: Vegetariano, Sem Pimenta).',
+                          'Add tags to indicate your food preferences (e.g. Vegetarian, No Spice).',
+                        ),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(
                             context,
@@ -157,7 +161,7 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Adicione uma preferência...',
+                          hintText: context.t('Adicione uma preferência...', 'Add a preference...'),
                           suffixIcon: IconButton(
                             icon: const Icon(
                               Icons.add_circle,
@@ -207,7 +211,7 @@ class _FoodPreferencesPageState extends State<FoodPreferencesPage> {
                         padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Center(
                           child: Text(
-                            'Suas preferências são salvas automaticamente.',
+                            context.t('Suas preferências são salvas automaticamente.', 'Your preferences are saved automatically.'),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Theme.of(
                                 context,

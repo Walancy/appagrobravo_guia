@@ -4,6 +4,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/components/documents_alert_card.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/profile/presentation/widgets/profile_header_cover.dart';
@@ -51,7 +57,7 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
-  void _showMissionsModal() {
+  void _showMissionsModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -78,7 +84,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text('Minhas Missões', style: AppTextStyles.h3),
+                  child: Text(context.t('Minhas Missões', 'My Missions'), style: AppTextStyles.h3),
                 ),
                 const Divider(),
                 Expanded(
@@ -108,7 +114,7 @@ class _ProfileTabState extends State<ProfileTab> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Nenhuma missão encontrada',
+                                context.t('Nenhuma missão encontrada', 'No missions found'),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: Colors.grey,
                                 ),
@@ -191,8 +197,6 @@ class _ProfileTabState extends State<ProfileTab> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                       ),
-                                      // Add dates if available in MissionEntity?
-                                      // MissionEntity usually has date range?
                                     ],
                                   ),
                                 ),
@@ -222,7 +226,7 @@ class _ProfileTabState extends State<ProfileTab> {
         extendBodyBehindAppBar: true,
         appBar:
             widget.userId != null
-                ? const AppHeader(mode: HeaderMode.back, title: 'Perfil')
+                ? AppHeader(mode: HeaderMode.back, title: context.t('Perfil', 'Profile'))
                 : null,
         body: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
@@ -242,7 +246,10 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Text(
-                        'Não foi possível carregar o perfil. Verifique sua conexão.',
+                        context.t(
+                          'Não foi possível carregar o perfil. Verifique sua conexão.',
+                          'Could not load profile. Please check your connection.',
+                        ),
                         textAlign: TextAlign.center,
                         style: AppTextStyles.bodyLarge,
                       ),
@@ -258,7 +265,7 @@ class _ProfileTabState extends State<ProfileTab> {
                           ),
                         ),
                         child: Text(
-                          'Tentar Novamente',
+                          context.t('Tentar Novamente', 'Try Again'),
                           style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                         ),
                       ),
@@ -276,8 +283,8 @@ class _ProfileTabState extends State<ProfileTab> {
                         (context) => ImageSourceBottomSheet(
                           title:
                               isAvatar
-                                  ? 'Alterar foto de perfil'
-                                  : 'Alterar capa',
+                                  ? context.t('Alterar foto de perfil', 'Change profile picture')
+                                  : context.t('Alterar capa', 'Change cover'),
                         ),
                   );
 
@@ -330,48 +337,80 @@ class _ProfileTabState extends State<ProfileTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const HeaderSpacer(extraHeight: 0),
-                      ProfileHeaderCover(
-                        coverUrl: profile.coverUrl,
-                        avatarUrl: profile.avatarUrl,
-                        pendingAvatar: pendingAvatar,
-                        pendingCover: pendingCover,
-                        isMe: isMe,
-                        isEditing: isEditing,
-                        isUpdatingAvatar: isUpdatingAvatar,
-                        isUpdatingCover: isUpdatingCover,
-                        onUpdateAvatar: () => pickAndUploadImage(true),
-                        onUpdateCover: () => pickAndUploadImage(false),
-                        statsWidget: Opacity(
-                          opacity: isEditing ? 0.3 : 1.0,
-                          child: ProfileHeaderStats(
-                            connections: profile.connectionsCount,
-                            posts: profile.postsCount,
-                            missions: profile.missionsCount,
-                            onConnectionsTap: () {
-                              context.push('/connections/${profile.id}');
-                            },
-                            onPostsTap: _scrollToPosts,
-                            onMissionsTap: _showMissionsModal,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Opacity(
-                        opacity: isEditing ? 0.3 : 1.0,
-                        child: Column(
+                      // Determina se é admin (COLABORADOR ou MASTER)
+                      Builder(builder: (context) {
+                        final authState = getIt<AuthCubit>().state;
+                        final isAdmin = authState.maybeWhen(
+                          authenticated: (user) =>
+                              user.roles.contains('COLABORADOR') ||
+                              user.roles.contains('MASTER'),
+                          orElse: () => false,
+                        );
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ProfileInfo(
-                              name: profile.name,
-                              jobTitle: profile.jobTitle,
-                              bio: profile.bio,
-                              missionName: profile.missionName,
-                              isGuide: profile.isGuide,
+                            ProfileHeaderCover(
+                              coverUrl: profile.coverUrl,
+                              avatarUrl: profile.avatarUrl,
+                              pendingAvatar: pendingAvatar,
+                              pendingCover: pendingCover,
+                              isMe: isMe,
+                              isEditing: isEditing,
+                              isUpdatingAvatar: isUpdatingAvatar,
+                              isUpdatingCover: isUpdatingCover,
+                              onUpdateAvatar: () => pickAndUploadImage(true),
+                              onUpdateCover: () => pickAndUploadImage(false),
+                              statsWidget: Opacity(
+                                opacity: isEditing ? 0.3 : 1.0,
+                                child: ProfileHeaderStats(
+                                  connections: profile.connectionsCount,
+                                  posts: profile.postsCount,
+                                  missions: isAdmin ? 0 : profile.missionsCount,
+                                  onConnectionsTap: () {
+                                    context.push('/connections/${profile.id}');
+                                  },
+                                  onPostsTap: _scrollToPosts,
+                                  onMissionsTap: isAdmin
+                                      ? () {}
+                                      : () => _showMissionsModal(context),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Opacity(
+                              opacity: isEditing ? 0.3 : 1.0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ProfileInfo(
+                                    name: profile.name,
+                                    jobTitle: profile.jobTitle,
+                                    bio: profile.bio,
+                                    missionName: profile.missionName,
+                                    isGuide: profile.isGuide,
+                                    isAdmin: isAdmin,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
+                        );
+                      }),
+                       if (isMe)
+                        BlocBuilder<DocumentsCubit, DocumentsState>(
+                          builder: (context, state) {
+                            if (state.hasPendingDocuments) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Padding(
+                                  padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                                  child: DocumentsAlertCard(),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
                       ProfileActions(
                         isMe: isMe,
                         connectionStatus: profile.connectionStatus,
@@ -407,7 +446,33 @@ class _ProfileTabState extends State<ProfileTab> {
                       Opacity(
                         key: _postsKey,
                         opacity: isEditing ? 0.3 : 1.0,
-                        child: ProfilePostGrid(posts: posts),
+                        child: posts.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 40),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.photo_library_outlined,
+                                        size: 48,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        context.t(
+                                          'Nenhuma publicação encontrada',
+                                          'No posts found',
+                                        ),
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ProfilePostGrid(posts: posts),
                       ),
                       const SizedBox(height: 80),
                     ],

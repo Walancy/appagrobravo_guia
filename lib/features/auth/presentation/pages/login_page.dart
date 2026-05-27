@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/assets.gen.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
@@ -135,14 +136,12 @@ class _LoginPageState extends State<LoginPage>
             if (_authMode == AuthMode.resetPassword) return;
 
             if (user.isGuide) {
-              // Navegar para Home do Guia
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Bem-vindo, Guia ${user.name}!')),
+                SnackBar(content: Text('${context.t('Bem-vindo, Guia', 'Welcome, Guide')} ${user.name}!')),
               );
             } else {
-              // Navegar para Home do Viajante
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Bem-vindo, ${user.name}!')),
+                SnackBar(content: Text('${context.t('Bem-vindo', 'Welcome')}, ${user.name}!')),
               );
             }
             context.go('/home');

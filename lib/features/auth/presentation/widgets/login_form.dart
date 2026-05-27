@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/components/primary_button.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -340,7 +341,7 @@ class _LoginFormState extends State<LoginForm> {
         onPressed: () {
           if (!_termsAccepted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Aceite os termos para continuar')),
+              SnackBar(content: Text(context.t('Aceite os termos para continuar', 'Please accept the terms to continue'))),
             );
             return;
           }

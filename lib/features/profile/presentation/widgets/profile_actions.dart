@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -48,7 +49,7 @@ class ProfileActions extends StatelessWidget {
             if (isEditing) ...[
               Expanded(
                 child: _ProfileActionButton(
-                  label: 'Cancelar',
+                  label: context.t('Cancelar', 'Cancel'),
                   icon: Icons.close,
                   backgroundColor: Colors.grey[200],
                   foregroundColor: Colors.black,
@@ -58,7 +59,7 @@ class ProfileActions extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ProfileActionButton(
-                  label: 'Concluir',
+                  label: context.t('Concluir', 'Done'),
                   icon: Icons.check,
                   onPressed: onSaveEdit ?? () {},
                 ),
@@ -66,7 +67,7 @@ class ProfileActions extends StatelessWidget {
             ] else ...[
               Expanded(
                 child: _ProfileActionButton(
-                  label: 'Editar perfil',
+                  label: context.t('Editar perfil', 'Edit profile'),
                   icon: Icons.edit_outlined,
                   backgroundColor: AppColors.primary,
                   onPressed: onEditProfile,
@@ -75,31 +76,31 @@ class ProfileActions extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ProfileActionButton(
-                  label: 'Publicar',
+                  label: context.t('Publicar', 'Publish'),
                   icon: Icons.add_circle_outline_rounded,
                   onPressed: onPublish,
                 ),
               ),
             ],
           ] else ...[
-            Expanded(child: _buildConnectionButton()),
+            Expanded(child: _buildConnectionButton(context)),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildConnectionButton() {
+  Widget _buildConnectionButton(BuildContext context) {
     switch (connectionStatus) {
       case ConnectionStatus.none:
         return _ProfileActionButton(
-          label: 'Conectar-se',
+          label: context.t('Conectar-se', 'Connect'),
           icon: Icons.person_add_outlined,
           onPressed: onConnect ?? () {},
         );
       case ConnectionStatus.pendingSent:
         return _ProfileActionButton(
-          label: 'Solicitado',
+          label: context.t('Solicitado', 'Requested'),
           icon: Icons.hourglass_empty_rounded,
           backgroundColor: Colors.grey[400],
           onPressed: onCancelRequest ?? () {},
@@ -109,7 +110,7 @@ class ProfileActions extends StatelessWidget {
           children: [
             Expanded(
               child: _ProfileActionButton(
-                label: 'Aceitar',
+                label: context.t('Aceitar', 'Accept'),
                 icon: Icons.check,
                 onPressed: onAccept ?? () {},
               ),
@@ -117,7 +118,7 @@ class ProfileActions extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _ProfileActionButton(
-                label: 'Recusar',
+                label: context.t('Recusar', 'Decline'),
                 icon: Icons.close,
                 backgroundColor: Colors.grey[200],
                 onPressed: onReject ?? () {},
@@ -146,7 +147,7 @@ class ProfileActions extends StatelessWidget {
                     final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
                     final url = Uri.parse(
                       'https://wa.me/55$cleanPhone',
-                    ); // Assuming BR country code for now
+                    );
                     if (await canLaunchUrl(url)) {
                       await launchUrl(
                         url,
@@ -159,10 +160,10 @@ class ProfileActions extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ProfileActionButton(
-                  label: 'Desconectar',
+                  label: context.t('Desconectar', 'Disconnect'),
                   icon: Icons.person_remove_outlined,
                   backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black, // Ensure contrast
+                  foregroundColor: Colors.black,
                   onPressed: onDisconnect ?? () {},
                 ),
               ),
@@ -170,10 +171,10 @@ class ProfileActions extends StatelessWidget {
           );
         }
         return _ProfileActionButton(
-          label: 'Desconectar',
+          label: context.t('Desconectar', 'Disconnect'),
           icon: Icons.person_remove_outlined,
           backgroundColor: Colors.grey[200],
-          foregroundColor: Colors.black, // Ensure contrast
+          foregroundColor: Colors.black,
           onPressed: onDisconnect ?? () {},
         );
     }

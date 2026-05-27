@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:agrobravo/core/components/documents_alert_card.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../domain/entities/itinerary_group.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_item.dart';
 import '../../../../core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../cubit/itinerary_cubit.dart';
 import '../widgets/itinerary_list.dart';
 import '../widgets/itinerary_header_card.dart';
@@ -50,7 +54,7 @@ class ItineraryTab extends StatelessWidget {
                   (msg) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text('Erro: $msg', textAlign: TextAlign.center),
+                      child: Text('${context.t('Erro', 'Error')}: $msg', textAlign: TextAlign.center),
                     ),
                   ),
               loaded: (group, items, travelTimes, pendingDocs) {
@@ -168,6 +172,17 @@ class _ItineraryContentState extends State<ItineraryContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const HeaderSpacer(),
+          BlocBuilder<DocumentsCubit, DocumentsState>(
+            builder: (context, state) {
+              if (state.hasPendingDocuments) {
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  child: DocumentsAlertCard(),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           //removed sizedbox height 4 to stick to header spacer if needed, but header card has margin top
 
           // Header Card with Group Info and Day Slider
@@ -192,8 +207,8 @@ class _ItineraryContentState extends State<ItineraryContent> {
               children: [
                 Text(
                   _filters.isActive
-                      ? '${_filters.count} filtros aplicados'
-                      : 'Sem filtros aplicados',
+                      ? '${_filters.count} ${context.t('filtros aplicados', 'filters applied')}'
+                      : context.t('Sem filtros aplicados', 'No filters applied'),
                   style: AppTextStyles.bodySmall.copyWith(
                     color:
                         _filters.isActive
@@ -241,7 +256,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Filtrar',
+                          context.t('Filtrar', 'Filter'),
                           style: AppTextStyles.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
                             color:

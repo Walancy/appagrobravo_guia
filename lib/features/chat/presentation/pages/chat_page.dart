@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:agrobravo/core/components/documents_alert_card.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
 import 'package:agrobravo/features/chat/domain/repositories/chat_repository.dart';
 import 'package:agrobravo/features/chat/presentation/pages/chat_detail_page.dart';
@@ -399,11 +404,23 @@ class _ChatPageState extends State<ChatPage>
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               tabs: [
-                const Tab(text: 'Viajantes'),
-                const Tab(text: 'Guias'),
-                Tab(text: widget.groupId != null ? 'Grupo' : 'Grupos'),
+                Tab(text: context.t('Viajantes', 'Travelers')),
+                Tab(text: context.t('Guias', 'Guides')),
+                Tab(text: widget.groupId != null ? context.t('Grupo', 'Group') : context.t('Grupos', 'Groups')),
               ],
             ),
+          ),
+
+          BlocBuilder<DocumentsCubit, DocumentsState>(
+            builder: (context, state) {
+              if (state.hasPendingDocuments) {
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: DocumentsAlertCard(),
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
 
           Expanded(
@@ -441,11 +458,11 @@ class _ChatPageState extends State<ChatPage>
         children: [
           const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
-          Text('Erro ao carregar', style: AppTextStyles.bodyMedium),
+          Text(context.t('Erro ao carregar', 'Error loading'), style: AppTextStyles.bodyMedium),
           const SizedBox(height: 8),
           TextButton(
             onPressed: _loadAll,
-            child: const Text('Tentar novamente'),
+            child: Text(context.t('Tentar novamente', 'Try again')),
           ),
         ],
       ),
@@ -504,19 +521,18 @@ class _ChatPageState extends State<ChatPage>
               children: [
                 // Mission filter
                 _FilterButton(
-                  label: _travelerMissionFilter ?? 'Missão',
+                  label: _travelerMissionFilter ?? context.t('Missão', 'Mission'),
                   icon: Icons.map_outlined,
                   isActive: _travelerMissionFilter != null,
                   onTap: () => _showTravelerMissionSheet(missions.toList()),
                 ),
                 const SizedBox(width: 8),
-                // Group filter (only if a mission is selected or there are groups)
                 if (availableGroups.isNotEmpty)
                   _FilterButton(
                     label:
                         _travelerGroupFilter != null
-                            ? (availableGroups[_travelerGroupFilter] ?? 'Grupo')
-                            : 'Grupo',
+                            ? (availableGroups[_travelerGroupFilter] ?? context.t('Grupo', 'Group'))
+                            : context.t('Grupo', 'Group'),
                     icon: Icons.group_outlined,
                     isActive: _travelerGroupFilter != null,
                     onTap: () => _showTravelerGroupSheet(availableGroups),
@@ -528,7 +544,7 @@ class _ChatPageState extends State<ChatPage>
         Expanded(
           child:
               filtered.isEmpty
-                  ? _buildEmpty('Nenhum viajante encontrado.')
+                  ? _buildEmpty(context.t('Nenhum viajante encontrado.', 'No travelers found.'))
                   : ListView.separated(
                     padding: EdgeInsets.zero,
                     itemCount: filtered.length,
@@ -647,7 +663,7 @@ class _ChatPageState extends State<ChatPage>
                   ),
                 ),
                 Text(
-                  'Filtrar por grupo',
+                  context.t('Filtrar por grupo', 'Filter by group'),
                   style: AppTextStyles.h3.copyWith(fontSize: 17),
                 ),
                 const SizedBox(height: 12),
@@ -670,7 +686,7 @@ class _ChatPageState extends State<ChatPage>
                             size: 22,
                           ),
                         ),
-                        title: const Text('Todos os grupos'),
+                        title: Text(context.t('Todos os grupos', 'All groups')),
                         trailing:
                             _travelerGroupFilter == null
                                 ? const Icon(
@@ -755,7 +771,7 @@ class _ChatPageState extends State<ChatPage>
   // ─── Guias tab ───────────────────────────────────────────────────────────────
 
   Widget _buildGuidesList() {
-    if (_guides.isEmpty) return _buildEmpty('Nenhum guia encontrado.');
+    if (_guides.isEmpty) return _buildEmpty(context.t('Nenhum guia encontrado.', 'No guides found.'));
 
     // Filters data
     final missions = <String>{};
@@ -807,7 +823,7 @@ class _ChatPageState extends State<ChatPage>
             child: Row(
               children: [
                 _FilterButton(
-                  label: _guideMissionFilter ?? 'Missão',
+                  label: _guideMissionFilter ?? context.t('Missão', 'Mission'),
                   icon: Icons.map_outlined,
                   isActive: _guideMissionFilter != null,
                   onTap: () => _showGuideMissionSheet(missions.toList()),
@@ -817,8 +833,8 @@ class _ChatPageState extends State<ChatPage>
                   _FilterButton(
                     label:
                         _guideGroupFilter != null
-                            ? (availableGroups[_guideGroupFilter] ?? 'Grupo')
-                            : 'Grupo',
+                            ? (availableGroups[_guideGroupFilter] ?? context.t('Grupo', 'Group'))
+                            : context.t('Grupo', 'Group'),
                     icon: Icons.group_outlined,
                     isActive: _guideGroupFilter != null,
                     onTap: () => _showGuideGroupSheet(availableGroups),
@@ -830,7 +846,7 @@ class _ChatPageState extends State<ChatPage>
           child:
               filtered.isEmpty
                   ? _buildEmpty(
-                    'Nenhum guia encontrado para os filtros selecionados.',
+                    context.t('Nenhum guia encontrado para os filtros selecionados.', 'No guides found for the selected filters.'),
                   )
                   : ListView.separated(
                     padding: EdgeInsets.zero,
@@ -943,7 +959,7 @@ class _ChatPageState extends State<ChatPage>
                     ),
                   ),
                 ),
-                Text('Filtrar por Grupo', style: AppTextStyles.h3),
+                Text(context.t('Filtrar por Grupo', 'Filter by Group'), style: AppTextStyles.h3),
                 const SizedBox(height: 16),
                 Expanded(
                   child: ListView(
@@ -965,7 +981,7 @@ class _ChatPageState extends State<ChatPage>
                             size: 22,
                           ),
                         ),
-                        title: const Text('Todos os grupos'),
+                        title: Text(context.t('Todos os grupos', 'All groups')),
                         trailing:
                             _guideGroupFilter == null
                                 ? const Icon(
@@ -1063,7 +1079,7 @@ class _ChatPageState extends State<ChatPage>
               6,
             ),
             child: _FilterButton(
-              label: _selectedMissionFilter ?? 'Todas as missões',
+              label: _selectedMissionFilter ?? context.t('Todas as missões', 'All missions'),
               icon: Icons.filter_list_rounded,
               isActive: _selectedMissionFilter != null,
               onTap: () => _showMissionFilterSheet(missions.toList()),
@@ -1072,7 +1088,7 @@ class _ChatPageState extends State<ChatPage>
         Expanded(
           child:
               filtered.isEmpty
-                  ? _buildEmpty('Nenhum grupo encontrado.')
+                  ? _buildEmpty(context.t('Nenhum grupo encontrado.', 'No groups found.'))
                   : ListView.separated(
                     padding: EdgeInsets.zero,
                     itemCount: filtered.length,
@@ -1144,7 +1160,7 @@ class _ChatPageState extends State<ChatPage>
       orElse:
           () => ChatEntity(
             id: widget.groupId!,
-            title: 'Grupo',
+            title: context.t('Grupo', 'Group'),
             subtitle: '',
             unreadCount: 0,
           ),
@@ -1291,7 +1307,7 @@ class _MissionFilterSheet extends StatelessWidget {
             ),
           ),
           Text(
-            'Filtrar por missão',
+            context.t('Filtrar por missão', 'Filter by mission'),
             style: AppTextStyles.h3.copyWith(fontSize: 17),
           ),
           const SizedBox(height: 12),
@@ -1314,7 +1330,7 @@ class _MissionFilterSheet extends StatelessWidget {
                       size: 22,
                     ),
                   ),
-                  title: const Text('Todas as missões'),
+                  title: Text(context.t('Todas as missões', 'All missions')),
                   trailing:
                       selectedMission == null
                           ? const Icon(
@@ -1405,7 +1421,7 @@ class _ChatListTile extends StatelessWidget {
     this.unreadCount = 0,
   });
 
-  String _formatTime(DateTime date) {
+  String _formatTime(DateTime date, BuildContext context) {
     final localDate = date.toLocal();
     final now = DateTime.now();
     if (now.day == localDate.day &&
@@ -1413,7 +1429,7 @@ class _ChatListTile extends StatelessWidget {
         now.year == localDate.year) {
       return DateFormat('HH:mm').format(localDate);
     } else if (now.difference(localDate).inDays < 2 && now.day != localDate.day) {
-      return 'Ontem';
+      return context.t('Ontem', 'Yesterday');
     } else {
       return DateFormat('dd/MM').format(localDate);
     }
@@ -1507,7 +1523,7 @@ class _ChatListTile extends StatelessWidget {
                       ),
                       if (lastTime != null)
                         Text(
-                          _formatTime(lastTime!),
+                          _formatTime(lastTime!, context),
                           style: AppTextStyles.bodySmall.copyWith(
                             color:
                                 hasUnread

@@ -4,6 +4,7 @@ import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 
 class NotificationPreferencesPage extends StatefulWidget {
@@ -60,15 +61,15 @@ class _NotificationPreferencesPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: const AppHeader(mode: HeaderMode.back, title: 'Notificações'),
+      appBar: AppHeader(mode: HeaderMode.back, title: context.t('Notificações', 'Notifications')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _buildHeader('Geral'),
+                _buildHeader(context.t('Geral', 'General')),
                 _buildSwitchTile(
-                  'Notificações Push',
-                  'Receba alertas em tempo real no seu celular',
+                  context.t('Notificações Push', 'Push Notifications'),
+                  context.t('Receba alertas em tempo real no seu celular', 'Receive real-time alerts on your phone'),
                   _pushNotifications,
                   (v) {
                     setState(() => _pushNotifications = v);
@@ -76,8 +77,8 @@ class _NotificationPreferencesPageState
                   },
                 ),
                 _buildSwitchTile(
-                  'E-mails',
-                  'Informativos e resumos da missão',
+                  context.t('E-mails', 'Emails'),
+                  context.t('Informativos e resumos da missão', 'Mission updates and summaries'),
                   _emailNotifications,
                   (v) {
                     setState(() => _emailNotifications = v);
@@ -85,10 +86,10 @@ class _NotificationPreferencesPageState
                   },
                 ),
                 const Divider(height: 1),
-                _buildHeader('Tipos de Alerta'),
+                _buildHeader(context.t('Tipos de Alerta', 'Alert Types')),
                 _buildSwitchTile(
-                  'Documentação',
-                  'Alertas de pendências e aprovações de documentos',
+                  context.t('Documentação', 'Documentation'),
+                  context.t('Alertas de pendências e aprovações de documentos', 'Alerts for pending and approved documents'),
                   _documentAlerts,
                   (v) {
                     setState(() => _documentAlerts = v);
@@ -96,8 +97,8 @@ class _NotificationPreferencesPageState
                   },
                 ),
                 _buildSwitchTile(
-                  'Atualizações da Missão',
-                  'Mudanças no itinerário e avisos do guia',
+                  context.t('Atualizações da Missão', 'Mission Updates'),
+                  context.t('Mudanças no itinerário e avisos do guia', 'Itinerary changes and guide notices'),
                   _missionUpdates,
                   (v) {
                     setState(() => _missionUpdates = v);
@@ -105,8 +106,8 @@ class _NotificationPreferencesPageState
                   },
                 ),
                 _buildSwitchTile(
-                  'Novas Conexões',
-                  'Solicitações de seguidores e novas mensagens',
+                  context.t('Novas Conexões', 'New Connections'),
+                  context.t('Solicitações de seguidores e novas mensagens', 'Follower requests and new messages'),
                   _connections,
                   (v) {
                     setState(() => _connections = v);
@@ -117,7 +118,7 @@ class _NotificationPreferencesPageState
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Text(
-                    'Suas preferências são salvas automaticamente.',
+                    context.t('Suas preferências são salvas automaticamente.', 'Your preferences are saved automatically.'),
                     textAlign: TextAlign.center,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Theme.of(

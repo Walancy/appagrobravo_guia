@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
@@ -94,7 +95,7 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao selecionar imagem')),
+          SnackBar(content: Text(context.t('Erro ao selecionar imagem', 'Error selecting image'))),
         );
       }
     }
@@ -260,13 +261,13 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                           error:
                               (msg) => Center(
                                 child: Text(
-                                  'Erro: $msg',
+                                  '${context.t('Erro', 'Error')}: $msg',
                                   style: const TextStyle(color: Colors.red),
                                 ),
                               ),
                           loaded: (messages) {
                             if (messages.isEmpty) {
-                              return const Center(child: Text('Sem mensagens'));
+                              return Center(child: Text(context.t('Sem mensagens', 'No messages')));
                             }
                             return ListView.builder(
                               controller: _scrollController,

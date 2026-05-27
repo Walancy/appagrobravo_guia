@@ -20,11 +20,9 @@ class DocumentsState with _$DocumentsState {
 }
 
 extension DocumentsStateX on DocumentsState {
-  bool get hasPendingAction {
+  bool get hasPendingDocuments {
     return maybeWhen(
       loaded: (documents, isAlertDismissed, profile, mission) {
-        if (isAlertDismissed) return false;
-
         // Don't show if mission is ended
         if (mission?.endDate != null &&
             mission!.endDate!.isBefore(DateTime.now())) {
@@ -51,20 +49,13 @@ extension DocumentsStateX on DocumentsState {
             if (mission.passaporteObrigatorio) DocumentType.passaporte,
             if (mission.vistoObrigatorio) DocumentType.visto,
             if (mission.vacinaObrigatoria) DocumentType.vacina,
-            if (mission.seguroObrigatorio) DocumentType.seguro,
             if (mission.carteiraObrigatoria) DocumentType.carteiraMotorista,
             if (mission.autorizacaoObrigatoria && isUnder18)
               DocumentType.autorizacaoMenores,
           ];
         } else {
-          // Fallback baseline
-          mandatoryTypes = [
-            DocumentType.passaporte,
-            DocumentType.visto,
-            DocumentType.vacina,
-            DocumentType.seguro,
-            if (isUnder18) DocumentType.autorizacaoMenores,
-          ];
+          // Se não estiver em nenhuma missão não precisamos cobrar os documentos
+          return false;
         }
 
         for (final type in mandatoryTypes) {
@@ -74,13 +65,23 @@ extension DocumentsStateX on DocumentsState {
           );
 
           if (doc == null) return true;
-          if (doc.status == DocumentStatus.pendente ||
-              doc.status == DocumentStatus.recusado ||
+          // Apenas considera pendente se não foi enviado (null) ou se foi recusado/expirado
+          if (doc.status == DocumentStatus.recusado ||
               doc.status == DocumentStatus.expirado) {
             return true;
           }
         }
         return false;
+      },
+      orElse: () => false,
+    );
+  }
+
+  bool get hasPendingAction {
+    return maybeWhen(
+      loaded: (documents, isAlertDismissed, profile, mission) {
+        if (isAlertDismissed) return false;
+        return hasPendingDocuments;
       },
       orElse: () => false,
     );

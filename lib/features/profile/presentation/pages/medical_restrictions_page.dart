@@ -5,6 +5,7 @@ import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 
@@ -63,9 +64,9 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
       value: _cubit,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: const AppHeader(
+        appBar: AppHeader(
           mode: HeaderMode.back,
-          title: 'Restrições médicas',
+          title: context.t('Restrições médicas', 'Medical restrictions'),
         ),
         body: BlocConsumer<ProfileCubit, ProfileState>(
           listener: (context, state) {
@@ -109,7 +110,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Não foi possível carregar os dados. Verifique sua conexão.',
+                          context.t('Não foi possível carregar os dados. Verifique sua conexão.', 'Could not load data. Check your connection.'),
                           textAlign: TextAlign.center,
                           style: AppTextStyles.bodyLarge,
                         ),
@@ -125,7 +126,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                             ),
                           ),
                           child: Text(
-                            'Tentar Novamente',
+                            context.t('Tentar Novamente', 'Try Again'),
                             style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                           ),
                         ),
@@ -149,14 +150,17 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Text(
-                            'Sua saúde é prioridade',
+                            context.t('Sua saúde é prioridade', 'Your health is our priority'),
                             style: AppTextStyles.h3,
                           ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Adicione tags para indicar alergias ou condições médicas importantes.',
+                        context.t(
+                          'Adicione tags para indicar alergias ou condições médicas importantes.',
+                          'Add tags to indicate allergies or important medical conditions.',
+                        ),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(
                             context,
@@ -170,7 +174,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Adicione uma restrição...',
+                          hintText: context.t('Adicione uma restrição...', 'Add a restriction...'),
                           suffixIcon: IconButton(
                             icon: const Icon(
                               Icons.add_circle,
@@ -220,7 +224,7 @@ class _MedicalRestrictionsPageState extends State<MedicalRestrictionsPage> {
                         padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Center(
                           child: Text(
-                            'Suas informações são salvas automaticamente.',
+                            context.t('Suas informações são salvas automaticamente.', 'Your information is saved automatically.'),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Theme.of(
                                 context,

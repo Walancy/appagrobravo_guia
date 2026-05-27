@@ -6,12 +6,15 @@ import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/cubits/theme_cubit.dart';
+import 'package:agrobravo/core/cubits/language_cubit.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,7 +32,10 @@ class SettingsPage extends StatelessWidget {
         ),
       ],
       child: Scaffold(
-        appBar: const AppHeader(mode: HeaderMode.back, title: 'Configurações'),
+        appBar: AppHeader(
+          mode: HeaderMode.back,
+          title: context.t('Configurações', 'Settings'),
+        ),
         body: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
             return state.when(
@@ -91,7 +97,7 @@ class SettingsPage extends StatelessWidget {
             return _buildOption(
               context,
               icon: Icons.description_outlined,
-              title: 'Meus documentos',
+              title: context.t('Meus documentos', 'My documents'),
               onTap: hasError
                   ? () => _showOfflineWarning(context)
                   : () => context.push('/documents'),
@@ -102,7 +108,7 @@ class SettingsPage extends StatelessWidget {
         _buildOption(
           context,
           icon: Icons.person_outline,
-          title: 'Dados da conta',
+          title: context.t('Dados da conta', 'Account details'),
           onTap: hasError
               ? () => _showOfflineWarning(context)
               : () => context.push('/account-data'),
@@ -110,7 +116,7 @@ class SettingsPage extends StatelessWidget {
         _buildOption(
           context,
           icon: Icons.restaurant_menu_outlined,
-          title: 'Preferências alimentares',
+          title: context.t('Preferências alimentares', 'Food preferences'),
           onTap: hasError
               ? () => _showOfflineWarning(context)
               : () => context.push('/food-preferences'),
@@ -118,7 +124,7 @@ class SettingsPage extends StatelessWidget {
         _buildOption(
           context,
           icon: Icons.medical_services_outlined,
-          title: 'Restrições médicas',
+          title: context.t('Restrições médicas', 'Medical restrictions'),
           onTap: hasError
               ? () => _showOfflineWarning(context)
               : () => context.push('/medical-restrictions'),
@@ -135,7 +141,7 @@ class SettingsPage extends StatelessWidget {
               context,
               icon:
                   isDark ? Icons.dark_mode : Icons.light_mode,
-              title: isDark ? 'Modo Escuro' : 'Modo Claro',
+              title: isDark ? context.t('Modo Escuro', 'Dark Mode') : context.t('Modo Claro', 'Light Mode'),
               trailing: Switch(
                 value: isDark,
                 onChanged: (value) {
@@ -153,10 +159,40 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
+        BlocBuilder<LanguageCubit, Locale>(
+          builder: (context, locale) {
+            final isEnglish = locale.languageCode == 'en';
+            return _buildOption(
+              context,
+              icon: Icons.language,
+              title: context.t('Idioma', 'Language'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isEnglish ? 'English' : 'Português',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ],
+              ),
+              onTap: () {
+                _showLanguageSelector(context, locale.languageCode);
+              },
+            );
+          },
+        ),
         _buildOption(
           context,
           icon: Icons.notifications_none_outlined,
-          title: 'Preferências de notificações',
+          title: context.t('Preferências de notificações', 'Notification settings'),
           onTap: hasError
               ? () => _showOfflineWarning(context)
               : () => context.push('/notification-preferences'),
@@ -164,19 +200,19 @@ class SettingsPage extends StatelessWidget {
         _buildOption(
           context,
           icon: Icons.privacy_tip_outlined,
-          title: 'Política de privacidade',
+          title: context.t('Política de privacidade', 'Privacy policy'),
           onTap: () => context.push('/privacy-policy'),
         ),
         _buildOption(
           context,
           icon: Icons.info_outline,
-          title: 'Sobre nós',
+          title: context.t('Sobre nós', 'About us'),
           onTap: () => context.push('/about-us'),
         ),
         _buildOption(
           context,
           icon: Icons.logout,
-          title: 'Sair da conta',
+          title: context.t('Sair da conta', 'Log out'),
           isDestructive: true,
           onTap: () async {
             await getIt<AuthCubit>().logout();
@@ -188,10 +224,75 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  void _showLanguageSelector(BuildContext context, String currentLanguageCode) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[800] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.t('Selecione o idioma', 'Select language'),
+                  style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  title: const Text('Português'),
+                  trailing: currentLanguageCode == 'pt'
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    context.read<LanguageCubit>().setLanguage('pt');
+                    Navigator.pop(context);
+                  },
+                ),
+                Divider(height: 1, color: Theme.of(context).dividerColor),
+                ListTile(
+                  title: const Text('English'),
+                  trailing: currentLanguageCode == 'en'
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    context.read<LanguageCubit>().setLanguage('en');
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showOfflineWarning(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Este recurso está temporariamente indisponível devido a falha de conexão.'),
+      SnackBar(
+        content: Text(context.t(
+          'Este recurso está temporariamente indisponível devido a falha de conexão.',
+          'This feature is temporarily unavailable due to a connection failure.',
+        )),
         backgroundColor: AppColors.error,
       ),
     );
@@ -253,23 +354,36 @@ class SettingsPage extends StatelessWidget {
                 const SizedBox(height: 2),
                 if (hasError)
                   Text(
-                    'Erro ao carregar dados online',
+                    context.t('Erro ao carregar dados online', 'Failed to load online data'),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.error,
                       fontWeight: FontWeight.w500,
                     ),
                   )
                 else ...[
-                  if (profile.missionName != null && profile.missionName!.isNotEmpty)
-                    Text(
-                      profile.missionName!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                        height: 1.2,
-                      ),
-                    ),
+                  Builder(builder: (context) {
+                    final authState = getIt<AuthCubit>().state;
+                    final isAdmin = authState.maybeWhen(
+                      authenticated: (user) =>
+                          user.roles.contains('COLABORADOR') ||
+                          user.roles.contains('MASTER'),
+                      orElse: () => false,
+                    );
+                    if (!isAdmin &&
+                        profile.missionName != null &&
+                        profile.missionName!.isNotEmpty) {
+                      return Text(
+                        profile.missionName!,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                          height: 1.2,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
                   if (profile.email != null && profile.email!.isNotEmpty)
                     Text(
                       profile.email!,
@@ -347,7 +461,7 @@ class SettingsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    'Pendente',
+                    context.t('Pendente', 'Pending'),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.error,
                       fontSize: 10,

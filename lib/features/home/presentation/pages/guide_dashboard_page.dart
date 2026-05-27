@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:agrobravo/core/components/documents_alert_card.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
@@ -16,6 +20,7 @@ import 'package:agrobravo/features/home/presentation/widgets/reminder_modal.dart
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:agrobravo/core/formatters/centavos_input_formatter.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class GuideDashboardPage extends StatefulWidget {
   final String groupId;
@@ -43,6 +48,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   List<Map<String, dynamic>> _filteredTravelers = [];
   List<Map<String, dynamic>> _filteredGuides = [];
   bool _isLoading = true;
+  int _selectedMembersTab = 0;
 
   @override
   void initState() {
@@ -288,6 +294,17 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  BlocBuilder<DocumentsCubit, DocumentsState>(
+                    builder: (context, state) {
+                      if (state.hasPendingDocuments) {
+                        return const Padding(
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: DocumentsAlertCard(),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildMainCard(context),
@@ -305,7 +322,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -405,14 +422,14 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Grupo',
+                    context.t('Grupo', 'Group'),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.grey,
                       fontSize: 12,
                     ),
                   ),
                   Text(
-                    _group?.name ?? 'Grupo sem nome',
+                    _group?.name ?? context.t('Grupo sem nome', 'Unnamed group'),
                     style: AppTextStyles.h3.copyWith(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -430,7 +447,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          _group?.missionLocation ?? 'Itinerário ativo',
+                          _group?.missionLocation ?? context.t('Itinerário active', 'Active itinerary'),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.grey,
                             fontSize: 13,
@@ -450,6 +467,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
     );
   }
 
+
   Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,7 +475,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Ações rápidas',
+            context.t('Ações rápidas', 'Quick actions'),
             style: AppTextStyles.bodyMedium.copyWith(
               color:
                   Theme.of(
@@ -477,7 +495,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Expanded(
                 child: _buildActionItem(
                   context,
-                  'Itinerário',
+                  context.t('Itinerário', 'Itinerary'),
                   Icons.explore_outlined,
                   AppColors.primary,
                   () => widget.onTabChange?.call(1),
@@ -487,7 +505,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Expanded(
                 child: _buildActionItem(
                   context,
-                  'Lembrete',
+                  context.t('Lembrete', 'Reminder'),
                   Icons.notifications_active_outlined,
                   AppColors.primary,
                   () => showModalBottomSheet(
@@ -503,7 +521,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Expanded(
                 child: _buildActionItem(
                   context,
-                  'Incidente',
+                  context.t('Incidente', 'Incident'),
                   Icons.warning_amber_rounded,
                   AppColors.primary,
                   () => context.push('/incident-list/${widget.groupId}').then((_) => _loadData()),
@@ -513,7 +531,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Expanded(
                 child: _buildActionItem(
                   context,
-                  'Gastos',
+                  context.t('Gastos', 'Expenses'),
                   Icons.output_rounded,
                   AppColors.primary,
                   () => context.push('/expense-list/${widget.groupId}').then((_) => _loadData()),
@@ -570,7 +588,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Próximos eventos',
+            context.t('Próximos eventos', 'Upcoming events'),
             style: AppTextStyles.bodyMedium.copyWith(
               color:
                   Theme.of(
@@ -598,7 +616,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: Theme.of(context).dividerColor),
                     ),
-                    child: const Center(child: Text('Nenhum evento agendado')),
+                    child: Center(child: Text(context.t('Nenhum evento agendado', 'No scheduled events'))),
                   )
                 else
                   ..._upcomingEvents.map(
@@ -744,7 +762,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Integrantes',
+              context.t('Integrantes', 'Members'),
               style: AppTextStyles.bodyMedium.copyWith(
                 color:
                     Theme.of(
@@ -759,7 +777,6 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         ),
         const SizedBox(height: 12),
         Container(
-          constraints: const BoxConstraints(maxHeight: 500),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(24),
@@ -772,81 +789,111 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             ],
           ),
           clipBehavior: Clip.hardEdge,
-          child: DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, left: 20, right: 20),
-                  child: TabBar(
-                    labelColor: Theme.of(context).colorScheme.onSurface,
-                    unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
-                    labelStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                    unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 16,
-                    ),
-                    indicatorColor: AppColors.primary,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicatorWeight: 3,
-                    dividerColor: Colors.transparent,
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('Viajantes'),
-                            if (hasTravelerAlert) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.amber,
-                                  shape: BoxShape.circle,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, left: 20, right: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedMembersTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _selectedMembersTab == 0
+                                    ? AppColors.primary
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                context.t('Viajantes', 'Travelers'),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: _selectedMembersTab == 0
+                                      ? FontWeight.w500
+                                      : FontWeight.w400,
+                                  fontSize: 15,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
+                              if (hasTravelerAlert) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.amber,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                      const Tab(text: 'Guias'),
-                    ],
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedMembersTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _selectedMembersTab == 1
+                                    ? AppColors.primary
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              context.t('Guias', 'Guides'),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: _selectedMembersTab == 1
+                                    ? FontWeight.w500
+                                    : FontWeight.w400,
+                                fontSize: 15,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: AppTextField(
+                  onChanged: _onSearch,
+                  textStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  hint: context.t('Buscar por nome', 'Search by name'),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary.withOpacity(0.7),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.primary,
+                    size: 24,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                  child: AppTextField(
-                    onChanged: _onSearch,
-                    textStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    hint: 'Buscar por nome',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary.withOpacity(0.7),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                  ),
-                ),
-
-                Expanded(
-                  // Use Expanded to fill remaining height
-                  child: TabBarView(
-                    children: [
-                      _buildMembersList(_filteredTravelers, true),
-                      _buildMembersList(_filteredGuides, false),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+              _selectedMembersTab == 0
+                  ? _buildMembersList(_filteredTravelers, true)
+                  : _buildMembersList(_filteredGuides, false),
+            ],
           ),
         ),
       ],
@@ -859,14 +906,19 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   ) {
     if (members.isEmpty) {
       return Center(
-        child: Text(
-          'Nenhum integrante encontrado',
-          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Text(
+            context.t('Nenhum integrante encontrado', 'No members found'),
+            style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+          ),
         ),
       );
     }
 
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: members.length,
       separatorBuilder:
@@ -1220,6 +1272,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Refeição';
+  String _selectedCurrency = 'BRL';
   List<String> _attachedFilePaths = [];
   List<String> _existingReceiptUrls = [];
   bool _isLoading = false;
@@ -1229,12 +1282,19 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
     super.initState();
     if (widget.expenseToEdit != null) {
       final expense = widget.expenseToEdit!;
-      _descriptionController.text = expense['local'] ?? '';
+      final local = expense['local'] ?? '';
+      if (local.endsWith(' (USD)')) {
+        _selectedCurrency = 'USD';
+        _descriptionController.text = local.substring(0, local.length - 6);
+      } else {
+        _selectedCurrency = 'BRL';
+        _descriptionController.text = local;
+      }
       _selectedCategory = expense['categoria'] ?? 'Refeição';
       _existingReceiptUrls = List<String>.from(expense['comprovantes_urls'] as List? ?? []);
 
       final amount = double.tryParse(expense['valor_gasto']?.toString() ?? '0') ?? 0.0;
-      _amountController.text = CentavosInputFormatter().formatter.format(amount);
+      _amountController.text = CentavosInputFormatter(isUsd: _selectedCurrency == 'USD').formatter.format(amount);
     }
   }
 
@@ -1302,7 +1362,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      widget.expenseToEdit != null ? 'Editar gasto' : 'Registrar gasto',
+                      widget.expenseToEdit != null ? context.t('Editar gasto', 'Edit expense') : context.t('Registrar gasto', 'Register expense'),
                       style: AppTextStyles.h2.copyWith(fontSize: 22),
                     ),
                     IconButton(
@@ -1313,21 +1373,70 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                 ),
                 const SizedBox(height: 24),
                 AppTextField(
-                  label: 'Valor do gasto',
+                  label: context.t('Valor do gasto', 'Expense amount'),
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
-                    CentavosInputFormatter(),
+                    CentavosInputFormatter(isUsd: _selectedCurrency == 'USD'),
                   ],
                   textStyle: AppTextStyles.h1.copyWith(
                     fontSize: 32,
                     color: AppColors.primary,
                   ),
-                  hint: 'R\$ 0,00',
+                  hint: _selectedCurrency == 'USD' ? '\$ 0.00' : 'R\$ 0,00',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButton<String>(
+                          value: _selectedCurrency,
+                          underline: const SizedBox(),
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'BRL',
+                              child: Text('BRL'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'USD',
+                              child: Text('USD'),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null && val != _selectedCurrency) {
+                              final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
+                              final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
+                              setState(() {
+                                _selectedCurrency = val;
+                                if (digitsOnly.isNotEmpty) {
+                                  _amountController.text = CentavosInputFormatter(isUsd: _selectedCurrency == 'USD').formatter.format(amount);
+                                }
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 20,
+                          color: Theme.of(context).dividerColor.withOpacity(0.5),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Categoria',
+                  context.t('Categoria', 'Category'),
                   style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
                 ),
                 const SizedBox(height: 12),
@@ -1349,7 +1458,19 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                             ? AppColors.primary
                                             : Colors.grey,
                                   ),
-                                  label: Text(cat),
+                                  label: Text(
+                                    cat == 'Refeição'
+                                        ? context.t('Refeição', 'Meal')
+                                        : cat == 'Transporte'
+                                            ? context.t('Transporte', 'Transportation')
+                                            : cat == 'Hospedagem'
+                                                ? context.t('Hospedagem', 'Accommodation')
+                                                : cat == 'Passeio'
+                                                    ? context.t('Passeio', 'Tour')
+                                                    : cat == 'Imprevisto'
+                                                        ? context.t('Imprevisto', 'Unexpected')
+                                                        : context.t('Outros', 'Others'),
+                                  ),
                                   selected: _selectedCategory == cat,
                                   onSelected:
                                       (val) =>
@@ -1384,9 +1505,9 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                 ),
                 const SizedBox(height: 24),
                 AppTextField(
-                  label: 'Descrição / Local',
+                  label: context.t('Descrição / Local', 'Description / Location'),
                   controller: _descriptionController,
-                  hint: 'Ex: Almoço no aeroporto',
+                  hint: context.t('Ex: Almoço no aeroporto', 'e.g., Lunch at the airport'),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -1396,7 +1517,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Comprovante(s)',
+                            context.t('Comprovante(s)', 'Receipt(s)'),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Colors.grey,
                             ),
@@ -1430,7 +1551,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            'Comprovante salvo',
+                                            context.t('Comprovante salvo', 'Saved receipt'),
                                             style: AppTextStyles.bodySmall.copyWith(
                                               color: AppColors.primary,
                                               fontWeight: FontWeight.bold,
@@ -1544,9 +1665,9 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'Erro ao selecionar arquivo.',
+                                          context.t('Erro ao selecionar arquivo.', 'Error selecting file.'),
                                         ),
                                       ),
                                     );
@@ -1555,7 +1676,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                               }
                             },
                             icon: const Icon(Icons.attach_file_rounded, size: 20),
-                            label: Text((_attachedFilePaths.isEmpty && _existingReceiptUrls.isEmpty) ? 'Anexar Comprovante' : 'Adicionar outro anexo'),
+                            label: Text((_attachedFilePaths.isEmpty && _existingReceiptUrls.isEmpty) ? context.t('Anexar Comprovante', 'Attach Receipt') : context.t('Adicionar outro anexo', 'Add another attachment')),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: const BorderSide(color: AppColors.primary),
@@ -1582,7 +1703,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                       : () async {
                           if (_amountController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Informe um valor válido')),
+                              SnackBar(content: Text(context.t('Informe um valor válido', 'Please enter a valid amount'))),
                             );
                             return;
                           }
@@ -1592,12 +1713,17 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                           
                           if (amount <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Informe um valor válido')),
+                              SnackBar(content: Text(context.t('Informe um valor válido', 'Please enter a valid amount'))),
                             );
                             return;
                           }
     
                           setState(() => _isLoading = true);
+                          
+                          final rawDescription = _descriptionController.text.trim();
+                          final finalDescription = _selectedCurrency == 'USD'
+                              ? '$rawDescription (USD)'
+                              : rawDescription;
     
                           final result = widget.expenseToEdit != null
                               ? await widget.repository.updateExpense(
@@ -1605,7 +1731,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                   groupId: widget.groupId,
                                   amount: amount,
                                   category: _selectedCategory,
-                                  description: _descriptionController.text.trim(),
+                                  description: finalDescription,
                                   existingReceiptUrls: _existingReceiptUrls,
                                   newLocalReceiptPaths: _attachedFilePaths,
                                 )
@@ -1613,7 +1739,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                   groupId: widget.groupId,
                                   amount: amount,
                                   category: _selectedCategory,
-                                  description: _descriptionController.text.trim(),
+                                  description: finalDescription,
                                   receiptPaths: _attachedFilePaths,
                                 );
     
@@ -1623,7 +1749,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                             result.fold(
                               (failure) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Erro: ${failure.toString().replaceAll('Exception: ', '')}')),
+                                  SnackBar(content: Text('${context.t('Erro', 'Error')}: ${failure.toString().replaceAll('Exception: ', '')}')),
                                 );
                               },
                               (_) {
@@ -1632,8 +1758,8 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                   SnackBar(
                                     content: Text(
                                       widget.expenseToEdit != null
-                                          ? 'Gasto atualizado com sucesso!'
-                                          : 'Gasto registrado com sucesso!',
+                                          ? context.t('Gasto atualizado com sucesso!', 'Expense updated successfully!')
+                                          : context.t('Gasto registrado com sucesso!', 'Expense registered successfully!'),
                                     ),
                                   ),
                                 );
@@ -1657,7 +1783,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          widget.expenseToEdit != null ? 'Salvar alterações' : 'Confirmar Registro',
+                          widget.expenseToEdit != null ? context.t('Salvar alterações', 'Save changes') : context.t('Confirmar Registro', 'Confirm Registration'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                         ),
                 ),

@@ -7,6 +7,7 @@ import 'package:agrobravo/features/home/presentation/pages/guide_dashboard_page.
 import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class ExpenseListPage extends StatefulWidget {
   final String groupId;
@@ -38,7 +39,10 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao carregar gastos: ${failure.toString().replaceAll("Exception: ", "")}')),
+            SnackBar(content: Text(context.t(
+              'Erro ao carregar gastos: ${failure.toString().replaceAll("Exception: ", "")}',
+              'Error loading expenses: ${failure.toString().replaceAll("Exception: ", "")}',
+            ))),
           );
         }
       },
@@ -96,7 +100,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
-          'Gastos do Grupo',
+          context.t('Gastos do Grupo', 'Group Expenses'),
           style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -145,12 +149,12 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Nenhum gasto registrado',
+              context.t('Nenhum gasto registrado', 'No expenses registered'),
               style: AppTextStyles.h3.copyWith(color: Colors.grey[600], fontSize: 18),
             ),
             const SizedBox(height: 8),
             Text(
-              'Toque no botão + no topo para registrar um gasto.',
+              context.t('Toque no botão + no topo para registrar um gasto.', 'Tap the + button at the top to register an expense.'),
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
             ),
@@ -163,7 +167,11 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
   Widget _buildExpenseCard(Map<String, dynamic> expense) {
     final amount = double.tryParse(expense['valor_gasto']?.toString() ?? '0') ?? 0.0;
     final category = expense['categoria'] ?? 'Outros';
-    final description = expense['local'] ?? '';
+    final rawDescription = expense['local'] ?? '';
+    final isUsd = rawDescription.endsWith(' (USD)');
+    final displayDescription = isUsd
+        ? rawDescription.substring(0, rawDescription.length - 6)
+        : rawDescription;
     final dateStr = expense['data_transacao'] ?? '';
     final receiptUrls = expense['comprovantes_urls'] as List?;
     final user = expense['user'] as Map<String, dynamic>?;
@@ -218,7 +226,17 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        category,
+                        category == 'Refeição'
+                            ? context.t('Refeição', 'Meal')
+                            : category == 'Transporte'
+                                ? context.t('Transporte', 'Transportation')
+                                : category == 'Hospedagem'
+                                    ? context.t('Hospedagem', 'Accommodation')
+                                    : category == 'Passeio'
+                                        ? context.t('Passeio', 'Tour')
+                                        : category == 'Imprevisto'
+                                            ? context.t('Imprevisto', 'Unexpected')
+                                            : context.t('Outros', 'Others'),
                         style: AppTextStyles.h3.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -226,7 +244,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        description,
+                        displayDescription,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                         ),
@@ -243,7 +261,9 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                   ),
                 ),
                 Text(
-                  NumberFormat.simpleCurrency(locale: 'pt_BR').format(amount),
+                  isUsd
+                      ? NumberFormat.simpleCurrency(locale: 'en_US').format(amount)
+                      : NumberFormat.simpleCurrency(locale: 'pt_BR').format(amount),
                   style: AppTextStyles.h3.copyWith(
                     color: AppColors.primary,
                     fontSize: 18,
@@ -251,8 +271,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                   ),
                 ),
                 if (Supabase.instance.client.auth.currentUser?.id == expense['user_id'] &&
-                    status != 'Reembolsado' &&
-                    status != 'Recusado') ...[
+                    status == 'Pendente') ...[
                   const SizedBox(width: 4),
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert_rounded, color: Colors.grey[600]),
@@ -269,23 +288,23 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
-                            SizedBox(width: 8),
-                            Text('Editar'),
+                            const Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            Text(context.t('Editar', 'Edit')),
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Excluir', style: TextStyle(color: Colors.red)),
+                            const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Text(context.t('Excluir', 'Delete'), style: const TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -308,7 +327,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: Text(
-                      'Comprovante(s):',
+                      context.t('Comprovante(s):', 'Receipt(s):'),
                       style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -351,7 +370,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                 Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey[500]),
                 const SizedBox(width: 6),
                 Text(
-                  'Registrado por $userName',
+                  context.t('Registrado por $userName', 'Registered by $userName'),
                   style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -415,6 +434,12 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
         break;
     }
 
+    final statusTranslated = status == 'Reembolsado'
+        ? context.t('Reembolsado', 'Reimbursed')
+        : status == 'Recusado'
+            ? context.t('Recusado', 'Rejected')
+            : context.t('Pendente', 'Pending');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -422,7 +447,7 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status,
+        statusTranslated,
         style: TextStyle(
           color: textColor,
           fontSize: 11,
@@ -453,11 +478,11 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
     showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CustomConfirmBottomSheet(
-        title: 'Excluir gasto',
-        message: 'Deseja realmente excluir este lançamento de gasto? Esta ação não pode ser desfeita.',
-        confirmLabel: 'Excluir',
-        cancelLabel: 'Cancelar',
+      builder: (context) => CustomConfirmBottomSheet(
+        title: context.t('Excluir gasto', 'Delete expense'),
+        message: context.t('Deseja realmente excluir este lançamento de gasto? Esta ação não pode ser desfeita.', 'Do you really want to delete this expense entry? This action cannot be undone.'),
+        confirmLabel: context.t('Excluir', 'Delete'),
+        cancelLabel: context.t('Cancelar', 'Cancel'),
       ),
     ).then((confirmed) async {
       if (confirmed == true) {
@@ -469,17 +494,21 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
             setState(() => _isLoading = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
+                content: Text(context.t(
                   'Erro ao excluir gasto: ${failure.toString().replaceAll("Exception: ", "")}',
-                ),
+                  'Error deleting expense: ${failure.toString().replaceAll("Exception: ", "")}',
+                )),
               ),
             );
           },
           (_) {
             _loadExpenses();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Lançamento de gasto excluído com sucesso!'),
+              SnackBar(
+                content: Text(context.t(
+                  'Lançamento de gasto excluído com sucesso!',
+                  'Expense entry successfully deleted!',
+                )),
               ),
             );
           },

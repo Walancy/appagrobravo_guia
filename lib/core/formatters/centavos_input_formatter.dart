@@ -2,11 +2,21 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class CentavosInputFormatter extends TextInputFormatter {
-  final NumberFormat formatter = NumberFormat.currency(
-    locale: 'pt_BR',
-    symbol: 'R\$',
-    decimalDigits: 2,
-  );
+  final bool isUsd;
+  final NumberFormat formatter;
+
+  CentavosInputFormatter({this.isUsd = false})
+      : formatter = isUsd
+            ? NumberFormat.currency(
+                locale: 'en_US',
+                symbol: '\$',
+                decimalDigits: 2,
+              )
+            : NumberFormat.currency(
+                locale: 'pt_BR',
+                symbol: 'R\$',
+                decimalDigits: 2,
+              );
 
   @override
   TextEditingValue formatEditUpdate(

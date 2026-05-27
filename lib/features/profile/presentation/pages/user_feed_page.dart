@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/features/home/presentation/widgets/post_card.dart';
@@ -92,14 +93,14 @@ class _UserFeedPageState extends State<UserFeedPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Excluir Publicação'),
-        content: const Text(
-          'Tem certeza que deseja excluir esta publicação?',
+        title: Text(context.t('Excluir Publicação', 'Delete Post')),
+        content: Text(
+          context.t('Tem certeza que deseja excluir esta publicação?', 'Are you sure you want to delete this post?'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
+            child: Text(context.t('Cancelar', 'Cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -110,8 +111,8 @@ class _UserFeedPageState extends State<UserFeedPage> {
                 (error) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Erro ao excluir publicação.'),
+                      SnackBar(
+                        content: Text(context.t('Erro ao excluir publicação.', 'Error deleting post.')),
                       ),
                     );
                   }
@@ -124,7 +125,7 @@ class _UserFeedPageState extends State<UserFeedPage> {
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Excluir'),
+            child: Text(context.t('Excluir', 'Delete')),
           ),
         ],
       ),
@@ -144,7 +145,7 @@ class _UserFeedPageState extends State<UserFeedPage> {
           : _posts.isEmpty
           ? Center(
               child: Text(
-                'Nenhuma publicação encontrada.',
+                context.t('Nenhuma publicação encontrada.', 'No posts found.'),
                 style: AppTextStyles.bodyMedium,
               ),
             )
