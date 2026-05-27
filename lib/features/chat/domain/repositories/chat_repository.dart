@@ -16,6 +16,7 @@ abstract class ChatRepository {
   Future<void> editMessage(String messageId, String newText);
   Future<void> deleteMessages(List<String> messageIds);
   Future<Either<Exception, GroupDetailEntity>> getGroupDetails(String groupId);
+  Future<void> markChatAsRead(String chatId);
 
   /// DMs received from travelers (eu sou o guia)
   Future<Either<Exception, List<GuideEntity>>> getTravelerDMs();

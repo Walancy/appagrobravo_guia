@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/document_entity.dart';
-import '../../domain/entities/document_enums.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 
 part 'document_model.freezed.dart';
 part 'document_model.g.dart';

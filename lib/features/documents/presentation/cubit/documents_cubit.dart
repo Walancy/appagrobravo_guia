@@ -3,14 +3,14 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../home/domain/repositories/feed_repository.dart';
-import '../../../home/domain/entities/mission_entity.dart';
-import '../../../profile/domain/entities/profile_entity.dart';
-import '../../../profile/domain/repositories/profile_repository.dart';
-import '../../domain/entities/document_entity.dart';
-import '../../domain/entities/document_enums.dart';
-import '../../domain/repositories/documents_repository.dart';
-import 'documents_state.dart';
+import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart';
+import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
+import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
+import 'package:agrobravo/features/profile/domain/repositories/profile_repository.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
+import 'package:agrobravo/features/documents/domain/repositories/documents_repository.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 
 @injectable
 class DocumentsCubit extends Cubit<DocumentsState> {
@@ -66,16 +66,20 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   }
 
   Future<void> uploadDocument({
+    String? id,
     required DocumentType type,
     required File file,
     String? documentNumber,
     DateTime? expiryDate,
+    String? documentName,
   }) async {
     final result = await _repository.uploadDocument(
+      id: id,
       type: type,
       file: file,
       documentNumber: documentNumber,
       expiryDate: expiryDate,
+      documentName: documentName,
     );
 
     result.fold(
@@ -87,6 +91,16 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   void dismissAlert() {
     state.mapOrNull(
       loaded: (state) => emit(state.copyWith(isAlertDismissed: true)),
+    );
+  }
+
+  Future<Either<Exception, Map<String, dynamic>>> parseDocument({
+    required DocumentType type,
+    required File file,
+  }) async {
+    return await _repository.parseDocument(
+      type: type,
+      file: file,
     );
   }
 }

@@ -9,10 +9,10 @@ import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
-import '../cubit/documents_cubit.dart';
-import '../cubit/documents_state.dart';
-import '../../domain/entities/document_entity.dart';
-import '../../domain/entities/document_enums.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 
 class DocumentsPage extends StatelessWidget {
   const DocumentsPage({super.key});
@@ -201,7 +201,7 @@ class _DocumentTypeButton extends StatelessWidget {
       isPending = document!.status == DocumentStatus.pendente;
     }
 
-    bool isAlert =
+    final bool isAlert =
         document != null &&
         (document!.status == DocumentStatus.recusado ||
             document!.status == DocumentStatus.expirado);
@@ -228,20 +228,38 @@ class _DocumentTypeButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
-        onTap: () => context
-            .push(
+        onTap: () {
+          final isHistoryType = type == DocumentType.seguro ||
+              type == DocumentType.visto ||
+              type == DocumentType.vacina;
+
+          if (isHistoryType) {
+            context.push(
+              '/document-history',
+              extra: {
+                'type': type,
+                'cubit': context.read<DocumentsCubit>(),
+              },
+            ).then((value) {
+              if (context.mounted) {
+                context.read<DocumentsCubit>().loadDocuments();
+              }
+            });
+          } else {
+            context.push(
               '/document-details',
               extra: {
                 'type': type,
                 'document': document,
                 'cubit': context.read<DocumentsCubit>(),
               },
-            )
-            .then((value) {
-              if (value == true) {
+            ).then((value) {
+              if (value == true && context.mounted) {
                 context.read<DocumentsCubit>().loadDocuments();
               }
-            }),
+            });
+          }
+        },
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),

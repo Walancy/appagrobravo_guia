@@ -1,8 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../home/domain/entities/mission_entity.dart';
-import '../../domain/entities/document_entity.dart';
-import '../../../profile/domain/entities/profile_entity.dart';
-import '../../domain/entities/document_enums.dart';
+import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
+import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 
 part 'documents_state.freezed.dart';
 

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'document_enums.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 
 part 'document_entity.freezed.dart';
 

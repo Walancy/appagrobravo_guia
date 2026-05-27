@@ -625,10 +625,30 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> deleteMessages(List<String> messageIds) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final cutoff = DateTime.now()
+        .toUtc()
+        .subtract(const Duration(hours: 1))
+        .toIso8601String();
+
     await _supabaseClient
         .from('mensagens')
         .update({'deletado': true})
+        .eq('user_id', userId)
+        .gte('created_at', cutoff)
         .inFilter('id', messageIds);
+  }
+
+  @override
+  Future<void> markChatAsRead(String chatId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
+      await prefs.setString('last_read_$chatId', nowStr);
+      await prefs.setString('chat_last_visit_$chatId', nowStr);
+    } catch (_) {}
   }
 
   @override

@@ -11,6 +11,7 @@ import 'package:agrobravo/features/chat/presentation/cubit/chat_detail_cubit.dar
 import 'package:agrobravo/features/chat/presentation/cubit/chat_detail_state.dart';
 import 'package:agrobravo/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:agrobravo/features/chat/presentation/widgets/chat_input.dart';
+import 'package:agrobravo/features/chat/presentation/widgets/image_preview_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrobravo/core/di/injection.dart';
 
@@ -85,12 +86,61 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
     }
   }
 
+  bool _canDeleteMessage(MessageEntity message) {
+    return message.type == MessageType.me &&
+        !message.isDeleted &&
+        DateTime.now().difference(message.timestamp) <= const Duration(hours: 1);
+  }
+
+  void _deleteSelectedMessages() {
+    context.read<ChatDetailCubit>().state.whenOrNull(
+      loaded: (messages) {
+        final selectedMessages = messages
+            .where((message) => _selectedMessageIds.contains(message.id))
+            .toList();
+        final canDeleteAll = selectedMessages.isNotEmpty &&
+            selectedMessages.every(_canDeleteMessage);
+
+        if (!canDeleteAll) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.t(
+                  'Só é possível apagar mensagens enviadas há até 1 hora.',
+                  'Only messages sent within 1 hour can be deleted.',
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+
+        context.read<ChatDetailCubit>().deleteMessages(
+          _selectedMessageIds.toList(),
+        );
+        setState(() {
+          _selectedMessageIds.clear();
+        });
+      },
+    );
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     try {
-      final image = await picker.pickImage(source: source);
+      final image = await picker.pickImage(source: source, imageQuality: 85);
       if (image != null && mounted) {
-        context.read<ChatDetailCubit>().sendMessage('', image: image);
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => ImagePreviewPage(
+              image: image,
+              onSend: (img, caption) {
+                context.read<ChatDetailCubit>().sendMessage(caption, image: img);
+              },
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -212,14 +262,7 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                         ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          context.read<ChatDetailCubit>().deleteMessages(
-                            _selectedMessageIds.toList(),
-                          );
-                          setState(() {
-                            _selectedMessageIds.clear();
-                          });
-                        },
+                        onPressed: _deleteSelectedMessages,
                       ),
                       IconButton(
                         icon: Icon(

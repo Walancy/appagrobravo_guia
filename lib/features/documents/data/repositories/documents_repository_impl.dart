@@ -4,10 +4,12 @@ import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/document_entity.dart';
-import '../../domain/entities/document_enums.dart';
-import '../../domain/repositories/documents_repository.dart';
-import '../models/document_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
+import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
+import 'package:agrobravo/features/documents/domain/repositories/documents_repository.dart';
+import 'package:agrobravo/features/documents/data/models/document_model.dart';
 
 @LazySingleton(as: DocumentsRepository)
 class DocumentsRepositoryImpl implements DocumentsRepository {
@@ -74,10 +76,12 @@ class DocumentsRepositoryImpl implements DocumentsRepository {
 
   @override
   Future<Either<Exception, void>> uploadDocument({
+    String? id,
     required DocumentType type,
     required File file,
     String? documentNumber,
     DateTime? expiryDate,
+    String? documentName,
   }) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
@@ -93,31 +97,25 @@ class DocumentsRepositoryImpl implements DocumentsRepository {
           .from('files')
           .getPublicUrl(path);
 
-      // 2. Check if document already exists to update or insert
-      final existingDoc = await _supabaseClient
-          .from('documentos')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('tipo', type.name.toUpperCase())
-          .maybeSingle();
-
       final docData = {
         'user_id': userId,
-        'tipo': type.name.toUpperCase(),
+        'tipo': _documentTypeToDb(type),
         'status': 'PENDENTE',
         'foto_doc': publicUrl,
         'numero_documento': documentNumber,
         'validade_doc': expiryDate?.toIso8601String(),
         'data_envio': DateTime.now().toIso8601String(),
-        'nome_documento': type.label,
+        'nome_documento': documentName ?? type.label,
       };
 
-      if (existingDoc != null) {
+      if (id != null) {
+        // Update existing document in history
         await _supabaseClient
             .from('documentos')
             .update(docData)
-            .eq('id', existingDoc['id']);
+            .eq('id', id);
       } else {
+        // Insert new document (create history)
         await _supabaseClient.from('documentos').insert(docData);
       }
 
@@ -125,5 +123,124 @@ class DocumentsRepositoryImpl implements DocumentsRepository {
     } catch (e) {
       return Left(Exception('Erro ao enviar documento: $e'));
     }
+  }
+
+  String _documentTypeToDb(DocumentType type) {
+    switch (type) {
+      case DocumentType.passaporte:
+        return 'PASSAPORTE';
+      case DocumentType.visto:
+        return 'VISTO';
+      case DocumentType.vacina:
+        return 'VACINA';
+      case DocumentType.seguro:
+        return 'SEGURO';
+      case DocumentType.carteiraMotorista:
+        return 'CARTEIRA_MOTORISTA';
+      case DocumentType.autorizacaoMenores:
+        return 'AUTORIZACAO_MENORES';
+      case DocumentType.outro:
+        return 'OUTRO';
+    }
+  }
+
+  static const String _systemPrompt = '''
+You are an expert at extracting data from travel documents (visas, passports). 
+Given an image of a visa or passport, extract the following fields and return ONLY a valid JSON object, no markdown or explanation.
+Use null for any field you cannot read or that does not apply.
+
+Required JSON shape:
+{
+  "document_kind": "passport" or "visa" - REQUIRED. Identify whether the image shows a PASSPORT or a VISA. Return exactly one of these two words.",
+  "surname": "string or null",
+  "given_name": "string or null",
+  "issue_date": "DD/MM/YYYY or null",
+  "expiration_date": "DD/MM/YYYY or null",
+  "country": "ISO 2-letter code or country name (e.g. us, USA, Brazil) or null",
+  "visa_origin": "string or null - For VISAS only: identify which country issued the visa and return a short label in Portuguese (e.g. Americano, Chinês, Britânico, Japonês, Canadense, Australiano, Schengen). Use null for passports or if not a visa.",
+  "visa_number": "string or null (for visas; Control Number on US visas)",
+  "visa_type": "string or null (e.g. B1/B2)",
+  "passport_number": "string or null (for passports)"
+}
+
+Rules:
+- document_kind: MUST be "passport" if the document is a passport (national passport booklet), or "visa" if it is a visa (sticker, visa page, or visa-only document). No other values.
+- Dates: use DD/MM/YYYY format. If you see 21MAY2033, return "21/05/2033".
+- Names: use the exact spelling from the document (Surname and Given Name as labeled).
+- Country: prefer 2-letter code (us, br) or full name.
+- visa_origin: only for visas; use Portuguese adjective (Americano, Chinês, Britânico, etc.). One word when possible.
+- Return only the JSON object, no other text.
+''';
+
+  Future<Either<Exception, Map<String, dynamic>>> _parseDocumentDirectOpenAI({
+    required DocumentType type,
+    required File file,
+  }) async {
+    try {
+      final apiKey = dotenv.env['OPENAI_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return Left(Exception('OpenAI API key não encontrada no .env do app.'));
+      }
+
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      
+      final userPrompt = type == DocumentType.passaporte
+          ? 'Extract all fields from this passport image. Return only the JSON object.'
+          : 'Extract all fields from this visa image (Surname, Given Name, Issue Date, Expiration Date, Country, Visa Number, Visa Type). Return only the JSON object.';
+
+      final mimeType = file.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      final dataUrl = 'data:$mimeType;base64,$base64Image';
+
+      final url = Uri.parse('https://api.openai.com/v1/chat/completions');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': 'gpt-4o-mini',
+          'max_tokens': 500,
+          'response_format': {'type': 'json_object'},
+          'messages': [
+            {'role': 'system', 'content': _systemPrompt},
+            {
+              'role': 'user',
+              'content': [
+                {'type': 'text', 'text': userPrompt},
+                {
+                  'type': 'image_url',
+                  'image_url': {'url': dataUrl},
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices']?[0]?['message']?['content'];
+        if (content != null && content is String) {
+          final Map<String, dynamic> parsedData = jsonDecode(content);
+          return Right(parsedData);
+        }
+        return Left(Exception('Formato de resposta da OpenAI inválido.'));
+      } else {
+        return Left(Exception('Erro da OpenAI: ${response.statusCode} - ${response.body}'));
+      }
+    } catch (e) {
+      return Left(Exception('Falha no processamento direto com a OpenAI: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Map<String, dynamic>>> parseDocument({
+    required DocumentType type,
+    required File file,
+  }) async {
+    // Chama diretamente o processamento por LLM (OpenAI)
+    return await _parseDocumentDirectOpenAI(type: type, file: file);
   }
 }
