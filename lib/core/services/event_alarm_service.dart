@@ -30,9 +30,9 @@ class EventAlarmService {
 
     // 2. Detecta e configura o timezone LOCAL real do dispositivo
     try {
-      final String localTz = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(localTz));
-      debugPrint('[EventAlarmService] Timezone configurado: $localTz');
+      final tzInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
+      debugPrint('[EventAlarmService] Timezone configurado: ${tzInfo.identifier}');
     } catch (e) {
       // Fallback: usa America/Sao_Paulo se não conseguir detectar
       try {
