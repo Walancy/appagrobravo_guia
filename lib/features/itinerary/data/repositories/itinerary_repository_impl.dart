@@ -16,6 +16,7 @@ import '../../domain/entities/guide_mission.dart';
 import '../../../home/domain/entities/mission_entity.dart';
 import '../../domain/entities/menu_item.dart';
 import '../models/menu_item_dto.dart';
+import '../../domain/entities/guia_evento_status.dart';
 
 @LazySingleton(as: ItineraryRepository)
 class ItineraryRepositoryImpl implements ItineraryRepository {
@@ -605,23 +606,143 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
   }
 
   @override
-  Future<Either<Exception, void>> updateAttendance(
+  Future<Either<Exception, void>> confirmarPresencas(
     String eventId,
-    String userId,
-    bool isPresent,
+    List<Map<String, dynamic>> presencas,
   ) async {
     try {
-      await _supabaseClient.from('eventos_presenca').upsert({
-        'evento_id': eventId,
-        'user_id': userId,
-        'presente': isPresent,
-        'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'evento_id, user_id');
+      final rows = presencas
+          .map((p) => {
+                'evento_id': eventId,
+                'user_id': p['user_id'] as String,
+                'presente': p['presente'] as bool,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+          .toList();
+
+      await _supabaseClient
+          .from('eventos_presenca')
+          .upsert(rows, onConflict: 'evento_id, user_id');
 
       return const Right(null);
     } catch (e) {
-      debugPrint('Erro ao atualizar presença: $e');
-      return Left(Exception('Erro ao atualizar presença: $e'));
+      debugPrint('Erro ao confirmar presenças em lote: $e');
+      return Left(Exception('Erro ao confirmar presenças: $e'));
+    }
+  }
+
+  // ─── Check-in / Check-out do guia ──────────────────────────────────────────
+
+  @override
+  Future<Either<Exception, GuiaEventoStatus?>> getGuiaEventoStatus(
+    String eventoId,
+    String guiaId,
+  ) async {
+    try {
+      final response = await _supabaseClient
+          .from('eventos_guia_status')
+          .select()
+          .eq('evento_id', eventoId)
+          .eq('guia_id', guiaId)
+          .maybeSingle();
+
+      if (response == null) return const Right(null);
+      return Right(GuiaEventoStatus.fromJson(response));
+    } catch (e) {
+      debugPrint('Erro ao buscar status do guia no evento: $e');
+      return Left(Exception('Erro ao buscar status: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, GuiaEventoStatus>> registrarCheckin(
+    String eventoId,
+    String guiaId,
+    DateTime checkinAt,
+    List<Map<String, dynamic>> presencas,
+  ) async {
+    try {
+      // Grava presenças em lote
+      if (presencas.isNotEmpty) {
+        final rows = presencas
+            .map((p) => {
+                  'evento_id': eventoId,
+                  'user_id': p['user_id'] as String,
+                  'presente': p['presente'] as bool,
+                  'updated_at': checkinAt.toIso8601String(),
+                })
+            .toList();
+        await _supabaseClient
+            .from('eventos_presenca')
+            .upsert(rows, onConflict: 'evento_id, user_id');
+      }
+
+      // Atualiza status do guia
+      final response = await _supabaseClient
+          .from('eventos_guia_status')
+          .upsert(
+            {
+              'evento_id': eventoId,
+              'guia_id': guiaId,
+              'status': 'checkin_feito',
+              'checkin_at': checkinAt.toIso8601String(),
+              'updated_at': checkinAt.toIso8601String(),
+            },
+            onConflict: 'evento_id, guia_id',
+          )
+          .select()
+          .single();
+
+      return Right(GuiaEventoStatus.fromJson(response));
+    } catch (e) {
+      debugPrint('Erro ao registrar check-in: $e');
+      return Left(Exception('Erro ao registrar check-in: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, GuiaEventoStatus>> registrarCheckout(
+    String eventoId,
+    String guiaId,
+    DateTime checkoutAt,
+    List<Map<String, dynamic>> presencas,
+  ) async {
+    try {
+      // Atualiza presenças em lote
+      if (presencas.isNotEmpty) {
+        final rows = presencas
+            .map((p) => {
+                  'evento_id': eventoId,
+                  'user_id': p['user_id'] as String,
+                  'presente': p['presente'] as bool,
+                  'updated_at': checkoutAt.toIso8601String(),
+                })
+            .toList();
+        await _supabaseClient
+            .from('eventos_presenca')
+            .upsert(rows, onConflict: 'evento_id, user_id');
+      }
+
+      // Atualiza status do guia
+      final response = await _supabaseClient
+          .from('eventos_guia_status')
+          .upsert(
+            {
+              'evento_id': eventoId,
+              'guia_id': guiaId,
+              'status': 'checkout_feito',
+              'checkout_at': checkoutAt.toIso8601String(),
+              'updated_at': checkoutAt.toIso8601String(),
+            },
+            onConflict: 'evento_id, guia_id',
+          )
+          .select()
+          .single();
+
+      return Right(GuiaEventoStatus.fromJson(response));
+    } catch (e) {
+      debugPrint('Erro ao registrar check-out: $e');
+      return Left(Exception('Erro ao registrar check-out: $e'));
     }
   }
 }

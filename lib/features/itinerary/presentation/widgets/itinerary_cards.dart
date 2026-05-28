@@ -274,6 +274,7 @@ class GenericEventCard extends StatelessWidget {
                             eventIcon: _getIconForType(item.type),
                             groupId: groupId,
                             eventId: item.id,
+                            endDateTime: item.endDateTime,
                           ),
                     );
                   },

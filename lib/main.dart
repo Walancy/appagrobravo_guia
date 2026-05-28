@@ -19,6 +19,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:agrobravo/core/services/event_alarm_service.dart';
 import 'dart:developer';
 
 /// Handler de mensagens em background (precisa ser top-level)
@@ -181,6 +182,9 @@ void main() async {
       debugPrint('Erro ao configurar FCM: $e');
     }
   }
+
+  // Inicializa o serviço de alarmes locais (check-out de eventos)
+  await EventAlarmService.instance.init();
 
   runApp(
     DevicePreview(
