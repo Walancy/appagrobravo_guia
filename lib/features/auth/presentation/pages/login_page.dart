@@ -288,13 +288,12 @@ class _LoginPageState extends State<LoginPage>
                                             onRegisterNavigation: () =>
                                                 _switchMode(AuthMode.register),
                                             onLoginAction:
-                                                (email, password, rememberMe) {
+                                                (email, password) {
                                                   context
                                                       .read<AuthCubit>()
                                                       .login(
                                                         email,
                                                         password,
-                                                        rememberMe: rememberMe,
                                                       );
                                                 },
                                             onRegisterAction: (

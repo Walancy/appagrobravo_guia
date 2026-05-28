@@ -3,7 +3,6 @@ import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:agrobravo/features/auth/domain/repositories/auth_repository.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dartz/dartz.dart';
 
 @LazySingleton()
@@ -52,21 +51,8 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> login(
-    String email,
-    String password, {
-    bool rememberMe = false,
-  }) async {
+  Future<void> login(String email, String password) async {
     emit(const AuthState.loading());
-
-    final prefs = await SharedPreferences.getInstance();
-    if (rememberMe) {
-      await prefs.setString('remembered_email', email);
-      await prefs.setString('remembered_password', password);
-    } else {
-      await prefs.remove('remembered_email');
-      await prefs.remove('remembered_password');
-    }
 
     final result = await _authRepository.signInWithEmailAndPassword(
       email: email,
@@ -89,11 +75,6 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
     );
-  }
-
-  Future<String?> getRememberedEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('remembered_email');
   }
 
   Future<void> register(

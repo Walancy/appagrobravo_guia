@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/components/primary_button.dart';
 import 'package:agrobravo/core/constants/translations.dart';
@@ -19,8 +18,7 @@ class LoginForm extends StatefulWidget {
   final VoidCallback onRegisterNavigation; // Navegação para Registro
 
   // Ações de Submissão com Dados
-  final void Function(String email, String password, bool rememberMe)?
-  onLoginAction;
+  final void Function(String email, String password)? onLoginAction;
   final void Function(
     String name,
     String email,
@@ -67,7 +65,6 @@ class _LoginFormState extends State<LoginForm> {
   final _otpController = TextEditingController();
 
   // State
-  bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _termsAccepted = false;
@@ -77,7 +74,6 @@ class _LoginFormState extends State<LoginForm> {
   @override
   void initState() {
     super.initState();
-    _loadRememberedCredentials();
     if (widget.authMode == AuthMode.emailVerification) {
       _startResendTimer(60);
     }
@@ -86,26 +82,44 @@ class _LoginFormState extends State<LoginForm> {
   @override
   void didUpdateWidget(LoginForm oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.authMode != oldWidget.authMode &&
-        widget.authMode == AuthMode.emailVerification) {
-      _startResendTimer(60);
-    }
-  }
 
-  Future<void> _loadRememberedCredentials() async {
-    if (widget.authMode == AuthMode.login) {
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('remembered_email');
-      final password = prefs.getString('remembered_password');
-      if (email != null && mounted) {
-        setState(() {
-          _emailController.text = email;
-          if (password != null) {
-            _passwordController.text = password;
-          }
-          _rememberMe = true;
-        });
-      }
+    final oldMode = oldWidget.authMode;
+    final newMode = widget.authMode;
+
+    if (oldMode == newMode) return;
+
+    // Ao trocar entre login e registro: limpa todos os campos
+    final isLoginRegisterSwitch =
+        (oldMode == AuthMode.login && newMode == AuthMode.register) ||
+        (oldMode == AuthMode.register && newMode == AuthMode.login);
+
+    if (isLoginRegisterSwitch) {
+      _emailController.clear();
+      _passwordController.clear();
+      _nameController.clear();
+      _confirmPasswordController.clear();
+      _otpController.clear();
+      setState(() {
+        _obscurePassword = true;
+        _obscureConfirmPassword = true;
+        _termsAccepted = false;
+      });
+      return;
+    }
+
+    // Ao ir para forgotPassword vindo do login: preserva email (UX intencional)
+    // Para qualquer outro modo: limpa senha e confirmação por segurança
+    if (newMode != AuthMode.forgotPassword) {
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      setState(() {
+        _obscurePassword = true;
+        _obscureConfirmPassword = true;
+      });
+    }
+
+    if (newMode == AuthMode.emailVerification) {
+      _startResendTimer(60);
     }
   }
 
@@ -220,38 +234,24 @@ class _LoginFormState extends State<LoginForm> {
         controller: _passwordController,
         suffixIcon: _buildVisibilityIcon(true),
       ),
-      const SizedBox(height: AppSpacing.sm),
-      Row(
-        children: [
-          _buildCheckbox(
-            value: _rememberMe,
-            onChanged: (v) => setState(() => _rememberMe = v ?? false),
+      const SizedBox(height: AppSpacing.xs),
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(
+          onPressed: widget.onForgotPasswordNavigation,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          const SizedBox(width: AppSpacing.xs),
-          Text(
-            'Lembrar conta',
+          child: Text(
+            'Esqueci minha senha',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.surface,
+              color: const Color(0xFF00E676),
+              fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
           ),
-          const Spacer(),
-          TextButton(
-            onPressed: widget.onForgotPasswordNavigation,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'Esqueci minha senha',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: const Color(0xFF00E676),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
       const SizedBox(height: AppSpacing.md),
       PrimaryButton(
@@ -260,7 +260,6 @@ class _LoginFormState extends State<LoginForm> {
           widget.onLoginAction?.call(
             _emailController.text,
             _passwordController.text,
-            _rememberMe,
           );
         },
       ),
