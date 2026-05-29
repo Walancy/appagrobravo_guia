@@ -82,95 +82,115 @@ class _DaySliderState extends State<DaySlider> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    return SizedBox(
-      height: 90,
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-        clipBehavior: Clip.none,
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: _days.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final date = _days[index];
-          final dayDate = DateTime(date.year, date.month, date.day);
-          final isSelected =
-              widget.selectedDate != null &&
-              Utils.isSameDay(widget.selectedDate!, date);
+    final currentMonth = DateFormat('MMMM yyyy', 'pt_BR')
+        .format(widget.selectedDate ?? widget.startDate)
+        .capitalize();
 
-          final isPast = dayDate.isBefore(today);
-
-          Color backgroundColor;
-          if (isSelected) {
-            backgroundColor = AppColors.primary;
-          } else {
-            if (Theme.of(context).brightness == Brightness.dark) {
-              backgroundColor = Theme.of(context).cardColor;
-            } else {
-              backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-            }
-            if (isPast) {
-              backgroundColor = backgroundColor.withOpacity(0.5);
-            }
-          }
-
-          return GestureDetector(
-            onTap: () => widget.onDateSelected(date),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 50,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color:
-                      isSelected
-                          ? AppColors.primary
-                          : Theme.of(
-                            context,
-                          ).dividerColor.withOpacity(0.5),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    DateFormat(
-                      'E',
-                      'pt_BR',
-                    ).format(date).replaceAll('.', '').capitalize(),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color:
-                          isSelected
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurface
-                                  .withValues(alpha: isPast ? 0.3 : 0.6),
-                      fontSize: 10,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    date.day.toString(),
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color:
-                          isSelected
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurface
-                                  .withValues(alpha: isPast ? 0.4 : 1.0),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 8),
+          child: Text(
+            currentMonth,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-          );
-        },
-      ),
+          ),
+        ),
+        SizedBox(
+          height: 68,
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
+            clipBehavior: Clip.none,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: _days.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final date = _days[index];
+              final dayDate = DateTime(date.year, date.month, date.day);
+              final isSelected =
+                  widget.selectedDate != null &&
+                  Utils.isSameDay(widget.selectedDate!, date);
+
+              final isPast = dayDate.isBefore(today);
+
+              Color backgroundColor;
+              if (isSelected) {
+                backgroundColor = AppColors.primary;
+              } else {
+                if (Theme.of(context).brightness == Brightness.dark) {
+                  backgroundColor = Theme.of(context).cardColor;
+                } else {
+                  backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+                }
+                if (isPast) {
+                  backgroundColor = backgroundColor.withOpacity(0.5);
+                }
+              }
+
+              return GestureDetector(
+                onTap: () => widget.onDateSelected(date),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 50,
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          isSelected
+                              ? AppColors.primary
+                              : Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat(
+                          'E',
+                          'pt_BR',
+                        ).format(date).replaceAll('.', '').capitalize(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color:
+                              isSelected
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: isPast ? 0.3 : 0.6),
+                          fontSize: 9,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        date.day.toString(),
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color:
+                              isSelected
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: isPast ? 0.4 : 1.0),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

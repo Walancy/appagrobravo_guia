@@ -1,5 +1,7 @@
 import 'package:agrobravo/features/notifications/data/models/notification_model.dart';
 import 'package:agrobravo/features/notifications/domain/entities/notification_entity.dart';
+import 'package:agrobravo/features/notifications/domain/entities/participante_entity.dart';
+import 'package:agrobravo/features/notifications/domain/entities/lembrete_entity.dart';
 import 'package:agrobravo/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
@@ -242,6 +244,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     required String groupId,
     required String title,
     required String message,
+    List<String>? destinatarios,
   }) async {
     try {
       final currentUserId = _supabaseClient.auth.currentUser?.id;
@@ -249,61 +252,316 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
         return Left(Exception('Usuário não autenticado'));
       }
 
-      // 1. Fetch Participants
-      final participantsRes = await _supabaseClient
-          .from('gruposParticipantes')
-          .select('user_id')
-          .eq('grupo_id', groupId);
-
-      final participantIds =
-          (participantsRes as List).map((e) => e['user_id'] as String).toSet();
-
-      // 2. Fetch Leaders
-      final leadersRes = await _supabaseClient
-          .from('lideresGrupo')
-          .select('lider_id')
-          .eq('grupo_id', groupId);
-
-      final leaderIds =
-          (leadersRes as List).map((e) => e['lider_id'] as String).toSet();
-
       // Fetch Mission ID
-      final groupRes =
-          await _supabaseClient
-              .from('grupos')
-              .select('missao_id')
-              .eq('id', groupId)
-              .maybeSingle();
-
+      final groupRes = await _supabaseClient
+          .from('grupos')
+          .select('missao_id')
+          .eq('id', groupId)
+          .maybeSingle();
       final missaoId = groupRes?['missao_id'] as String?;
 
-      // 3. Combine and remove current user
-      final allUserIds = {...participantIds, ...leaderIds};
-      allUserIds.remove(currentUserId);
+      Set<String> allUserIds;
+
+      if (destinatarios != null && destinatarios.isNotEmpty) {
+        // Destinatários específicos selecionados pelo guia
+        allUserIds = destinatarios.toSet();
+        allUserIds.remove(currentUserId);
+      } else {
+        // Todos os participantes + líderes do grupo
+        final participantsRes = await _supabaseClient
+            .from('gruposParticipantes')
+            .select('user_id')
+            .eq('grupo_id', groupId);
+        final participantIds =
+            (participantsRes as List).map((e) => e['user_id'] as String).toSet();
+
+        final leadersRes = await _supabaseClient
+            .from('lideresGrupo')
+            .select('lider_id')
+            .eq('grupo_id', groupId);
+        final leaderIds =
+            (leadersRes as List).map((e) => e['lider_id'] as String).toSet();
+
+        allUserIds = {...participantIds, ...leaderIds};
+        allUserIds.remove(currentUserId);
+      }
 
       if (allUserIds.isEmpty) {
         return const Right(unit);
       }
 
-      // 4. Create Notifications
-      final notifications =
-          allUserIds.map((userId) {
-            return {
-              'user_id': userId,
-              'grupo_id': groupId,
-              'missao_id': missaoId,
-              'assunto': title,
-              'mensagem': message,
-              'lido': false,
-              'created_at': DateTime.now().toIso8601String(),
-            };
-          }).toList();
+      // Inserir notificações (trigger existente dispara o push)
+      final notifications = allUserIds.map((userId) {
+        return {
+          'user_id': userId,
+          'grupo_id': groupId,
+          'missao_id': missaoId,
+          'titulo': title,
+          'assunto': title,
+          'mensagem': message,
+          'lido': false,
+        };
+      }).toList();
 
       await _supabaseClient.from('notificacoes').insert(notifications);
+
+      // Registrar no histórico de lembretes
+      await _supabaseClient.from('lembretes').insert({
+        'grupo_id': groupId,
+        'missao_id': missaoId,
+        'criado_por': currentUserId,
+        'titulo': title,
+        'mensagem': message,
+        'destinatarios': destinatarios, // null = todos
+        'total_destinatarios': allUserIds.length,
+        'status': 'enviado',
+      });
 
       return const Right(unit);
     } catch (e) {
       return Left(Exception('Erro ao enviar notificação para o grupo: $e'));
     }
   }
+
+  @override
+  Future<Either<Exception, List<ParticipanteEntity>>> getGrupoParticipantes(
+    String groupId,
+  ) async {
+    try {
+      // Participantes
+      final participantsRes = await _supabaseClient
+          .from('gruposParticipantes')
+          .select('user_id')
+          .eq('grupo_id', groupId);
+      final participantIds =
+          (participantsRes as List).map((e) => e['user_id'] as String).toList();
+
+      // Líderes
+      final leadersRes = await _supabaseClient
+          .from('lideresGrupo')
+          .select('lider_id')
+          .eq('grupo_id', groupId);
+      final leaderIds =
+          (leadersRes as List).map((e) => e['lider_id'] as String).toSet();
+
+      // Usuário logado
+      final currentUserId = _supabaseClient.auth.currentUser?.id;
+
+      // Todos os IDs únicos (exceto o próprio guia logado)
+      final allIds = {...participantIds, ...leaderIds};
+      allIds.remove(currentUserId);
+
+      if (allIds.isEmpty) return const Right([]);
+
+      final usersRes = await _supabaseClient
+          .from('users')
+          .select('id, nome, foto')
+          .inFilter('id', allIds.toList());
+
+      final participantes = (usersRes as List).map((u) {
+        return ParticipanteEntity(
+          id: u['id'] as String,
+          nome: u['nome'] as String? ?? 'Sem nome',
+          foto: u['foto'] as String?,
+          isGuia: leaderIds.contains(u['id']),
+        );
+      }).toList()
+        ..sort((a, b) => a.nome.compareTo(b.nome));
+
+      return Right(participantes);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar participantes: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<LembreteEntity>>> getLembretesHistorico(
+    String groupId,
+  ) async {
+    try {
+      final currentUserId = _supabaseClient.auth.currentUser?.id;
+      if (currentUserId == null) return Left(Exception('Não autenticado'));
+
+      // Agendados primeiro (por agendado_para ASC), depois enviados (created_at DESC)
+      final res = await _supabaseClient
+          .from('lembretes')
+          .select()
+          .eq('grupo_id', groupId)
+          .eq('criado_por', currentUserId)
+          .neq('status', 'cancelado')
+          .order('created_at', ascending: false);
+
+      final lembretes = (res as List).map((json) {
+        final destinatariosRaw = json['destinatarios'];
+        List<String>? destinatarios;
+        if (destinatariosRaw is List) {
+          destinatarios = destinatariosRaw.map((e) => e.toString()).toList();
+        }
+        return LembreteEntity(
+          id: json['id'] as String,
+          grupoId: json['grupo_id'] as String,
+          missaoId: json['missao_id'] as String?,
+          criadoPor: json['criado_por'] as String,
+          titulo: json['titulo'] as String,
+          mensagem: json['mensagem'] as String,
+          destinatarios: destinatarios,
+          totalDestinatarios: (json['total_destinatarios'] as int?) ?? 0,
+          status: json['status'] as String? ?? 'enviado',
+          createdAt: DateTime.parse(json['created_at'] as String),
+          agendadoPara: json['agendado_para'] != null
+              ? DateTime.parse(json['agendado_para'] as String)
+              : null,
+          processadoEm: json['processado_em'] != null
+              ? DateTime.parse(json['processado_em'] as String)
+              : null,
+        );
+      }).toList();
+
+      // Ordena: agendados primeiro (por agendado_para), depois enviados (por created_at)
+      lembretes.sort((a, b) {
+        if (a.isAgendado && !b.isAgendado) return -1;
+        if (!a.isAgendado && b.isAgendado) return 1;
+        if (a.isAgendado && b.isAgendado) {
+          return (a.agendadoPara ?? a.createdAt)
+              .compareTo(b.agendadoPara ?? b.createdAt);
+        }
+        return b.createdAt.compareTo(a.createdAt);
+      });
+
+      return Right(lembretes);
+    } catch (e) {
+      return Left(Exception('Erro ao buscar histórico: $e'));
+    }
+  }
+
+  // ── Etapa 2: Agendamento ──────────────────────────────────────────────────
+
+  @override
+  Future<Either<Exception, Unit>> agendarLembrete({
+    required String groupId,
+    required String title,
+    required String message,
+    required DateTime agendadoPara,
+    List<String>? destinatarios,
+  }) async {
+    try {
+      final currentUserId = _supabaseClient.auth.currentUser?.id;
+      if (currentUserId == null) return Left(Exception('Não autenticado'));
+
+      final groupRes = await _supabaseClient
+          .from('grupos')
+          .select('missao_id')
+          .eq('id', groupId)
+          .maybeSingle();
+      final missaoId = groupRes?['missao_id'] as String?;
+
+      // Calcula o total de destinatários para exibir no histórico
+      int totalDest = 0;
+      if (destinatarios != null) {
+        totalDest = destinatarios.length;
+      } else {
+        // Conta participantes + líderes (exceto o guia)
+        final pRes = await _supabaseClient
+            .from('gruposParticipantes')
+            .select('user_id')
+            .eq('grupo_id', groupId);
+        final lRes = await _supabaseClient
+            .from('lideresGrupo')
+            .select('lider_id')
+            .eq('grupo_id', groupId);
+        final ids = {
+          ...(pRes as List).map((e) => e['user_id'] as String),
+          ...(lRes as List).map((e) => e['lider_id'] as String),
+        }..remove(currentUserId);
+        totalDest = ids.length;
+      }
+
+      await _supabaseClient.from('lembretes').insert({
+        'grupo_id': groupId,
+        'missao_id': missaoId,
+        'criado_por': currentUserId,
+        'titulo': title,
+        'mensagem': message,
+        'destinatarios': destinatarios,
+        'total_destinatarios': totalDest,
+        'status': 'agendado',
+        'agendado_para': agendadoPara.toUtc().toIso8601String(),
+      });
+
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao agendar lembrete: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Unit>> cancelarLembrete(String lembreteId) async {
+    try {
+      await _supabaseClient
+          .from('lembretes')
+          .update({'status': 'cancelado'})
+          .eq('id', lembreteId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao cancelar lembrete: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Unit>> atualizarHorarioLembrete(
+    String lembreteId,
+    DateTime novoHorario,
+  ) async {
+    try {
+      await _supabaseClient
+          .from('lembretes')
+          .update({'agendado_para': novoHorario.toUtc().toIso8601String()})
+          .eq('id', lembreteId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao atualizar horário: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Unit>> editarLembrete({
+    required String lembreteId,
+    required String mensagem,
+    required DateTime agendadoPara,
+    List<String>? destinatarios,
+    required int totalDestinatarios,
+  }) async {
+    try {
+      await _supabaseClient
+          .from('lembretes')
+          .update({
+            'mensagem': mensagem,
+            'agendado_para': agendadoPara.toUtc().toIso8601String(),
+            'destinatarios': destinatarios,
+            'total_destinatarios': totalDestinatarios,
+          })
+          .eq('id', lembreteId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao editar lembrete: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, Unit>> enviarLembreteAgora(String lembreteId) async {
+    try {
+      await _supabaseClient.rpc(
+        'send_lembrete_now',
+        params: {'p_lembrete_id': lembreteId},
+      );
+      return const Right(unit);
+    } catch (e) {
+      return Left(Exception('Erro ao enviar lembrete: $e'));
+    }
+  }
 }
+
+
+
+
+

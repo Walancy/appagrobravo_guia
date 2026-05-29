@@ -27,6 +27,7 @@ import 'package:agrobravo/features/home/presentation/pages/member_details_page.d
 import 'package:agrobravo/features/home/presentation/pages/incident_list_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/expense_list_page.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
+import 'package:agrobravo/features/notifications/presentation/pages/lembretes_historico_page.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/di/injection.dart';
@@ -278,6 +279,15 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) {
         final groupId = state.pathParameters['groupId']!;
         return NoTransitionPage(child: ExpenseListPage(groupId: groupId));
+      },
+    ),
+    GoRoute(
+      path: '/lembretes-historico/:groupId',
+      pageBuilder: (context, state) {
+        final groupId = state.pathParameters['groupId']!;
+        return NoTransitionPage(
+          child: LembretesHistoricoPage(groupId: groupId),
+        );
       },
     ),
   ],
