@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:image_picker/image_picker.dart';
@@ -307,15 +308,50 @@ class ChatRepositoryImpl implements ChatRepository {
           final response =
               await _supabaseClient
                   .from('mensagens')
-                  .select('mensagem, created_at')
+                  .select('mensagem, created_at, user_id, audio_url, imagem')
                   .eq('batepapo_id', chatId)
                   .order('created_at', ascending: false)
                   .limit(1)
                   .maybeSingle();
 
           if (response != null) {
-            lastMessages[identifier] =
-                response['mensagem'] as String? ?? 'Imagem/Arquivo';
+            final senderId = response['user_id'] as String?;
+            final rawText = response['mensagem'] as String? ?? '';
+            final hasAudioUrl = response['audio_url'] != null;
+            final hasImageUrl = response['imagem'] != null;
+            final isMe = senderId == userId;
+
+            String senderLabel;
+            if (isMe) {
+              senderLabel = 'Você';
+            } else if (senderId != null) {
+              try {
+                final userResp = await _supabaseClient
+                    .from('users')
+                    .select('nome')
+                    .eq('id', senderId)
+                    .maybeSingle();
+                final fullName = userResp?['nome'] as String? ?? '';
+                senderLabel = fullName.isNotEmpty
+                    ? fullName.split(' ').first
+                    : 'Alguém';
+              } catch (_) {
+                senderLabel = 'Alguém';
+              }
+            } else {
+              senderLabel = '';
+            }
+
+            final prefix = senderLabel.isNotEmpty ? '$senderLabel: ' : '';
+            final preview = hasAudioUrl
+                ? '${prefix}🎤 Áudio'
+                : hasImageUrl
+                    ? '${prefix}📷 Foto'
+                    : rawText.isNotEmpty
+                        ? '$prefix$rawText'
+                        : '';
+
+            lastMessages[identifier] = preview;
             if (response['created_at'] != null) {
               lastMessageTimes[identifier] = DateTime.parse(
                 response['created_at'],
@@ -355,8 +391,7 @@ class ChatRepositoryImpl implements ChatRepository {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonList =
-          messages
+      final jsonList = messages
               .map(
                 (m) => {
                   'id': m.id,
@@ -367,7 +402,8 @@ class ChatRepositoryImpl implements ChatRepository {
                   'userAvatarUrl': m.userAvatarUrl,
                   'guideRole': m.guideRole,
                   'attachmentUrl': m.attachmentUrl,
-                  // serialize partial repliedToMessage if needed, simplistic version here:
+                  'audioUrl': m.audioUrl,
+                  'audioDurationMs': m.audioDurationMs,
                   'repliedToId': m.repliedToMessage?.id,
                   'isEdited': m.isEdited,
                   'isDeleted': m.isDeleted,
@@ -401,6 +437,8 @@ class ChatRepositoryImpl implements ChatRepository {
             userAvatarUrl: json['userAvatarUrl'],
             guideRole: json['guideRole'],
             attachmentUrl: json['attachmentUrl'],
+            audioUrl: json['audioUrl'],
+            audioDurationMs: json['audioDurationMs'] as int?,
             repliedToMessage:
                 json['repliedToId'] != null
                     ? MessageEntity(
@@ -492,6 +530,8 @@ class ChatRepositoryImpl implements ChatRepository {
             userAvatarUrl: userData?['foto'],
             guideRole: role,
             attachmentUrl: msg['imagem'],
+            audioUrl: msg['audio_url'] as String?,
+            audioDurationMs: msg['audio_duration_ms'] as int?,
             repliedToMessage:
                 msg['id_mensagem_respondida'] != null
                     ? messages.firstWhere(
@@ -694,6 +734,52 @@ class ChatRepositoryImpl implements ChatRepository {
       _createDMNotification(realChatId, user.id).catchError((_) {});
     }
   }
+
+  @override
+  Future<void> sendAudio(
+    String chatId,
+    String audioPath, {
+    bool isGroup = true,
+    int audioDurationMs = 0,
+    String? replyToId,
+  }) async {
+    final user = _supabaseClient.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    final realChatId = await _resolveChatId(chatId, isGroup);
+    if (realChatId == null) throw Exception('Could not resolve chat ID');
+
+    final bytes = await File(audioPath).readAsBytes();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final storagePath = 'chats/$realChatId/audio/${timestamp}_${user.id}.m4a';
+
+    await _supabaseClient.storage
+        .from('files')
+        .uploadBinary(storagePath, bytes);
+
+    final audioUrl = _supabaseClient.storage
+        .from('files')
+        .getPublicUrl(storagePath);
+
+    await _supabaseClient.from('mensagens').insert({
+      'batepapo_id': realChatId,
+      'user_id': user.id,
+      'mensagem': '',
+      'audio_url': audioUrl,
+      'audio_duration_ms': audioDurationMs > 0 ? audioDurationMs : null,
+      'id_mensagem_respondida': replyToId,
+    });
+
+    try {
+      await File(audioPath).delete();
+    } catch (_) {}
+
+    // Criar notificação apenas para DMs
+    if (!isGroup) {
+      _createDMNotification(realChatId, user.id).catchError((_) {});
+    }
+  }
+
 
   Future<void> _createDMNotification(
     String batePapoId,

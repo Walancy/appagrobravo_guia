@@ -13,6 +13,13 @@ abstract class ChatRepository {
     XFile? image,
     String? replyToId,
   });
+  Future<void> sendAudio(
+    String chatId,
+    String audioPath, {
+    bool isGroup = true,
+    int audioDurationMs = 0,
+    String? replyToId,
+  });
   Future<void> editMessage(String messageId, String newText);
   Future<void> deleteMessages(List<String> messageIds);
   Future<Either<Exception, GroupDetailEntity>> getGroupDetails(String groupId);

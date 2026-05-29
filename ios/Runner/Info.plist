@@ -51,6 +51,8 @@
 	<string>O AgroBravo usa a sua localização no modal de emergência para compartilhar sua posição com a equipe de suporte.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>O AgroBravo usa a câmera para fotografar comprovantes de despesas, documentos da viagem e enviar fotos no chat.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O AgroBravo usa o microfone para enviar mensagens de áudio no chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>O AgroBravo acessa sua galeria para selecionar imagens de comprovantes, documentos e enviar fotos no chat.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
