@@ -25,6 +25,7 @@ class ChatBubble extends StatelessWidget {
   final bool isSelected;
   final bool isEdited;
   final bool isDeleted;
+  final bool isPending;
   final VoidCallback? onReply;
   final String? repliedMessage;
   final String? repliedUserName;
@@ -49,6 +50,7 @@ class ChatBubble extends StatelessWidget {
     this.isEdited = false,
     this.isDeleted = false,
     this.isSelected = false,
+    this.isPending = false,
     this.onReply,
     this.repliedMessage,
     this.repliedUserName,
@@ -133,40 +135,43 @@ class ChatBubble extends StatelessWidget {
 
               // Bubble
               Flexible(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.72 -
-                        avatarPlaceholderWidth,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          color: _imageOnly ? Colors.transparent : bgColor,
-                          borderRadius: borderRadius,
-                          boxShadow: _imageOnly
-                              ? null
-                              : [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(
-                                      isDark ? 0.18 : 0.06,
+                child: Opacity(
+                  opacity: isPending ? 0.65 : 1.0,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.72 -
+                          avatarPlaceholderWidth,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: _imageOnly ? Colors.transparent : bgColor,
+                            borderRadius: borderRadius,
+                            boxShadow: _imageOnly
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(
+                                        isDark ? 0.18 : 0.06,
+                                      ),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
                                     ),
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                                  ],
+                          ),
+                          child: isDeleted
+                              ? _buildDeletedBubble(
+                                  context, textColor, borderRadius)
+                              : _buildContent(
+                                  context, bgColor, textColor, borderRadius, isDark),
                         ),
-                        child: isDeleted
-                            ? _buildDeletedBubble(
-                                context, textColor, borderRadius)
-                            : _buildContent(
-                                context, bgColor, textColor, borderRadius, isDark),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -528,13 +533,20 @@ class ChatBubble extends StatelessWidget {
           ),
           const SizedBox(width: 4),
         ],
-        Text(
-          time,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: textColor.withOpacity(0.65),
-            fontSize: 11,
+        if (isPending)
+          Icon(
+            Icons.access_time_rounded,
+            size: 12,
+            color: textColor.withOpacity(0.55),
+          )
+        else
+          Text(
+            time,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: textColor.withOpacity(0.65),
+              fontSize: 11,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -707,6 +719,31 @@ class _AudioPlayerState extends State<_AudioPlayer> {
     final subtleColor = widget.isMe
         ? Colors.white.withOpacity(0.65)
         : Theme.of(context).colorScheme.onSurface.withOpacity(0.55);
+
+    // Estado de envio — audioUrl ainda não disponível
+    if (widget.audioUrl == 'pending') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Enviando áudio...',
+              style: TextStyle(color: subtleColor, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
 
     // Prefer non-zero live duration; fall back to stored value from DB
     final effectiveDuration =

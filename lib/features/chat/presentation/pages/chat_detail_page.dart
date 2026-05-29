@@ -405,6 +405,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                                       audioDurationMs: msg.audioDurationMs,
                                       isEdited: msg.isEdited,
                                       isDeleted: msg.isDeleted,
+                                      isPending: msg.isPending,
                                       isSelected: isSelected,
                                       repliedMessage:
                                           msg.repliedToMessage?.text,

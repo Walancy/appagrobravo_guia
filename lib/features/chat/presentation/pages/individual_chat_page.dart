@@ -330,10 +330,13 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                                   userAvatarUrl: msg.userAvatarUrl,
                                   guideRole: msg.guideRole,
                                   attachmentUrl: msg.attachmentUrl,
+                                  audioUrl: msg.audioUrl,
+                                  audioDurationMs: msg.audioDurationMs,
                                   isGroupChat: false,
                                   showAvatar: false,
                                   isEdited: msg.isEdited,
                                   isDeleted: msg.isDeleted,
+                                  isPending: msg.isPending,
                                   isSelected: isSelected,
                                   onLongPress:
                                       msg.type == MessageType.me &&
@@ -408,6 +411,12 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                 },
                 onImagePicked: () => _pickImage(ImageSource.gallery),
                 onCameraPicked: () => _pickImage(ImageSource.camera),
+                onAudioRecorded: (path, durationMs) {
+                  context.read<ChatDetailCubit>().sendAudioMessage(
+                    path,
+                    audioDurationMs: durationMs,
+                  );
+                },
                 onSendMessage: (text) {
                   if (_editingMessageId != null) {
                     context.read<ChatDetailCubit>().editMessage(
