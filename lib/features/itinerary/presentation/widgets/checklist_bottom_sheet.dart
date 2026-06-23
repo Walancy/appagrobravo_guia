@@ -48,6 +48,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   GuiaEventoStatus? _guiaStatus;
   bool _isLoading = true;
   bool _isActing = false;
+  DateTime? _lastActionTime;
   String? _error;
 
   String get _currentGuiaId =>
@@ -152,6 +153,13 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   // ─── Ações ────────────────────────────────────────────────────────────────
 
   Future<void> _confirmarCheckin() async {
+    final now = DateTime.now();
+    if (_lastActionTime != null && now.difference(_lastActionTime!).inMilliseconds < 1500) {
+      debugPrint('[ChecklistBottomSheet] Check-in ignorado para evitar duplo clique.');
+      return;
+    }
+    _lastActionTime = now;
+
     setState(() => _isActing = true);
     final repo = getIt<ItineraryRepository>();
     final checkinAt = _selectedDateTime;
@@ -196,6 +204,13 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   }
 
   Future<void> _confirmarCheckout() async {
+    final now = DateTime.now();
+    if (_lastActionTime != null && now.difference(_lastActionTime!).inMilliseconds < 1500) {
+      debugPrint('[ChecklistBottomSheet] Check-out ignorado para evitar duplo clique.');
+      return;
+    }
+    _lastActionTime = now;
+
     setState(() => _isActing = true);
     final repo = getIt<ItineraryRepository>();
     final checkoutAt = _selectedDateTime;
