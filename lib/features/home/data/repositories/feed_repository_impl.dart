@@ -976,7 +976,7 @@ class FeedRepositoryImpl implements FeedRepository {
         if (existingNotification == null) {
           await _supabaseClient.from('notificacoes').insert({
             'user_id': userId,
-            'assunto': 'missionUpdate',
+            'assunto': 'MISSAO',
             'grupo_id': groupResponse['grupo_id'],
             'missao_id': missionData['id'],
             'titulo': 'Nova Missão',

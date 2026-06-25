@@ -24,6 +24,7 @@ abstract class NotificationModel with _$NotificationModel {
     String? icone,
     @JsonKey(name: 'grupo_id') String? grupoId,
     @JsonKey(name: 'batepapo_id') String? batepapoId,
+    @JsonKey(name: 'target_route') String? targetRoute,
     // Joined data from users table (if any)
     @JsonKey(ignore: true) String? userName,
     @JsonKey(ignore: true) String? userAvatar,
@@ -50,18 +51,22 @@ abstract class NotificationModel with _$NotificationModel {
         type = NotificationType.documentPending;
       }
     } else if (postId != null) {
-      if (subject.contains('curtiu')) {
+      if (subject.contains('curtiu') || subject == 'curtiu') {
         type = NotificationType.like;
-      } else if (subject.contains('comentou')) {
+      } else if (subject.contains('comentou') || subject == 'comentou') {
         type = NotificationType.comment;
-      } else if (subject.contains('mencionou')) {
+      } else if (subject.contains('mencionou') || subject == 'mencionou') {
         type = NotificationType.mention;
       } else {
         type = NotificationType.like;
       }
+    } else if (subject == 'chat_grupo' || subject == 'chatgrupo') {
+      type = NotificationType.message;
+    } else if (subject == 'chat_direto' || subject == 'chatdireto') {
+      type = NotificationType.message;
     } else if (solicitacaoUserId != null) {
-      // Check if it's really a follow request
       final isFollowKeyword =
+          subject.contains('solicitacao') ||
           subject.contains('solicitação') ||
           subject.contains('conexo') ||
           subject.contains('seguir') ||
@@ -74,13 +79,16 @@ abstract class NotificationModel with _$NotificationModel {
       if (isFollowKeyword) {
         type = NotificationType.follow;
       } else {
-        // Just a generic notification from a user (e.g. mention without postId or message)
         type = NotificationType.missionUpdate;
       }
+    } else if (subject == 'guia_viagem' || subject.contains('guia')) {
+      type = NotificationType.guideAlert;
+    } else if (subject == 'material') {
+      type = NotificationType.missionUpdate;
     } else if (subject == 'mensagem' || subject.contains('mensagem')) {
       type = NotificationType.message;
     } else if (missionId != null || grupoId != null) {
-      if (subject.contains('guia') || title.contains('guia')) {
+      if (title.contains('guia')) {
         type = NotificationType.guideAlert;
       } else {
         type = NotificationType.missionUpdate;
@@ -125,6 +133,7 @@ abstract class NotificationModel with _$NotificationModel {
       message: finalMessage,
       createdAt: createdAt,
       isRead: (lido ?? false) || (solicitacaoRespondida ?? false),
+      targetRoute: targetRoute,
     );
   }
 }

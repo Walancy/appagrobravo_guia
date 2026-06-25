@@ -284,6 +284,50 @@ class _NotificationItem extends StatelessWidget {
 
   const _NotificationItem({required this.notification});
 
+  void _pushRoute(BuildContext context, String route) {
+    debugPrint('[NOTIF-TAP] _pushRoute called with route="$route"');
+    final uri = Uri.tryParse(route.trim());
+    if (uri == null || uri.path.isEmpty || !uri.path.startsWith('/')) {
+      return;
+    }
+
+    String finalRoute = uri.toString();
+
+    // Backend manda /chat-group/:id → No Guia não há tela separada para chat de grupo, é na tab 2
+    if (uri.path.startsWith('/chat-group/')) {
+      final groupId = uri.pathSegments.last;
+      context.go('/home?tab=2&groupId=$groupId&t=${DateTime.now().millisecondsSinceEpoch}');
+      return;
+    }
+
+    // Backend manda /chat-direct/:id → No Guia a rota é /chat/dm/:id
+    if (uri.path.startsWith('/chat-direct/')) {
+      final userId = uri.pathSegments.last;
+      finalRoute = '/chat/dm/$userId';
+    }
+
+    // Intercept /itinerary/:groupId → navigate to itinerary tab in HomePage
+    final itineraryMatch = RegExp(r'^/itinerary/(.+)$').firstMatch(uri.path);
+    if (itineraryMatch != null) {
+      final groupId = itineraryMatch.group(1)!;
+      context.go('/home?tab=1&groupId=$groupId&t=${DateTime.now().millisecondsSinceEpoch}');
+      return;
+    }
+
+    // /home routes → replace (switch tabs)
+    if (finalRoute.startsWith('/home')) {
+      context.go(finalRoute);
+      return;
+    }
+
+    // Detail routes → push on top so back button works
+    try {
+      context.push(finalRoute);
+    } catch (e) {
+      debugPrint('[NOTIF-TAP] _pushRoute: ERROR $e');
+    }
+  }
+
   String _formatTime(DateTime date) {
     final diff = DateTime.now().difference(date);
     if (diff.inSeconds < 60) return '${diff.inSeconds}s';
@@ -300,6 +344,11 @@ class _NotificationItem extends StatelessWidget {
       onTap: () {
         if (!notification.isRead) {
           context.read<NotificationsCubit>().markAsRead(notification.id);
+        }
+
+        if (notification.targetRoute != null && notification.targetRoute!.isNotEmpty) {
+          _pushRoute(context, notification.targetRoute!);
+          return;
         }
 
         if (notification.type == NotificationType.follow) {

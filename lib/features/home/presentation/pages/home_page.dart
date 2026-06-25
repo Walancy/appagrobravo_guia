@@ -38,7 +38,14 @@ import 'package:agrobravo/core/components/empty_mission_state.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int initialTab;
+  final String? initialGroupId;
+
+  const HomePage({
+    super.key,
+    this.initialTab = 0,
+    this.initialGroupId,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -51,7 +58,22 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialTab;
+    _selectedGroupId = widget.initialGroupId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialGroupId != null) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('DEBUG ROTEAMENTO'),
+            content: Text('HomePage carregada!\nTab inicial: ${widget.initialTab}\nGrupo: ${widget.initialGroupId}'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+            ],
+          ),
+        );
+      }
+
       final documentsCubit = context.read<DocumentsCubit>();
       documentsCubit.state.maybeMap(
         initial: (_) => documentsCubit.loadDocuments(),
@@ -70,6 +92,32 @@ class _HomePageState extends State<HomePage> {
         orElse: () {},
       );
     });
+  }
+
+  @override
+  void didUpdateWidget(HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != oldWidget.initialTab) {
+      _selectedIndex = widget.initialTab;
+    }
+    if (widget.initialGroupId != oldWidget.initialGroupId) {
+      _selectedGroupId = widget.initialGroupId;
+    }
+    
+    if (widget.initialGroupId != oldWidget.initialGroupId || widget.initialTab != oldWidget.initialTab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('DEBUG ROTEAMENTO (UPDATE)'),
+            content: Text('HomePage atualizada!\nTab inicial: ${widget.initialTab}\nGrupo: ${widget.initialGroupId}'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+            ],
+          ),
+        );
+      });
+    }
   }
 
   @override
