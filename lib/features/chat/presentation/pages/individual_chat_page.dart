@@ -14,6 +14,7 @@ import 'package:agrobravo/features/chat/presentation/widgets/chat_input.dart';
 import 'package:agrobravo/features/chat/presentation/widgets/image_preview_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/features/profile/domain/repositories/profile_repository.dart';
 
 class IndividualChatPage extends StatelessWidget {
   final GuideEntity guide;
@@ -47,11 +48,38 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
   bool _showScrollToBottom = false;
   String? _editingMessageId;
   final Set<String> _selectedMessageIds = {};
+  late GuideEntity _currentGuide;
 
   @override
   void initState() {
     super.initState();
+    _currentGuide = widget.guide;
     _scrollController.addListener(_scrollListener);
+
+    if (_currentGuide.name == 'Usuário') {
+      _fetchUserProfile();
+    }
+  }
+
+  Future<void> _fetchUserProfile() async {
+    try {
+      final repo = getIt<ProfileRepository>();
+      final result = await repo.getProfile(_currentGuide.id);
+      result.fold(
+        (l) => null,
+        (profile) {
+          if (mounted) {
+            setState(() {
+              _currentGuide = _currentGuide.copyWith(
+                name: profile.name,
+                avatarUrl: profile.avatarUrl,
+                role: profile.jobTitle ?? _currentGuide.role,
+              );
+            });
+          }
+        },
+      );
+    } catch (_) {}
   }
 
   @override
@@ -160,11 +188,11 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
               : AppColors.chatBackground,
       appBar: AppHeader(
         mode: HeaderMode.back,
-        title: widget.guide.name,
-        subtitle: widget.guide.role,
-        onTitleTap: () => context.push('/profile/${widget.guide.id}'),
+        title: _currentGuide.name,
+        subtitle: _currentGuide.role,
+        onTitleTap: () => context.push('/profile/${_currentGuide.id}'),
         logo: GestureDetector(
-          onTap: () => context.push('/profile/${widget.guide.id}'),
+          onTap: () => context.push('/profile/${_currentGuide.id}'),
           child: Container(
             width: 40,
             height: 40,
@@ -172,17 +200,17 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
               color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
               image:
-                  widget.guide.avatarUrl != null
+                  _currentGuide.avatarUrl != null
                       ? DecorationImage(
                         image: CachedNetworkImageProvider(
-                          widget.guide.avatarUrl!,
+                          _currentGuide.avatarUrl!,
                         ),
                         fit: BoxFit.cover,
                       )
                       : null,
             ),
             child:
-                widget.guide.avatarUrl == null
+                _currentGuide.avatarUrl == null
                     ? Icon(
                       Icons.person,
                       color: Theme.of(
