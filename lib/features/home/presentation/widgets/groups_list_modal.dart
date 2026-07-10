@@ -82,7 +82,7 @@ class GroupsListModal extends StatelessWidget {
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Theme.of(context).dividerColor.withOpacity(0.5),
+                        color: Theme.of(context).dividerColor.withOpacity(0.03),
                       ),
                     ),
                     child: Row(

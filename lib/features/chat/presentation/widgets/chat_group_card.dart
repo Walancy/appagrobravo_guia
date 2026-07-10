@@ -46,7 +46,7 @@ class ChatGroupCard extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.1),
+                color: Theme.of(context).dividerColor.withOpacity(0.03),
               ),
             ),
             child: ClipOval(child: leading),

@@ -289,7 +289,7 @@ class MemberDetailsPage extends StatelessWidget {
                               Color statusColor;
                               if (status == 'APROVADO' ||
                                   status == 'VALIDADO') {
-                                statusColor = const Color(0xFF00B289);
+                                statusColor = AppColors.primary;
                               } else if (status == 'PENDENTE') {
                                 statusColor = Colors.amber;
                               } else if (status == 'EXPIRADO') {
@@ -309,7 +309,7 @@ class MemberDetailsPage extends StatelessWidget {
                                   border: Border.all(
                                     color: Theme.of(
                                       context,
-                                    ).dividerColor.withOpacity(0.1),
+                                    ).dividerColor.withOpacity(0.03),
                                   ),
                                 ),
                                 child: Row(

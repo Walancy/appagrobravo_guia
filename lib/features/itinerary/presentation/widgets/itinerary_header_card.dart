@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:agrobravo/core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import '../../domain/entities/itinerary_group.dart';
 import 'day_slider.dart';
@@ -40,7 +41,7 @@ class ItineraryHeaderCard extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).dividerColor.withOpacity(0.1),
+                    color: Theme.of(context).dividerColor.withOpacity(0.03),
                     shape: BoxShape.circle,
                     image:
                         group.logo != null && group.logo!.isNotEmpty
@@ -82,7 +83,7 @@ class ItineraryHeaderCard extends StatelessWidget {
                           const Icon(
                             Icons.location_on_rounded,
                             size: 14,
-                            color: Color(0xFF00B289),
+                            color: AppColors.primary,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -110,7 +111,7 @@ class ItineraryHeaderCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00B289),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(

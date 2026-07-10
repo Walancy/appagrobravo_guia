@@ -1,16 +1,21 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pdfx/pdfx.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/components/image_source_bottom_sheet.dart';
+import 'package:agrobravo/core/components/country_picker_bottom_sheet.dart';
+import 'package:agrobravo/core/data/countries.dart';
 import 'package:agrobravo/core/di/injection.dart';
-import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/components/document_preview_page.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
@@ -39,6 +44,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   bool _isUploading = false;
   bool _isProcessingOcr = false;
   String? _ocrError;
+  bool _fieldsModified = false;
+  CountryItem? _selectedCountry; // apenas para tipo visto
 
   @override
   void initState() {
@@ -47,6 +54,20 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       _numberController.text = widget.currentDocument!.documentNumber ?? '';
       _nameController.text = widget.currentDocument!.title ?? '';
       _selectedDate = widget.currentDocument!.expiryDate;
+      // Carrega país salvo (só para visto)
+      if (widget.type == DocumentType.visto) {
+        _selectedCountry = countryByCode(widget.currentDocument!.visaCountry);
+      }
+    }
+    _numberController.addListener(_onFieldChanged);
+    _nameController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (!_fieldsModified) {
+      setState(() {
+        _fieldsModified = true;
+      });
     }
   }
 
@@ -57,7 +78,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     super.dispose();
   }
 
-  String _getTypeLabel(BuildContext context) {
+  /// Rótulo bilíngue do tipo de documento.
+  String _typeLabel() {
     switch (widget.type) {
       case DocumentType.passaporte:
         return context.t('Passaporte', 'Passport');
@@ -91,43 +113,47 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         !widget.currentDocument!.imageUrl!.toLowerCase().contains('/pdf');
 
     if (hasLocalPdf) {
-      launchUrl(
-        Uri.file(_selectedFile!.path),
-        mode: LaunchMode.externalApplication,
+      // Abrir PDF local in-app
+      DocumentPreviewPage.show(
+        context,
+        filePath: _selectedFile!.path,
+        title: _typeLabel(),
       );
       return;
     }
 
     if (hasRemotePdf) {
-      final uri = Uri.tryParse(remoteUrl);
-      if (uri != null) {
-        launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      // Abrir PDF remoto in-app
+      DocumentPreviewPage.show(
+        context,
+        url: remoteUrl,
+        title: _typeLabel(),
+      );
       return;
     }
 
     if (!hasLocalImage && !hasRemoteImage) return;
 
-    final ImageProvider imageProvider;
     if (hasLocalImage) {
-      imageProvider = FileImage(_selectedFile!);
+      // Abrir imagem local in-app
+      DocumentPreviewPage.show(
+        context,
+        filePath: _selectedFile!.path,
+        title: _typeLabel(),
+      );
     } else {
-      imageProvider = NetworkImage(widget.currentDocument!.imageUrl!);
+      // Abrir imagem remota in-app
+      DocumentPreviewPage.show(
+        context,
+        url: widget.currentDocument!.imageUrl!,
+        title: _typeLabel(),
+      );
     }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenImagePage(
-          imageProvider: imageProvider,
-          title: _getTypeLabel(context),
-        ),
-      ),
-    );
   }
 
   void _showDatePickerBottomSheet() {
-    DateTime tempDate = _selectedDate ?? DateTime.now().add(const Duration(days: 365));
+    DateTime tempDate =
+        _selectedDate ?? DateTime.now().add(const Duration(days: 365));
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -145,11 +171,12 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).dividerColor.withOpacity(0.1),
+                        color: Theme.of(context).dividerColor.withOpacity(0.03),
                       ),
                     ),
                   ),
@@ -175,6 +202,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                         onPressed: () {
                           setState(() {
                             _selectedDate = tempDate;
+                            _fieldsModified = true;
                           });
                           Navigator.pop(context);
                         },
@@ -195,7 +223,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: tempDate,
-                    minimumDate: DateTime.now().subtract(const Duration(days: 3650)),
+                    minimumDate:
+                        DateTime.now().subtract(const Duration(days: 3650)),
                     maximumDate: DateTime.now().add(const Duration(days: 3650)),
                     onDateTimeChanged: (DateTime newDate) {
                       tempDate = newDate;
@@ -224,10 +253,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   }
 
   Future<void> _processDocumentOcr(File file) async {
-    final isImage = ['.jpg', '.jpeg', '.png', '.webp'].any(file.path.toLowerCase().endsWith);
-    final supportsOcr = widget.type == DocumentType.passaporte || widget.type == DocumentType.visto;
+    final isPdf = file.path.toLowerCase().endsWith('.pdf');
+    final isImage =
+        ['.jpg', '.jpeg', '.png', '.webp'].any(file.path.toLowerCase().endsWith);
+    final supportsOcr = widget.type == DocumentType.passaporte ||
+        widget.type == DocumentType.visto;
 
-    if (!isImage || !supportsOcr) {
+    if ((!isImage && !isPdf) || !supportsOcr) {
       setState(() {
         _ocrError = null;
       });
@@ -239,46 +271,99 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       _ocrError = null;
     });
 
+    File fileToProcess = file;
+
+    if (isPdf) {
+      try {
+        final document = await PdfDocument.openFile(file.path);
+        if (document.pagesCount > 0) {
+          final page = await document.getPage(1);
+          final pageImage = await page.render(
+            width: page.width * 2,
+            height: page.height * 2,
+            format: PdfPageImageFormat.jpeg,
+          );
+
+          if (pageImage != null) {
+            final tempDir = await getTemporaryDirectory();
+            final tempFile = File(
+                '${tempDir.path}/ocr_temp_${DateTime.now().millisecondsSinceEpoch}.jpg');
+            await tempFile.writeAsBytes(pageImage.bytes);
+            fileToProcess = tempFile;
+          }
+
+          await page.close();
+        }
+        await document.close();
+      } catch (e) {
+        if (mounted) {
+          if (kDebugMode) debugPrint('[Documents] Erro ao converter PDF: $e');
+          setState(() {
+            _ocrError = context.t(
+              'Não foi possível processar o PDF. Tente com uma imagem.',
+              'Could not process the PDF. Try with an image.',
+            );
+            _isProcessingOcr = false;
+          });
+        }
+        return;
+      }
+    }
+
     final cubit = widget.cubit ?? getIt<DocumentsCubit>();
-    final result = await cubit.parseDocument(type: widget.type, file: file);
+    final result =
+        await cubit.parseDocument(type: widget.type, file: fileToProcess);
 
     if (!mounted) return;
 
     result.fold(
       (error) {
-        if (!mounted) return;
+        if (kDebugMode) debugPrint('[Documents] OCR error: $error');
         setState(() {
-          _ocrError = error.toString();
+          _ocrError = context.t(
+            'Não foi possível extrair os dados automaticamente. Preencha manualmente.',
+            'Could not automatically extract the data. Please fill in manually.',
+          );
           _isProcessingOcr = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.t('Falha ao extrair dados por IA: ', 'Failed to extract data via AI: ') + error.toString(),
-            ),
+            content: Text(context.t(
+              'Não foi possível extrair os dados. Preencha manualmente.',
+              'Could not extract the data. Please fill in manually.',
+            )),
           ),
         );
       },
       (data) {
-        if (!mounted) return;
         setState(() {
           _isProcessingOcr = false;
         });
 
-        final expectedKind = widget.type == DocumentType.passaporte ? 'passport' : 'visa';
+        final expectedKind =
+            widget.type == DocumentType.passaporte ? 'passport' : 'visa';
         final detectedKind = data['document_kind'];
 
         if (detectedKind != null && detectedKind != expectedKind) {
           final detectedLabel = detectedKind == 'passport'
               ? context.t('Passaporte', 'Passport')
               : context.t('Visto', 'Visa');
-          final selectedLabel = _getTypeLabel(context);
+          final selectedLabel = _typeLabel();
           setState(() {
-            _ocrError = context.t('O documento anexado é um ', 'The attached document is a ') +
+            _ocrError = context.t(
+                  'O documento anexado é um ',
+                  'The attached document is a ',
+                ) +
                 detectedLabel +
-                context.t(', mas você selecionou "', ', but you selected "') +
+                context.t(
+                  ', mas você selecionou "',
+                  ', but you selected "',
+                ) +
                 selectedLabel +
-                context.t('". Envie o documento correto.', '". Please submit the correct document.');
+                context.t(
+                  '". Envie o documento correto.',
+                  '". Please submit the correct document.',
+                );
             _selectedFile = null; // Reseta o arquivo inválido
           });
           return;
@@ -294,6 +379,17 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           final visaNumber = data['visa_number'];
           if (visaNumber != null) {
             _numberController.text = visaNumber.toString();
+          }
+          // Tenta extrair o país do visto via visa_origin ou country
+          final visaOrigin = data['visa_origin']?.toString();
+          final country = data['country']?.toString();
+          final detectedCountry =
+              countryByAny(visaOrigin) ?? countryByAny(country);
+          if (detectedCountry != null) {
+            setState(() {
+              _selectedCountry = detectedCountry;
+              _fieldsModified = true;
+            });
           }
         }
 
@@ -326,9 +422,10 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.t('Dados extraídos por Inteligência Artificial!', 'Data extracted by Artificial Intelligence!'),
-            ),
+            content: Text(context.t(
+              'Dados extraídos por Inteligência Artificial!',
+              'Data extracted by Artificial Intelligence!',
+            )),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -338,14 +435,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final hasImage = _selectedFile != null || widget.currentDocument?.imageUrl != null;
     final resultSource = await showModalBottomSheet<dynamic>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => ImageSourceBottomSheet(
-        title: hasImage
+        title: _selectedFile != null || widget.currentDocument?.imageUrl != null
             ? context.t('Alterar arquivo do documento', 'Change document file')
-            : context.t('Enviar ', 'Upload ') + _getTypeLabel(context),
+            : context.t('Enviar ', 'Upload ') + _typeLabel(),
         supportFiles: true,
       ),
     );
@@ -379,23 +475,14 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   }
 
   Future<void> _onSave(BuildContext context) async {
-    if (_selectedFile == null && widget.currentDocument?.imageUrl == null) {
+    // For new documents, a file is required
+    if (_selectedFile == null && widget.currentDocument == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            context.t('Selecione um PDF ou imagem do documento.', 'Select a PDF or image of the document.'),
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedFile == null && widget.currentDocument != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.t('Escolha um novo arquivo para atualizar o documento.', 'Choose a new file to update the document.'),
-          ),
+          content: Text(context.t(
+            'Selecione um PDF ou imagem do documento.',
+            'Select a PDF or image of the document.',
+          )),
         ),
       );
       return;
@@ -406,16 +493,17 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     final cubit = widget.cubit ?? getIt<DocumentsCubit>();
 
     try {
-      if (_selectedFile != null) {
-        await cubit.uploadDocument(
-          id: widget.currentDocument?.id,
-          type: widget.type,
-          file: _selectedFile!,
-          documentNumber: _numberController.text,
-          expiryDate: _selectedDate,
-          documentName: _nameController.text.isNotEmpty ? _nameController.text : _getTypeLabel(context),
-        );
-      }
+      await cubit.uploadDocument(
+        id: widget.currentDocument?.id,
+        type: widget.type,
+        file: _selectedFile, // null is OK for existing documents (metadata-only update)
+        documentNumber: _numberController.text,
+        expiryDate: _selectedDate,
+        documentName: _nameController.text,
+        visaCountry: widget.type == DocumentType.visto
+            ? _selectedCountry?.code
+            : null,
+      );
 
       if (mounted) {
         Navigator.pop(context, true); // Signal success
@@ -424,11 +512,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.t('Erro ao salvar: $e', 'Error saving: $e'),
-            ),
+            content: Text(context.t(
+              'Não foi possível salvar o documento. Tente novamente.',
+              'Could not save the document. Please try again.',
+            )),
           ),
         );
+        if (kDebugMode) debugPrint('[Documents] _onSave error: $e');
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -437,213 +527,351 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedFileName = _selectedFile?.path.split('/').last;
     final hasCurrentDocument = widget.currentDocument?.imageUrl != null;
-    final canSubmit = _selectedFile != null && !_isUploading;
+    // For new documents: require a file. For existing documents: allow submit if file or fields changed.
+    final isEditing = widget.currentDocument != null;
+    final canSubmit = !_isUploading &&
+        !_isProcessingOcr &&
+        (_selectedFile != null || (isEditing && _fieldsModified));
 
     return Scaffold(
-      appBar: AppHeader(
-        mode: HeaderMode.back,
-        title: _getTypeLabel(context),
-      ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.xl,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStatusHeader(context),
-              const SizedBox(height: AppSpacing.lg),
+      appBar: AppHeader(mode: HeaderMode.back, title: _typeLabel()),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildStatusHeader(),
+            const SizedBox(height: AppSpacing.lg),
 
-              if (_ocrError != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.2),
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+            if (_ocrError != null) ...[
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.2),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.red[800]),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          _ocrError!,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.red.shade200
-                                : Colors.red.shade900,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red[800]),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        _ocrError!,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.red.shade200
+                              : Colors.red.shade900,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-
-              Text(
-                context.t('Arquivo do documento', 'Document file'),
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontWeight: FontWeight.bold,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              GestureDetector(
-                onTap: _openImagePreview,
-                child: _buildImagePreview(context),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: _pickImage,
-                  icon: Icon(
-                    hasCurrentDocument || _selectedFile != null
-                        ? Icons.swap_horiz_rounded
-                        : Icons.upload_file_rounded,
-                    size: 20,
-                  ),
-                  label: Text(
-                    hasCurrentDocument || _selectedFile != null
-                        ? context.t('Substituir arquivo', 'Replace file')
-                        : context.t('Selecionar PDF ou imagem', 'Select PDF or image'),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              if (selectedFileName != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  context.t('Novo arquivo: ', 'New file: ') + selectedFileName,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.56),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-
               const SizedBox(height: AppSpacing.lg),
-              _buildFieldLabel(context.t('Nome no documento', 'Name on document')),
-              _DocumentTextField(
-                controller: _nameController,
-                hintText: context.t('Ex: NELSON VIEIRA', 'E.g.: NELSON VIEIRA'),
-              ),
+            ],
 
+            Text(
+              context.t('Arquivo do documento', 'Document file'),
+              style: AppTextStyles.bodyLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            GestureDetector(
+              onTap: _openImagePreview,
+              child: _buildImagePreview(),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: _pickImage,
+                icon: Icon(
+                  hasCurrentDocument || _selectedFile != null
+                      ? Icons.swap_horiz_rounded
+                      : Icons.upload_file_rounded,
+                  size: 20,
+                ),
+                label: Text(
+                  hasCurrentDocument || _selectedFile != null
+                      ? context.t('Substituir arquivo', 'Replace file')
+                      : context.t(
+                          'Selecionar PDF ou imagem',
+                          'Select PDF or image',
+                        ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+
+            if (_hasDocumentNumber()) ...[
               const SizedBox(height: AppSpacing.lg),
-              _buildFieldLabel(context.t('Número do documento', 'Document number')),
+              _buildFieldLabel(_numberFieldLabel()),
               _DocumentTextField(
                 controller: _numberController,
-                hintText: context.t('Ex: CD123456', 'E.g.: CD123456'),
+                hintText: _numberFieldHint(),
               ),
+            ],
 
+            // Campo de país — somente para visto
+            if (widget.type == DocumentType.visto) ...[
               const SizedBox(height: AppSpacing.lg),
-              _buildFieldLabel(context.t('Data de validade', 'Expiry date')),
+              _buildFieldLabel(context.t('País do Visto', 'Visa Country')),
               InkWell(
-                onTap: _showDatePickerBottomSheet,
+                onTap: () async {
+                  final picked = await CountryPickerBottomSheet.show(
+                    context,
+                    initialValue: _selectedCountry,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedCountry = picked;
+                      _fieldsModified = true;
+                    });
+                  }
+                },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 15,
+                    vertical: 13,
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.12),
                     ),
                     borderRadius: BorderRadius.circular(12),
-                    color: Theme.of(context).colorScheme.surface,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.035),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _selectedDate == null
-                            ? context.t('Selecionar data', 'Select date')
-                            : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                        style: AppTextStyles.bodyMedium,
-                      ),
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: AppColors.textSecondary,
-                      ),
+                      if (_selectedCountry != null) ...[
+                        Text(
+                          _flagEmoji(_selectedCountry!.code),
+                          style: const TextStyle(fontSize: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _selectedCountry!.name,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCountry = null;
+                              _fieldsModified = true;
+                            });
+                          },
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ] else ...[
+                        const Icon(
+                          Icons.public_rounded,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.t('Selecionar país', 'Select country'),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.35),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
+            ],
 
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: canSubmit ? () => _onSave(context) : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.08),
-                    disabledForegroundColor: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.38),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    elevation: 0,
+            const SizedBox(height: AppSpacing.lg),
+            _buildFieldLabel(context.t('Nome no documento', 'Name on document')),
+            _DocumentTextField(
+              controller: _nameController,
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+            _buildFieldLabel(context.t('Data de validade', 'Expiry date')),
+            InkWell(
+              onTap: _showDatePickerBottomSheet,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 15,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.03),
                   ),
-                  child: _isUploading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          hasCurrentDocument
-                              ? context.t('Enviar substituição para análise', 'Submit replacement for review')
-                              : context.t('Enviar para análise', 'Submit for review'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedDate == null
+                          ? context.t('Selecionar data', 'Select date')
+                          : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 48),
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: canSubmit ? () => _onSave(context) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.08),
+                  disabledForegroundColor: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.38),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isUploading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        hasCurrentDocument
+                            ? context.t(
+                                'Enviar substituição para análise',
+                                'Submit replacement for review',
+                              )
+                            : context.t(
+                                'Enviar para análise',
+                                'Submit for review',
+                              ),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusHeader(BuildContext context) {
+  /// Converte código ISO 2 letras em emoji de bandeira
+  String _flagEmoji(String code) {
+    const base = 0x1F1E6 - 0x41;
+    final chars = code.toUpperCase().codeUnits;
+    if (chars.length != 2) return '🏳';
+    return String.fromCharCode(base + chars[0]) +
+        String.fromCharCode(base + chars[1]);
+  }
+
+  bool _hasDocumentNumber() {
+    return widget.type == DocumentType.passaporte ||
+        widget.type == DocumentType.visto ||
+        widget.type == DocumentType.seguro ||
+        widget.type == DocumentType.carteiraMotorista;
+  }
+
+  String _numberFieldLabel() {
+    switch (widget.type) {
+      case DocumentType.passaporte:
+        return context.t('Número do Passaporte', 'Passport Number');
+      case DocumentType.visto:
+        return context.t('Número do Visto', 'Visa Number');
+      case DocumentType.carteiraMotorista:
+        return context.t('Número da CNH', "Driver's License Number");
+      case DocumentType.seguro:
+        return context.t('Número da Apólice', 'Policy Number');
+      default:
+        return context.t('Número do documento', 'Document number');
+    }
+  }
+
+  String _numberFieldHint() {
+    switch (widget.type) {
+      case DocumentType.passaporte:
+        return context.t('Ex: AA123456', 'e.g. AA123456');
+      case DocumentType.visto:
+        return context.t('Ex: V12345678', 'e.g. V12345678');
+      case DocumentType.carteiraMotorista:
+        return context.t('Ex: 00000000000', 'e.g. 00000000000');
+      case DocumentType.seguro:
+        return context.t('Ex: AP-000000', 'e.g. AP-000000');
+      default:
+        return context.t('Ex: 000000', 'e.g. 000000');
+    }
+  }
+
+  Widget _buildStatusHeader() {
     if (widget.currentDocument == null) {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -723,7 +951,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Text(
-              '${context.t('Motivo', 'Reason')}: ${widget.currentDocument!.rejectionReason}',
+              context.t('Motivo: ', 'Reason: ') +
+                  widget.currentDocument!.rejectionReason!,
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
@@ -745,7 +974,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     );
   }
 
-  Widget _buildImagePreview(BuildContext context) {
+  Widget _buildImagePreview() {
     final localPath = _selectedFile?.path.toLowerCase();
     final remoteUrl = widget.currentDocument?.imageUrl;
     final remoteLower = remoteUrl?.toLowerCase() ?? '';
@@ -755,7 +984,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         remoteLower.contains('application/pdf');
     final fileName = _selectedFile?.path.split('/').last ??
         widget.currentDocument?.title ??
-        '${_getTypeLabel(context)}.pdf';
+        '${_typeLabel()}.pdf';
 
     return Container(
       width: double.infinity,
@@ -764,7 +993,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.035),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+          color:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
         ),
       ),
       child: ClipRRect(
@@ -774,22 +1004,24 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             Positioned.fill(
               child: _selectedFile != null
                   ? (isLocalPdf
-                      ? _buildPdfPreview(context, fileName)
+                      ? _buildPdfPreview(fileName)
                       : Image.file(_selectedFile!, fit: BoxFit.cover))
                   : (remoteUrl != null
                       ? (isRemotePdf
-                          ? _buildPdfPreview(context, fileName)
+                          ? _buildPdfPreview(fileName)
                           : Image.network(
                               widget.currentDocument!.imageUrl!,
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               },
                               errorBuilder: (context, error, stackTrace) =>
-                                  _buildPdfPreview(context, fileName),
+                                  _buildPdfPreview(fileName),
                             ))
-                      : _buildEmptyPreview(context)),
+                      : _buildEmptyPreview()),
             ),
             if (_isProcessingOcr)
               const Positioned.fill(
@@ -801,7 +1033,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     );
   }
 
-  Widget _buildPdfPreview(BuildContext context, String fileName) {
+  Widget _buildPdfPreview(String fileName) {
     return Container(
       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -813,7 +1045,10 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.08),
             ),
           ),
           child: Column(
@@ -845,7 +1080,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                context.t('PDF anexado • toque para abrir', 'PDF attached • tap to open'),
+                context.t('PDF anexado • toque para abrir',
+                    'PDF attached • tap to open'),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -860,7 +1096,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     );
   }
 
-  Widget _buildEmptyPreview(BuildContext context) {
+  Widget _buildEmptyPreview() {
     return Container(
       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.025),
       child: Center(
@@ -894,7 +1130,10 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                context.t('Envie um PDF ou uma imagem legível do documento.', 'Upload a PDF or a readable image of the document.'),
+                context.t(
+                  'Envie um PDF ou uma imagem legível do documento.',
+                  'Upload a PDF or a legible image of the document.',
+                ),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -917,7 +1156,7 @@ class _DocumentTextField extends StatelessWidget {
 
   const _DocumentTextField({
     required this.controller,
-    required this.hintText,
+    this.hintText = '',
   });
 
   @override
@@ -1055,43 +1294,6 @@ class _OcrScanningOverlayState extends State<OcrScanningOverlay>
           ),
         ),
       ],
-    );
-  }
-}
-
-class FullScreenImagePage extends StatelessWidget {
-  final ImageProvider imageProvider;
-  final String title;
-
-  const FullScreenImagePage({
-    super.key,
-    required this.imageProvider,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image(
-            image: imageProvider,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
     );
   }
 }

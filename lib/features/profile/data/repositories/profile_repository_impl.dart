@@ -47,6 +47,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
         'postsCount': profile.postsCount,
         'missionsCount': profile.missionsCount,
         'isGuide': profile.isGuide,
+        'company': profile.company,
+        'country': profile.country,
+        'badgeName': profile.badgeName,
+        'emergencyName': profile.emergencyName,
+        'emergencyRelationship': profile.emergencyRelationship,
+        'emergencyContact': profile.emergencyContact,
         'connectionStatus': profile.connectionStatus.index,
       };
       await prefs.setString('cached_profile_${profile.id}', jsonEncode(json));
@@ -93,6 +99,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
           postsCount: json['postsCount'] ?? 0,
           missionsCount: json['missionsCount'] ?? 0,
           isGuide: json['isGuide'] ?? false,
+          company: json['company'],
+          country: json['country'],
+          badgeName: json['badgeName'],
+          emergencyName: json['emergencyName'],
+          emergencyRelationship: json['emergencyRelationship'],
+          emergencyContact: json['emergencyContact'],
           connectionStatus:
               ConnectionStatus.values[json['connectionStatus'] ?? 0],
         );
@@ -111,7 +123,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           await _supabaseClient
               .from('users')
               .select(
-                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser',
+                'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser, empresa, pais, nome_cracha, nome_contato_emergencia, grau_parentesco_emergencia, contato_emergencia',
               )
               .eq('id', userId)
               .maybeSingle();
@@ -131,7 +143,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
             userResponse = await _supabaseClient
                 .from('users')
                 .select(
-                  'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser',
+                  'id, nome, foto, cargo, observacoes, capa_perfil, email, telefone, restricoes_alimentares, restricoes_medicas, cpf, ssn, cep, estado, cidade, rua, numero, bairro, complemento, datanascimento, data_nascimento, nacionalidade, n_passaporte, tipouser, empresa, pais, nome_cracha, nome_contato_emergencia, grau_parentesco_emergencia, contato_emergencia',
                 )
                 .eq('id', userId)
                 .maybeSingle();
@@ -222,7 +234,37 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       // Step E: fetch mission names
       String? missionName;
-      if (missionIdSet.isNotEmpty) {
+      final List<String> groupAndMissionNames = [];
+
+      if (allGroupIds.isNotEmpty) {
+        try {
+          final groupsRes = await _supabaseClient
+              .from('grupos')
+              .select('nome, missoes(nome)')
+              .inFilter('id', allGroupIds);
+
+          for (final g in groupsRes as List) {
+            final groupName = g['nome'] as String?;
+            final missaoData = g['missoes'];
+            String? mName;
+            if (missaoData is Map) {
+              mName = missaoData['nome'] as String?;
+            } else if (missaoData is List && missaoData.isNotEmpty) {
+              mName = (missaoData[0] as Map)['nome'] as String?;
+            }
+
+            if (mName != null && groupName != null) {
+              groupAndMissionNames.add('$mName - $groupName');
+            } else if (mName != null) {
+              groupAndMissionNames.add(mName);
+            }
+          }
+        } catch (e) {
+          debugPrint('Erro ao buscar nome de missoes com grupos: $e');
+        }
+      }
+
+      if (groupAndMissionNames.isEmpty && missionIdSet.isNotEmpty) {
         final missionsNamesRes = await _supabaseClient
             .from('missoes')
             .select('nome')
@@ -233,7 +275,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
             .whereType<String>()
             .toList();
 
-        if (names.isNotEmpty) missionName = names.join(', ');
+        groupAndMissionNames.addAll(names);
+      }
+
+      if (groupAndMissionNames.isNotEmpty) {
+        missionName = groupAndMissionNames.first; // Exibir apenas a principal para evitar tamanho gigante
       }
 
       // 4. Fetch Connections Count
@@ -309,6 +355,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
           final roles = (userData['tipouser'] as List?)?.cast<String>() ?? [];
           return roles.any((r) => r == 'GUIA' || r == 'COLABORADOR' || r == 'MASTER');
         }(),
+        company: userData['empresa'],
+        country: userData['pais'],
+        badgeName: userData['nome_cracha'],
+        emergencyName: userData['nome_contato_emergencia'],
+        emergencyRelationship: userData['grau_parentesco_emergencia'],
+        emergencyContact: userData['contato_emergencia'],
         connectionStatus: connectionStatus,
       );
 
@@ -988,6 +1040,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (data.containsKey('passport'))
         dbData['n_passaporte'] = data['passport'];
       if (data.containsKey('ssn')) dbData['ssn'] = data['ssn'];
+      if (data.containsKey('company')) dbData['empresa'] = data['company'];
+      if (data.containsKey('country')) dbData['pais'] = data['country'];
+      if (data.containsKey('badgeName')) {
+        dbData['nome_cracha'] = data['badgeName'];
+      }
+      if (data.containsKey('emergencyName')) {
+        dbData['nome_contato_emergencia'] = data['emergencyName'];
+      }
+      if (data.containsKey('emergencyRelationship')) {
+        dbData['grau_parentesco_emergencia'] = data['emergencyRelationship'];
+      }
+      if (data.containsKey('emergencyContact')) {
+        dbData['contato_emergencia'] = data['emergencyContact'];
+      }
 
       await _supabaseClient.from('users').update(dbData).eq('id', userId);
       return const Right(null);

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:injectable/injectable.dart';
@@ -67,24 +68,76 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  void setPendingAvatar(XFile file) {
+  /// Extensão do arquivo para o storage. `XFile.fromData` tem `path` vazio,
+  /// então usa o `name` como fonte e cai para 'png' se não houver extensão.
+  String _fileExtension(XFile file) {
+    final source = file.path.isNotEmpty ? file.path : file.name;
+    final dotIndex = source.lastIndexOf('.');
+    if (dotIndex == -1 || dotIndex == source.length - 1) return 'png';
+    return source.substring(dotIndex + 1);
+  }
+
+  Future<void> updateProfilePhoto(XFile file) async {
+    final currentState = state.maybeMap(loaded: (s) => s, orElse: () => null);
+    if (currentState == null) return;
+
+    final bytes = await file.readAsBytes();
+    final extension = _fileExtension(file);
+    final result = await _profileRepository.updateProfilePhoto(
+      bytes,
+      extension,
+    );
+    if (isClosed) return;
+
+    result.fold(
+      (error) => emit(ProfileState.error(_mapFailure(error))),
+      (newUrl) => emit(
+        currentState.copyWith(
+          profile: currentState.profile.copyWith(avatarUrl: newUrl),
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateCoverPhoto(XFile file) async {
+    final currentState = state.maybeMap(loaded: (s) => s, orElse: () => null);
+    if (currentState == null) return;
+
+    final bytes = await file.readAsBytes();
+    final extension = _fileExtension(file);
+    final result = await _profileRepository.updateCoverPhoto(bytes, extension);
+    if (isClosed) return;
+
+    result.fold(
+      (error) => emit(ProfileState.error(_mapFailure(error))),
+      (newUrl) => emit(
+        currentState.copyWith(
+          profile: currentState.profile.copyWith(coverUrl: newUrl),
+        ),
+      ),
+    );
+  }
+
+  void setPendingAvatar(Uint8List bytes) {
     state.maybeMap(
       loaded: (currentState) {
-        emit(currentState.copyWith(pendingAvatar: file));
+        emit(currentState.copyWith(pendingAvatar: bytes));
       },
       orElse: () {},
     );
   }
 
-  void setPendingCover(XFile file) {
+  void setPendingCover(Uint8List bytes) {
     state.maybeMap(
       loaded: (currentState) {
-        emit(currentState.copyWith(pendingCover: file));
+        emit(currentState.copyWith(pendingCover: bytes));
       },
       orElse: () {},
     );
   }
 
+  /// Envia ao servidor apenas as imagens marcadas como pendentes (selecionadas
+  /// mas ainda não salvas). Chamado quando o usuário toca em "Salvar".
   Future<void> saveChanges() async {
     final currentState = state.maybeMap(
       loaded: (s) => s,
@@ -92,66 +145,74 @@ class ProfileCubit extends Cubit<ProfileState> {
     );
     if (currentState == null) return;
 
+    final avatarBytes = currentState.pendingAvatar;
+    final coverBytes = currentState.pendingCover;
+
     // Se não há nada para salvar, apenas desliga a edição
-    if (currentState.pendingAvatar == null && currentState.pendingCover == null) {
+    if (avatarBytes == null && coverBytes == null) {
       emit(currentState.copyWith(isEditing: false));
       return;
     }
 
     // Upload Avatar se houver
-    if (currentState.pendingAvatar != null) {
-      state.maybeMap(
-        loaded: (s) => emit(s.copyWith(isUpdatingAvatar: true)),
-        orElse: () {},
+    if (avatarBytes != null) {
+      emit(currentState.copyWith(isUpdatingAvatar: true));
+      final result = await _profileRepository.updateProfilePhoto(
+        avatarBytes,
+        'png',
       );
-      final file = currentState.pendingAvatar!;
-      final bytes = await file.readAsBytes();
-      final extension = file.path.split('.').last;
-      final result = await _profileRepository.updateProfilePhoto(bytes, extension);
-      
+      if (isClosed) return;
+
+      var failed = false;
       result.fold(
-        (error) => emit(ProfileState.error(_mapFailure(error))),
+        (error) {
+          failed = true;
+          emit(ProfileState.error(_mapFailure(error)));
+        },
         (newUrl) {
           state.maybeMap(
-            loaded: (s) {
-              emit(s.copyWith(
-                profile: s.profile.copyWith(avatarUrl: newUrl),
-                isUpdatingAvatar: false,
-                pendingAvatar: null,
-              ));
-            },
+            loaded: (s) => emit(s.copyWith(
+              profile: s.profile.copyWith(avatarUrl: newUrl),
+              isUpdatingAvatar: false,
+              pendingAvatar: null,
+            )),
             orElse: () {},
           );
         },
       );
+      if (failed) return;
     }
 
     // Upload Cover se houver
-    if (currentState.pendingCover != null) {
+    if (coverBytes != null) {
       state.maybeMap(
         loaded: (s) => emit(s.copyWith(isUpdatingCover: true)),
         orElse: () {},
       );
-      final file = currentState.pendingCover!;
-      final bytes = await file.readAsBytes();
-      final extension = file.path.split('.').last;
-      final result = await _profileRepository.updateCoverPhoto(bytes, extension);
-      
+      final result = await _profileRepository.updateCoverPhoto(
+        coverBytes,
+        'png',
+      );
+      if (isClosed) return;
+
+      var failed = false;
       result.fold(
-        (error) => emit(ProfileState.error(_mapFailure(error))),
+        (error) {
+          failed = true;
+          emit(ProfileState.error(_mapFailure(error)));
+        },
         (newUrl) {
           state.maybeMap(
-            loaded: (s) {
-              emit(s.copyWith(
-                profile: s.profile.copyWith(coverUrl: newUrl),
-                isUpdatingCover: false,
-                pendingCover: null,
-              ));
-            },
+            loaded: (s) => emit(s.copyWith(
+              profile: s.profile.copyWith(coverUrl: newUrl),
+              isUpdatingCover: false,
+              pendingCover: null,
+            )),
             orElse: () {},
           );
         },
       );
+      if (failed) return;
     }
 
     // Desliga modo edição após salvar tudo com sucesso

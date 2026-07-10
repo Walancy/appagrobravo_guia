@@ -53,25 +53,12 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Atenção',
-                    style: AppTextStyles.h1.copyWith(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
+              Text(
+                'Atenção',
+                style: AppTextStyles.h1.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -83,7 +70,7 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
               const SizedBox(height: AppSpacing.lg),
               Divider(
                 height: 1,
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+                color: Theme.of(context).dividerColor.withOpacity(0.03),
               ),
               const SizedBox(height: AppSpacing.lg),
 
@@ -144,7 +131,7 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
               const SizedBox(height: AppSpacing.xl),
               Divider(
                 height: 1,
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+                color: Theme.of(context).dividerColor.withOpacity(0.03),
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -176,7 +163,7 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
               const SizedBox(height: AppSpacing.lg),
               Divider(
                 height: 1,
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+                color: Theme.of(context).dividerColor.withOpacity(0.03),
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -276,17 +263,24 @@ class _MissionAlertDialogState extends State<MissionAlertDialog> {
           ),
         ),
         const SizedBox(width: AppSpacing.md),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-            Text(value, style: AppTextStyles.h3.copyWith(fontSize: 18)),
-          ],
+              Text(
+                value,
+                style: AppTextStyles.h3.copyWith(fontSize: 18),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );

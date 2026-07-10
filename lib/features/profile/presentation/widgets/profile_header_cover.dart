@@ -1,19 +1,19 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/assets.gen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ProfileHeaderCover extends StatelessWidget {
   final String? coverUrl;
   final String? avatarUrl;
-  final XFile? pendingAvatar;
-  final XFile? pendingCover;
+  // Preview local (bytes) das imagens selecionadas mas ainda não salvas.
+  final Uint8List? pendingAvatar;
+  final Uint8List? pendingCover;
   final bool isMe;
   final bool isEditing;
-  final bool isUpdatingAvatar;
-  final bool isUpdatingCover;
+  final bool isUploadingAvatar;
+  final bool isUploadingCover;
   final VoidCallback? onUpdateAvatar;
   final VoidCallback? onUpdateCover;
   final Widget? statsWidget;
@@ -26,8 +26,8 @@ class ProfileHeaderCover extends StatelessWidget {
     this.pendingCover,
     this.isMe = false,
     this.isEditing = false,
-    this.isUpdatingAvatar = false,
-    this.isUpdatingCover = false,
+    this.isUploadingAvatar = false,
+    this.isUploadingCover = false,
     this.onUpdateAvatar,
     this.onUpdateCover,
     this.statsWidget,
@@ -35,15 +35,6 @@ class ProfileHeaderCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ImageProvider coverImage;
-    if (pendingCover != null) {
-      coverImage = FileImage(File(pendingCover!.path));
-    } else if (coverUrl != null) {
-      coverImage = CachedNetworkImageProvider(coverUrl!);
-    } else {
-      coverImage = Assets.images.background.provider();
-    }
-
     return SizedBox(
       height: 230, // 180 (cover) + 50 (avatar overflow)
       width: double.infinity,
@@ -56,35 +47,46 @@ class ProfileHeaderCover extends StatelessWidget {
             left: 0,
             right: 0,
             height: 180,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(image: coverImage, fit: BoxFit.cover),
-              ),
-              child: Stack(
-                children: [
-                  if (isUpdatingCover)
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(30),
+            child: GestureDetector(
+              onTap: (isEditing && !isUploadingCover) ? onUpdateCover : null,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: pendingCover != null
+                        ? MemoryImage(pendingCover!)
+                        : (coverUrl != null
+                            ? CachedNetworkImageProvider(coverUrl!)
+                            : Assets.images.background.provider()),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    if (isUploadingCover)
+                      Container(
+                        color: Colors.black.withOpacity(0.45),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
                         ),
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
+                      )
+                    else if (isEditing)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: _buildCameraButton(
+                          context,
+                          onTap: onUpdateCover ?? () {},
                         ),
                       ),
-                    ),
-                  if (isEditing && !isUpdatingCover)
-                    Positioned(
-                      right: 16,
-                      bottom: 16,
-                      child: _buildCameraButton(
-                        context,
-                        onTap: onUpdateCover ?? () {},
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -99,38 +101,87 @@ class ProfileHeaderCover extends StatelessWidget {
             left: 16,
             child: Stack(
               children: [
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey[800]
-                            : Colors.grey[100],
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.surface,
-                      width: 4,
+                GestureDetector(
+                  onTap: (isEditing && !isUploadingAvatar) ? onUpdateAvatar : null,
+                  child: Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[800]
+                          : Colors.grey[100],
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 4,
+                      ),
                     ),
-                  ),
-                  child: ClipOval(
-                    child: Stack(
-                      children: [
-                        _buildAvatarImage(context),
-                        if (isUpdatingAvatar)
-                          Container(
-                            color: Colors.black45,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
+                    child: ClipOval(
+                      child: isUploadingAvatar
+                          ? Container(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey[800]
+                                  : Colors.grey[200],
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                      ],
+                            )
+                          : pendingAvatar != null
+                              ? Image.memory(
+                                  pendingAvatar!,
+                                  fit: BoxFit.cover,
+                                  height: 110,
+                                  width: 110,
+                                )
+                          : (avatarUrl != null && avatarUrl!.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: avatarUrl!,
+                                  fit: BoxFit.cover,
+                                  height: 110,
+                                  width: 110,
+                                  placeholder: (context, url) => Container(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[800]
+                                        : Colors.grey[200],
+                                  ),
+                                  errorWidget: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[600]
+                                            : Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[600]
+                                        : Colors.grey,
+                                  ),
+                                ),
                     ),
                   ),
                 ),
-                if (isEditing && !isUpdatingAvatar)
+                if (isEditing && !isUploadingAvatar)
                   Positioned(
                     right: 0,
                     bottom: 0,
@@ -146,56 +197,6 @@ class ProfileHeaderCover extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAvatarImage(BuildContext context) {
-    if (pendingAvatar != null) {
-      return Image.file(
-        File(pendingAvatar!.path),
-        fit: BoxFit.cover,
-        height: 110,
-        width: 110,
-      );
-    }
-
-    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: avatarUrl!,
-        fit: BoxFit.cover,
-        height: 110,
-        width: 110,
-        placeholder:
-            (context, url) => Container(
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[800]
-                      : Colors.grey[200],
-            ),
-        errorWidget: (context, error, stackTrace) {
-          return Center(
-            child: Icon(
-              Icons.person,
-              size: 60,
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[600]
-                      : Colors.grey,
-            ),
-          );
-        },
-      );
-    }
-
-    return Center(
-      child: Icon(
-        Icons.person,
-        size: 60,
-        color:
-            Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[600]
-                : Colors.grey,
       ),
     );
   }

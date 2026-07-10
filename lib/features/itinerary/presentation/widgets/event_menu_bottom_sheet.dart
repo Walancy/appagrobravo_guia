@@ -99,7 +99,7 @@ class _EventMenuBottomSheetState extends State<EventMenuBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.03),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -203,7 +203,7 @@ class _EventMenuBottomSheetState extends State<EventMenuBottomSheet> {
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withOpacity(0.03),
         ),
       ),
       child: Column(

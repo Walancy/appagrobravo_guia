@@ -26,7 +26,7 @@ class GenericEventCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withOpacity(0.03),
           width: 1,
         ),
       ),
@@ -305,7 +305,7 @@ class GenericEventCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(0.08)),
       ),
       child: Text(
         label,
@@ -368,7 +368,7 @@ class FlightCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withOpacity(0.03),
           width: 1,
         ),
       ),
@@ -512,7 +512,7 @@ class FlightCard extends StatelessWidget {
                             child: Divider(
                               color: Theme.of(
                                 context,
-                              ).dividerColor.withValues(alpha: 0.2),
+                              ).dividerColor.withValues(alpha: 0.03),
                             ),
                           ),
                           Padding(
@@ -527,7 +527,7 @@ class FlightCard extends StatelessWidget {
                             child: Divider(
                               color: Theme.of(
                                 context,
-                              ).dividerColor.withValues(alpha: 0.2),
+                              ).dividerColor.withValues(alpha: 0.03),
                             ),
                           ),
                         ],
@@ -757,10 +757,10 @@ class FlightCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(context).dividerColor.withOpacity(0.05),
+            color: Theme.of(context).dividerColor.withOpacity(0.03),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
+              color: Theme.of(context).dividerColor.withOpacity(0.03),
             ),
           ),
           child: Column(
@@ -830,7 +830,7 @@ class FlightCard extends StatelessWidget {
                                 child: Divider(
                                   color: Theme.of(
                                     context,
-                                  ).dividerColor.withValues(alpha: 0.2),
+                                  ).dividerColor.withValues(alpha: 0.03),
                                 ),
                               ),
                               Padding(
@@ -847,7 +847,7 @@ class FlightCard extends StatelessWidget {
                                 child: Divider(
                                   color: Theme.of(
                                     context,
-                                  ).dividerColor.withValues(alpha: 0.2),
+                                  ).dividerColor.withValues(alpha: 0.03),
                                 ),
                               ),
                             ],
@@ -958,7 +958,7 @@ class TransferCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withOpacity(0.03),
           width: 1,
         ),
       ),

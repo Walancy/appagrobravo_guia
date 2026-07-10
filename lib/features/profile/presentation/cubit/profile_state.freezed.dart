@@ -128,7 +128,7 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingAvatar, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingCover)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover,  Uint8List? pendingAvatar,  Uint8List? pendingCover)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
@@ -152,7 +152,7 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingAvatar, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingCover)  loaded,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover,  Uint8List? pendingAvatar,  Uint8List? pendingCover)  loaded,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial();case _Loading():
@@ -175,7 +175,7 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingAvatar, @JsonKey(includeFromJson: false, includeToJson: false)  XFile? pendingCover)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( ProfileEntity profile,  List<PostEntity> posts,  bool isMe,  bool isEditing,  bool isUpdatingAvatar,  bool isUpdatingCover,  Uint8List? pendingAvatar,  Uint8List? pendingCover)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
@@ -257,7 +257,7 @@ String toString() {
 
 
 class _Loaded implements ProfileState {
-  const _Loaded({required this.profile, required final  List<PostEntity> posts, required this.isMe, this.isEditing = false, this.isUpdatingAvatar = false, this.isUpdatingCover = false, @JsonKey(includeFromJson: false, includeToJson: false) this.pendingAvatar, @JsonKey(includeFromJson: false, includeToJson: false) this.pendingCover}): _posts = posts;
+  const _Loaded({required this.profile, required final  List<PostEntity> posts, required this.isMe, this.isEditing = false, this.isUpdatingAvatar = false, this.isUpdatingCover = false, this.pendingAvatar, this.pendingCover}): _posts = posts;
   
 
  final  ProfileEntity profile;
@@ -272,8 +272,10 @@ class _Loaded implements ProfileState {
 @JsonKey() final  bool isEditing;
 @JsonKey() final  bool isUpdatingAvatar;
 @JsonKey() final  bool isUpdatingCover;
-@JsonKey(includeFromJson: false, includeToJson: false) final  XFile? pendingAvatar;
-@JsonKey(includeFromJson: false, includeToJson: false) final  XFile? pendingCover;
+// Imagens selecionadas mas ainda não salvas (preview local em bytes).
+// Só são enviadas ao servidor quando o usuário toca em "Salvar".
+ final  Uint8List? pendingAvatar;
+ final  Uint8List? pendingCover;
 
 /// Create a copy of ProfileState
 /// with the given fields replaced by the non-null parameter values.
@@ -285,12 +287,12 @@ _$LoadedCopyWith<_Loaded> get copyWith => __$LoadedCopyWithImpl<_Loaded>(this, _
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&(identical(other.profile, profile) || other.profile == profile)&&const DeepCollectionEquality().equals(other._posts, _posts)&&(identical(other.isMe, isMe) || other.isMe == isMe)&&(identical(other.isEditing, isEditing) || other.isEditing == isEditing)&&(identical(other.isUpdatingAvatar, isUpdatingAvatar) || other.isUpdatingAvatar == isUpdatingAvatar)&&(identical(other.isUpdatingCover, isUpdatingCover) || other.isUpdatingCover == isUpdatingCover)&&(identical(other.pendingAvatar, pendingAvatar) || other.pendingAvatar == pendingAvatar)&&(identical(other.pendingCover, pendingCover) || other.pendingCover == pendingCover));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Loaded&&(identical(other.profile, profile) || other.profile == profile)&&const DeepCollectionEquality().equals(other._posts, _posts)&&(identical(other.isMe, isMe) || other.isMe == isMe)&&(identical(other.isEditing, isEditing) || other.isEditing == isEditing)&&(identical(other.isUpdatingAvatar, isUpdatingAvatar) || other.isUpdatingAvatar == isUpdatingAvatar)&&(identical(other.isUpdatingCover, isUpdatingCover) || other.isUpdatingCover == isUpdatingCover)&&const DeepCollectionEquality().equals(other.pendingAvatar, pendingAvatar)&&const DeepCollectionEquality().equals(other.pendingCover, pendingCover));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,profile,const DeepCollectionEquality().hash(_posts),isMe,isEditing,isUpdatingAvatar,isUpdatingCover,pendingAvatar,pendingCover);
+int get hashCode => Object.hash(runtimeType,profile,const DeepCollectionEquality().hash(_posts),isMe,isEditing,isUpdatingAvatar,isUpdatingCover,const DeepCollectionEquality().hash(pendingAvatar),const DeepCollectionEquality().hash(pendingCover));
 
 @override
 String toString() {
@@ -305,7 +307,7 @@ abstract mixin class _$LoadedCopyWith<$Res> implements $ProfileStateCopyWith<$Re
   factory _$LoadedCopyWith(_Loaded value, $Res Function(_Loaded) _then) = __$LoadedCopyWithImpl;
 @useResult
 $Res call({
- ProfileEntity profile, List<PostEntity> posts, bool isMe, bool isEditing, bool isUpdatingAvatar, bool isUpdatingCover,@JsonKey(includeFromJson: false, includeToJson: false) XFile? pendingAvatar,@JsonKey(includeFromJson: false, includeToJson: false) XFile? pendingCover
+ ProfileEntity profile, List<PostEntity> posts, bool isMe, bool isEditing, bool isUpdatingAvatar, bool isUpdatingCover, Uint8List? pendingAvatar, Uint8List? pendingCover
 });
 
 
@@ -331,8 +333,8 @@ as bool,isEditing: null == isEditing ? _self.isEditing : isEditing // ignore: ca
 as bool,isUpdatingAvatar: null == isUpdatingAvatar ? _self.isUpdatingAvatar : isUpdatingAvatar // ignore: cast_nullable_to_non_nullable
 as bool,isUpdatingCover: null == isUpdatingCover ? _self.isUpdatingCover : isUpdatingCover // ignore: cast_nullable_to_non_nullable
 as bool,pendingAvatar: freezed == pendingAvatar ? _self.pendingAvatar : pendingAvatar // ignore: cast_nullable_to_non_nullable
-as XFile?,pendingCover: freezed == pendingCover ? _self.pendingCover : pendingCover // ignore: cast_nullable_to_non_nullable
-as XFile?,
+as Uint8List?,pendingCover: freezed == pendingCover ? _self.pendingCover : pendingCover // ignore: cast_nullable_to_non_nullable
+as Uint8List?,
   ));
 }
 

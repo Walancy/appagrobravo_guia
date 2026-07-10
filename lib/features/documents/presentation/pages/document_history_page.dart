@@ -1,15 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
-import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/data/countries.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
+
+/// Rótulo bilíngue do tipo de documento (compartilhado pela página e widgets).
+String _documentTypeLabel(BuildContext context, DocumentType type) {
+  switch (type) {
+    case DocumentType.passaporte:
+      return context.t('Passaporte', 'Passport');
+    case DocumentType.visto:
+      return context.t('Visto', 'Visa');
+    case DocumentType.vacina:
+      return context.t('Carteira de Vacinação', 'Vaccination Card');
+    case DocumentType.seguro:
+      return context.t('Seguro Viagem', 'Travel Insurance');
+    case DocumentType.carteiraMotorista:
+      return context.t('Carteira de Motorista', "Driver's License");
+    case DocumentType.autorizacaoMenores:
+      return context.t('Autorização de Menores', 'Minor Authorization');
+    case DocumentType.outro:
+      return context.t('Outro', 'Other');
+  }
+}
 
 class DocumentHistoryPage extends StatelessWidget {
   final DocumentType type;
@@ -21,25 +42,6 @@ class DocumentHistoryPage extends StatelessWidget {
     required this.cubit,
   });
 
-  String _getTypeLabel(BuildContext context, DocumentType type) {
-    switch (type) {
-      case DocumentType.passaporte:
-        return context.t('Passaporte', 'Passport');
-      case DocumentType.visto:
-        return context.t('Visto', 'Visa');
-      case DocumentType.vacina:
-        return context.t('Carteira de Vacinação', 'Vaccination Card');
-      case DocumentType.seguro:
-        return context.t('Seguro Viagem', 'Travel Insurance');
-      case DocumentType.carteiraMotorista:
-        return context.t('Carteira de Motorista', "Driver's License");
-      case DocumentType.autorizacaoMenores:
-        return context.t('Autorização de Menores', 'Minor Authorization');
-      case DocumentType.outro:
-        return context.t('Outro', 'Other');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -47,15 +49,14 @@ class DocumentHistoryPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppHeader(
           mode: HeaderMode.back,
-          title: _getTypeLabel(context, type),
+          title: _documentTypeLabel(context, type),
         ),
         body: BlocBuilder<DocumentsCubit, DocumentsState>(
           builder: (context, state) {
             return state.maybeWhen(
               loaded: (documents, isAlertDismissed, profile, mission) {
-                final typeDocuments = documents
-                    .where((d) => d.type == type)
-                    .toList();
+                final typeDocuments =
+                    documents.where((d) => d.type == type).toList();
 
                 return _buildBody(context, typeDocuments);
               },
@@ -98,12 +99,12 @@ class DocumentHistoryPage extends StatelessWidget {
           width: double.infinity,
           height: 46,
           child: ElevatedButton.icon(
-            onPressed: () => _openDetails(context, latestDocument),
-            icon: const Icon(Icons.upload_file_rounded, size: 20),
+            onPressed: () => _openDetails(context, null),
+            icon: const Icon(Icons.add_circle_outline, size: 20),
             label: Text(
               latestDocument == null
                   ? context.t('Enviar documento', 'Submit document')
-                  : context.t('Atualizar documento', 'Update document'),
+                  : context.t('Adicionar novo documento', 'Add new document'),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -120,7 +121,7 @@ class DocumentHistoryPage extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          context.t('Histórico de envios', 'Upload history'),
+          context.t('Histórico de envios', 'Submission history'),
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -158,7 +159,7 @@ class DocumentHistoryPage extends StatelessWidget {
         break;
       case DocumentStatus.pendente:
         statusColor = Colors.orange;
-        statusText = context.t('Aguardando aprovação', 'Awaiting approval');
+        statusText = context.t('Pendente de aprovação', 'Pending approval');
         break;
       case DocumentStatus.recusado:
       case DocumentStatus.expirado:
@@ -180,7 +181,7 @@ class DocumentHistoryPage extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.1),
+              color: Theme.of(context).dividerColor.withOpacity(0.03),
               width: 1,
             ),
             boxShadow: [
@@ -237,14 +238,73 @@ class DocumentHistoryPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      document.documentNumber?.isNotEmpty == true
-                          ? 'Nº ${document.documentNumber}'
-                          : context.t('Sem número', 'No number'),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Builder(builder: (context) {
+                      if (type == DocumentType.visto &&
+                          document.visaCountry?.isNotEmpty == true) {
+                        final country = countryByCode(document.visaCountry);
+                        if (country != null) {
+                          final flagChars =
+                              country.code.toUpperCase().codeUnits;
+                          final flag = flagChars.length == 2
+                              ? String.fromCharCode(
+                                      0x1F1E6 - 0x41 + flagChars[0]) +
+                                  String.fromCharCode(
+                                      0x1F1E6 - 0x41 + flagChars[1])
+                              : '🏳';
+                          return Row(
+                            children: [
+                              Text(flag, style: const TextStyle(fontSize: 16)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  country.name,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      }
+
+                      return Text(
+                        document.title?.isNotEmpty == true
+                            ? document.title!
+                            : _documentTypeLabel(context, type),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
+                    if (type == DocumentType.visto &&
+                        document.visaCountry?.isNotEmpty == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        document.title?.isNotEmpty == true
+                            ? document.title!
+                            : _documentTypeLabel(context, type),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                    ],
+                    if (document.documentNumber?.isNotEmpty == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        context.t('Nº ', 'No. ') + document.documentNumber!,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       context.t('Enviado em: ', 'Submitted on: ') +
@@ -291,25 +351,6 @@ class _HistoryIntro extends StatelessWidget {
 
   const _HistoryIntro({required this.type});
 
-  String _getTypeLabel(BuildContext context, DocumentType type) {
-    switch (type) {
-      case DocumentType.passaporte:
-        return context.t('Passaporte', 'Passport');
-      case DocumentType.visto:
-        return context.t('Visto', 'Visa');
-      case DocumentType.vacina:
-        return context.t('Carteira de Vacinação', 'Vaccination Card');
-      case DocumentType.seguro:
-        return context.t('Seguro Viagem', 'Travel Insurance');
-      case DocumentType.carteiraMotorista:
-        return context.t('Carteira de Motorista', "Driver's License");
-      case DocumentType.autorizacaoMenores:
-        return context.t('Autorização de Menores', 'Minor Authorization');
-      case DocumentType.outro:
-        return context.t('Outro', 'Other');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -341,7 +382,7 @@ class _HistoryIntro extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _getTypeLabel(context, type),
+                  _documentTypeLabel(context, type),
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
@@ -351,7 +392,7 @@ class _HistoryIntro extends StatelessWidget {
                 Text(
                   context.t(
                     'Acompanhe o envio atual e substitua o arquivo quando necessário.',
-                    'Track the current submission and replace the file when necessary.',
+                    'Track the current submission and replace the file when needed.',
                   ),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(context)

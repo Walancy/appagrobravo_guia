@@ -65,8 +65,8 @@ class AppTextField extends StatelessWidget {
       : Theme.of(context).dividerColor.withOpacity(0.08);
       
     final borderColor = isLightModeOnDarkBackground
-      ? AppColors.surface.withOpacity(0.6)
-      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4);
+      ? AppColors.surface.withOpacity(0.02)
+      : Theme.of(context).colorScheme.onSurface.withOpacity(0.02);
 
     final focusedBorderColor = isLightModeOnDarkBackground
       ? AppColors.surface

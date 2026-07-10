@@ -34,19 +34,9 @@ class ItineraryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = GetIt.I<ItineraryCubit>();
-        if (groupId != null) {
-          cubit.loadItinerary(groupId!);
-        } else {
-          cubit.loadUserItinerary();
-        }
-        return cubit;
-      },
-      child: Scaffold(
-        // Inner scaffold to handle background and body
-        body: BlocBuilder<ItineraryCubit, ItineraryState>(
+    return Scaffold(
+      // Inner scaffold to handle background and body
+      body: BlocBuilder<ItineraryCubit, ItineraryState>(
           builder: (context, state) {
             return state.maybeWhen(
               loading: () => const ItineraryShimmer(),
@@ -72,7 +62,6 @@ class ItineraryTab extends StatelessWidget {
             );
           },
         ),
-      ),
     );
   }
 }
@@ -231,7 +220,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                       color:
                           _filters.isActive
                               ? AppColors.primary.withOpacity(0.1)
-                              : Theme.of(context).dividerColor.withOpacity(0.1),
+                              : Theme.of(context).dividerColor.withOpacity(0.03),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color:
@@ -239,7 +228,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                                 ? AppColors.primary
                                 : Theme.of(
                                   context,
-                                ).dividerColor.withOpacity(0.1),
+                                ).dividerColor.withOpacity(0.03),
                       ),
                     ),
                     child: Row(

@@ -151,7 +151,7 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                           side: BorderSide(
                             color: isSelected
                                 ? AppColors.primary
-                                : Theme.of(context).dividerColor.withOpacity(0.1),
+                                : Theme.of(context).dividerColor.withOpacity(0.03),
                           ),
                         ),
                         showCheckmark: false,

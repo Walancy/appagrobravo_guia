@@ -21,7 +21,7 @@ class DocumentAlert extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.amber.shade50,
           border: Border(
-            bottom: BorderSide(color: Colors.amber.shade200, width: 1),
+            bottom: BorderSide(color: Colors.amber.shade200.withOpacity(0.3), width: 1),
           ),
         ),
         child: Row(

@@ -34,6 +34,12 @@ abstract class ProfileEntity with _$ProfileEntity {
     required int postsCount,
     required int missionsCount,
     required bool isGuide,
+    String? company,
+    String? country,
+    String? badgeName,
+    String? emergencyName,
+    String? emergencyRelationship,
+    String? emergencyContact,
     @Default(ConnectionStatus.none) ConnectionStatus connectionStatus,
   }) = _ProfileEntity;
 

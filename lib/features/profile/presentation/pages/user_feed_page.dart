@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
-import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/components/app_header.dart';
+import 'package:agrobravo/core/components/empty_state_widget.dart';
+import 'package:agrobravo/core/components/feed_shimmer.dart';
 import 'package:agrobravo/features/home/presentation/widgets/post_card.dart';
 import 'package:agrobravo/features/home/presentation/widgets/comments_bottom_sheet.dart';
 import 'package:agrobravo/features/profile/domain/repositories/profile_repository.dart';
@@ -137,16 +138,26 @@ class _UserFeedPageState extends State<UserFeedPage> {
     final currentUserId = getIt<FeedRepository>().getCurrentUserId();
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: const AppHeader(mode: HeaderMode.back, title: 'Publicações'),
+      appBar: AppHeader(
+        mode: HeaderMode.back,
+        title: context.t('Publicações', 'Posts'),
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Padding(
+              padding: EdgeInsets.only(top: 130),
+              child: FeedShimmer(),
+            )
           : _error != null
           ? Center(child: Text(_error!))
           : _posts.isEmpty
           ? Center(
-              child: Text(
-                context.t('Nenhuma publicação encontrada.', 'No posts found.'),
-                style: AppTextStyles.bodyMedium,
+              child: EmptyStateWidget(
+                icon: Icons.person_off_outlined,
+                title: context.t('Nenhuma publicação', 'No posts'),
+                description: context.t(
+                  'Este usuário ainda não fez nenhuma publicação em seu perfil.',
+                  'This user has not made any posts on their profile yet.',
+                ),
               ),
             )
           : ListView.builder(

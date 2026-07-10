@@ -7,7 +7,7 @@ import 'package:agrobravo/features/itinerary/presentation/pages/itinerary_page.d
 import 'package:agrobravo/features/profile/presentation/pages/user_feed_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/connections_page.dart';
 import 'package:agrobravo/features/notifications/presentation/pages/notifications_page.dart';
-import 'package:agrobravo/features/profile/presentation/pages/settings_page.dart';
+import 'package:agrobravo/features/profile/presentation/pages/social_profile_page.dart';
 import 'package:agrobravo/features/documents/presentation/pages/documents_page.dart';
 import 'package:agrobravo/features/documents/presentation/pages/document_details_page.dart';
 import 'package:agrobravo/features/documents/presentation/pages/document_history_page.dart';
@@ -22,7 +22,6 @@ import 'package:agrobravo/features/profile/presentation/pages/notification_prefe
 import 'package:agrobravo/features/profile/presentation/pages/account_data_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/privacy_policy_page.dart';
 import 'package:agrobravo/features/profile/presentation/pages/about_us_page.dart';
-import 'package:agrobravo/features/profile/presentation/pages/profile_tab.dart';
 import 'package:agrobravo/features/home/presentation/pages/member_details_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/incident_list_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/expense_list_page.dart';
@@ -65,6 +64,9 @@ final routerRefreshStream = GoRouterRefreshStream(getIt<AuthCubit>().stream);
 final appRouter = GoRouter(
   initialLocation: '/',
   refreshListenable: routerRefreshStream,
+  // Rede de segurança: rota desconhecida (ex.: deep link antigo) volta para a home
+  // em vez de exibir a tela de erro padrão do GoRouter sem navegação.
+  onException: (context, state, router) => router.go('/home'),
   redirect: (context, state) {
     final authState = getIt<AuthCubit>().state;
 
@@ -180,9 +182,10 @@ final appRouter = GoRouter(
               const NoTransitionPage(child: NotificationsPage()),
     ),
     GoRoute(
+      // A tela de Configurações virou "Meus Dados" (tab 4 da home).
+      // Redirect mantido para deep links/pushes antigos que ainda enviam /settings.
       path: '/settings',
-      pageBuilder:
-          (context, state) => const NoTransitionPage(child: SettingsPage()),
+      redirect: (context, state) => '/home?tab=4',
     ),
     GoRoute(
       path: '/documents',
@@ -247,7 +250,7 @@ final appRouter = GoRouter(
       path: '/profile/:userId',
       pageBuilder: (context, state) {
         final userId = state.pathParameters['userId'];
-        return NoTransitionPage(child: ProfileTab(userId: userId));
+        return NoTransitionPage(child: SocialProfilePage(userId: userId));
       },
     ),
     GoRoute(

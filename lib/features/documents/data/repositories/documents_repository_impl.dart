@@ -78,35 +78,44 @@ class DocumentsRepositoryImpl implements DocumentsRepository {
   Future<Either<Exception, void>> uploadDocument({
     String? id,
     required DocumentType type,
-    required File file,
+    File? file,
     String? documentNumber,
     DateTime? expiryDate,
     String? documentName,
+    String? visaCountry,
   }) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return Left(Exception('Usuário não autenticado'));
 
-      // 1. Upload file to Storage
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final path = 'documents/$userId/$fileName';
+      // 1. Upload file to Storage (only if a new file was selected)
+      String? publicUrl;
+      if (file != null) {
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final path = 'documents/$userId/$fileName';
 
-      await _supabaseClient.storage.from('files').upload(path, file);
-      final publicUrl = _supabaseClient.storage
-          .from('files')
-          .getPublicUrl(path);
+        await _supabaseClient.storage.from('files').upload(path, file);
+        publicUrl = _supabaseClient.storage
+            .from('files')
+            .getPublicUrl(path);
+      }
 
-      final docData = {
+      final docData = <String, dynamic>{
         'user_id': userId,
         'tipo': _documentTypeToDb(type),
         'status': 'PENDENTE',
-        'foto_doc': publicUrl,
         'numero_documento': documentNumber,
         'validade_doc': expiryDate?.toIso8601String(),
         'data_envio': DateTime.now().toIso8601String(),
         'nome_documento': documentName ?? type.label,
+        if (type == DocumentType.visto && visaCountry != null)
+          'pais_visto': visaCountry,
       };
+
+      if (publicUrl != null) {
+        docData['foto_doc'] = publicUrl;
+      }
 
       if (id != null) {
         // Update existing document in history
@@ -116,6 +125,9 @@ class DocumentsRepositoryImpl implements DocumentsRepository {
             .eq('id', id);
       } else {
         // Insert new document (create history)
+        if (publicUrl == null) {
+          return Left(Exception('Arquivo é obrigatório para novo documento.'));
+        }
         await _supabaseClient.from('documentos').insert(docData);
       }
 

@@ -128,7 +128,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.03),
                                           width: 1,
                                         ),
                                       ),
@@ -137,7 +137,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
                                           AppSpacing.radiusLg,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.03),
                                           width: 1,
                                         ),
                                       ),
@@ -317,7 +317,7 @@ class _GroupSwitchModalState extends State<GroupSwitchModal> {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withOpacity(0.03),
           ),
           boxShadow: [
             BoxShadow(

@@ -147,7 +147,7 @@ class _DaySliderState extends State<DaySlider> {
                               ? AppColors.primary
                               : Theme.of(
                                 context,
-                              ).dividerColor.withOpacity(0.5),
+                              ).dividerColor.withOpacity(0.03),
                       width: 1,
                     ),
                   ),

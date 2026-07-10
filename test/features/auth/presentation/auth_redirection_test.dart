@@ -14,6 +14,7 @@ import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/auth/domain/entities/user_entity.dart';
 import 'package:agrobravo/features/home/presentation/pages/home_page.dart';
 import 'package:agrobravo/core/cubits/theme_cubit.dart';
+import 'package:agrobravo/core/cubits/language_cubit.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 import 'package:agrobravo/features/notifications/presentation/cubit/notifications_cubit.dart';
@@ -23,48 +24,66 @@ import 'package:agrobravo/core/cubits/global_alert_cubit.dart';
 import 'package:agrobravo/features/home/presentation/cubit/feed_cubit.dart';
 import 'package:agrobravo/features/home/presentation/cubit/feed_state.dart';
 import 'package:agrobravo/features/home/presentation/cubit/guide_home_cubit.dart';
+import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart';
+import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
+import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
+import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 class MockAuthCubit extends Mock implements AuthCubit {}
 class MockThemeCubit extends Mock implements ThemeCubit {}
+class MockLanguageCubit extends Mock implements LanguageCubit {}
 class MockDocumentsCubit extends Mock implements DocumentsCubit {}
 class MockNotificationsCubit extends Mock implements NotificationsCubit {}
 class MockItineraryCubit extends Mock implements ItineraryCubit {}
 class MockGlobalAlertCubit extends Mock implements GlobalAlertCubit {}
 class MockFeedCubit extends Mock implements FeedCubit {}
 class MockGuideHomeCubit extends Mock implements GuideHomeCubit {}
+class MockFeedRepository extends Mock implements FeedRepository {}
+class MockProfileCubit extends Mock implements ProfileCubit {}
 
 void main() {
   late MockAuthRepository mockAuthRepository;
   late MockAuthCubit mockAuthCubit;
   late MockThemeCubit mockThemeCubit;
+  late MockLanguageCubit mockLanguageCubit;
   late MockDocumentsCubit mockDocumentsCubit;
   late MockNotificationsCubit mockNotificationsCubit;
   late MockItineraryCubit mockItineraryCubit;
   late MockGlobalAlertCubit mockGlobalAlertCubit;
   late MockFeedCubit mockFeedCubit;
   late MockGuideHomeCubit mockGuideHomeCubit;
+  late MockFeedRepository mockFeedRepository;
+  late MockProfileCubit mockProfileCubit;
 
   setUp(() {
     getIt.allowReassignment = true;
     mockAuthRepository = MockAuthRepository();
     mockAuthCubit = MockAuthCubit();
     mockThemeCubit = MockThemeCubit();
+    mockLanguageCubit = MockLanguageCubit();
     mockDocumentsCubit = MockDocumentsCubit();
     mockNotificationsCubit = MockNotificationsCubit();
     mockItineraryCubit = MockItineraryCubit();
     mockGlobalAlertCubit = MockGlobalAlertCubit();
     mockFeedCubit = MockFeedCubit();
     mockGuideHomeCubit = MockGuideHomeCubit();
+    mockFeedRepository = MockFeedRepository();
+    mockProfileCubit = MockProfileCubit();
 
     getIt.registerSingleton<AuthCubit>(mockAuthCubit);
     getIt.registerSingleton<ThemeCubit>(mockThemeCubit);
+    getIt.registerSingleton<LanguageCubit>(mockLanguageCubit);
     getIt.registerSingleton<DocumentsCubit>(mockDocumentsCubit);
     getIt.registerSingleton<NotificationsCubit>(mockNotificationsCubit);
     getIt.registerSingleton<ItineraryCubit>(mockItineraryCubit);
     getIt.registerSingleton<GlobalAlertCubit>(mockGlobalAlertCubit);
     getIt.registerSingleton<FeedCubit>(mockFeedCubit);
     getIt.registerSingleton<GuideHomeCubit>(mockGuideHomeCubit);
+    // A home usa IndexedStack: CommunityTab (FeedRepository) e a aba Meus Dados
+    // (ProfileCubit) montam junto com as demais abas.
+    getIt.registerSingleton<FeedRepository>(mockFeedRepository);
+    getIt.registerFactory<ProfileCubit>(() => mockProfileCubit);
 
     when(() => mockAuthRepository.onAuthStateChange).thenAnswer((_) => const Stream.empty());
     
@@ -74,6 +93,9 @@ void main() {
     // Stub states & streams
     when(() => mockThemeCubit.state).thenReturn(ThemeMode.system);
     when(() => mockThemeCubit.stream).thenAnswer((_) => const Stream.empty());
+
+    when(() => mockLanguageCubit.state).thenReturn(const Locale('pt'));
+    when(() => mockLanguageCubit.stream).thenAnswer((_) => const Stream.empty());
 
     when(() => mockDocumentsCubit.state).thenReturn(const DocumentsState.initial());
     when(() => mockDocumentsCubit.stream).thenAnswer((_) => const Stream.empty());
@@ -98,15 +120,56 @@ void main() {
     when(() => mockGuideHomeCubit.stream).thenAnswer((_) => const Stream.empty());
     when(() => mockGuideHomeCubit.loadMissions()).thenAnswer((_) async {});
 
+    when(() => mockFeedRepository.getCurrentUserId()).thenReturn('test-user-id');
+
+    // Estado loaded (e não initial) para evitar o SettingsShimmer, cuja animação
+    // infinita dentro do IndexedStack faz o pumpAndSettle estourar timeout.
+    const fakeProfile = ProfileEntity(
+      id: 'test-user-id',
+      name: 'Guia Teste',
+      avatarUrl: null,
+      coverUrl: null,
+      jobTitle: null,
+      bio: null,
+      missionName: null,
+      email: null,
+      phone: null,
+      cpf: null,
+      ssn: null,
+      zipCode: null,
+      state: null,
+      city: null,
+      street: null,
+      number: null,
+      neighborhood: null,
+      complement: null,
+      birthDate: null,
+      nationality: null,
+      passport: null,
+      foodPreferences: null,
+      medicalRestrictions: null,
+      connectionsCount: 0,
+      postsCount: 0,
+      missionsCount: 0,
+      isGuide: true,
+    );
+    when(() => mockProfileCubit.state).thenReturn(
+      const ProfileState.loaded(profile: fakeProfile, posts: [], isMe: true),
+    );
+    when(() => mockProfileCubit.stream).thenAnswer((_) => const Stream.empty());
+    when(() => mockProfileCubit.loadProfile()).thenAnswer((_) async {});
+
     // Stub close methods for all cubits to prevent Null type errors when widgets are unmounted
     when(() => mockAuthCubit.close()).thenAnswer((_) async {});
     when(() => mockThemeCubit.close()).thenAnswer((_) async {});
+    when(() => mockLanguageCubit.close()).thenAnswer((_) async {});
     when(() => mockDocumentsCubit.close()).thenAnswer((_) async {});
     when(() => mockNotificationsCubit.close()).thenAnswer((_) async {});
     when(() => mockItineraryCubit.close()).thenAnswer((_) async {});
     when(() => mockGlobalAlertCubit.close()).thenAnswer((_) async {});
     when(() => mockFeedCubit.close()).thenAnswer((_) async {});
     when(() => mockGuideHomeCubit.close()).thenAnswer((_) async {});
+    when(() => mockProfileCubit.close()).thenAnswer((_) async {});
   });
 
   Widget buildTestWidget({required Widget child}) {
@@ -114,6 +177,7 @@ void main() {
       providers: [
         BlocProvider<AuthCubit>.value(value: mockAuthCubit),
         BlocProvider<ThemeCubit>.value(value: mockThemeCubit),
+        BlocProvider<LanguageCubit>.value(value: mockLanguageCubit),
         BlocProvider<DocumentsCubit>.value(value: mockDocumentsCubit),
         BlocProvider<NotificationsCubit>.value(value: mockNotificationsCubit),
         BlocProvider<ItineraryCubit>.value(value: mockItineraryCubit),

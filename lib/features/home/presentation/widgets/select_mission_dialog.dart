@@ -55,7 +55,7 @@ class SelectMissionDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Divider(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+            Divider(color: Theme.of(context).dividerColor.withOpacity(0.03)),
             const SizedBox(height: AppSpacing.md),
 
             // Mission List (assuming a few for now, otherwise scrollable)
@@ -89,7 +89,7 @@ class SelectMissionDialog extends StatelessWidget {
                                           ? AppColors.primary
                                           : Theme.of(
                                             context,
-                                          ).dividerColor.withOpacity(0.5),
+                                          ).dividerColor.withOpacity(0.03),
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),

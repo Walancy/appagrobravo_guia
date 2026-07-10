@@ -38,11 +38,19 @@ class $AssetsImagesGen {
   /// File path: assets/images/google_logo.svg
   String get googleLogo => 'assets/images/google_logo.svg';
 
+  /// File path: assets/images/logo_branca.png
+  AssetGenImage get logoBrancaPng =>
+      const AssetGenImage('assets/images/logo_branca.png');
+
   /// File path: assets/images/logo_branca.svg
-  String get logoBranca => 'assets/images/logo_branca.svg';
+  String get logoBrancaSvg => 'assets/images/logo_branca.svg';
+
+  /// File path: assets/images/logo_colorida.png
+  AssetGenImage get logoColoridaPng =>
+      const AssetGenImage('assets/images/logo_colorida.png');
 
   /// File path: assets/images/logo_colorida.svg
-  String get logoColorida => 'assets/images/logo_colorida.svg';
+  String get logoColoridaSvg => 'assets/images/logo_colorida.svg';
 
   /// File path: assets/images/whatsapp.svg
   String get whatsapp => 'assets/images/whatsapp.svg';
@@ -56,8 +64,10 @@ class $AssetsImagesGen {
     chatPattern,
     chatPatterns,
     googleLogo,
-    logoBranca,
-    logoColorida,
+    logoBrancaPng,
+    logoBrancaSvg,
+    logoColoridaPng,
+    logoColoridaSvg,
     whatsapp,
   ];
 }

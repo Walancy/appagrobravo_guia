@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:agrobravo/features/home/domain/entities/post_entity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:agrobravo/core/components/empty_state_widget.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class ProfilePostGrid extends StatelessWidget {
   final List<PostEntity> posts;
@@ -10,6 +12,20 @@ class ProfilePostGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (posts.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: EmptyStateWidget(
+          icon: Icons.photo_library_outlined,
+          title: context.t('Nenhuma publicação', 'No posts'),
+          description: context.t(
+            'Nenhuma publicação foi feita ainda.',
+            'No posts have been made yet.',
+          ),
+        ),
+      );
+    }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

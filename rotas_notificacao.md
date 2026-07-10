@@ -13,9 +13,11 @@ Essas rotas podem ser chamadas diretamente como estão escritas.
 - **Redefinição de Senha:** `/reset-password`
 - **Home:** `/home`
   - *Opcional:* Pode receber aba e grupo via query. Exemplo: `/home?tab=1&groupId=123`
+  - *Abas:* `0` = Início · `1` = Itinerário · `2` = Chats · `3` = Comunidade (Feed + Meu Perfil) · `4` = Meus Dados
 - **Criar Postagem:** `/create-post`
 - **Notificações:** `/notifications`
-- **Configurações:** `/settings`
+- **Meus Dados (antiga Configurações):** `/home?tab=4`
+  - ⚠️ A rota `/settings` foi **descontinuada** (a tela virou a aba "Meus Dados"). O app mantém um redirect de `/settings` → `/home?tab=4` por compatibilidade, mas novos disparos devem usar `/home?tab=4`.
 - **Documentos:** `/documents`
 - **Preferências Alimentares:** `/food-preferences`
 - **Restrições Médicas:** `/medical-restrictions`
@@ -34,8 +36,9 @@ Nestas rotas, você **deve** substituir a variável que começa com `:` pelo ID 
   - *Opcional:* Pode focar em um post específico via query: `/user-feed/f92b4...?postId=123`
 - **Conexões do Usuário:** `/connections/:userId`
   - *Exemplo de uso:* `/connections/f92b4...`
-- **Perfil de Usuário:** `/profile/:userId`
+- **Perfil de Usuário (perfil social):** `/profile/:userId`
   - *Exemplo de uso:* `/profile/f92b4...`
+  - Abre o perfil social do usuário (capa, stats, posts) empilhado sobre a aba Comunidade.
 - **Chat Direto (DM):** `/chat/dm/:userId`
   - *Exemplo de uso:* `/chat/dm/f92b4...`
 - **Lista de Ocorrências (Incidentes):** `/incident-list/:groupId`

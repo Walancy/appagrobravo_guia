@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -10,10 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 class ProfileActions extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onPublish;
-  final VoidCallback? onSaveEdit;
-  final VoidCallback? onCancelEdit;
+  final VoidCallback? onSave;
   final bool isEditing;
   final bool isMe;
+  final bool isUploadingAvatar;
+  final bool isUploadingCover;
   final ConnectionStatus connectionStatus;
   final VoidCallback? onConnect;
   final VoidCallback? onCancelRequest;
@@ -26,10 +26,11 @@ class ProfileActions extends StatelessWidget {
     super.key,
     required this.onEditProfile,
     required this.onPublish,
-    this.onSaveEdit,
-    this.onCancelEdit,
+    this.onSave,
     this.isEditing = false,
     this.isMe = true,
+    this.isUploadingAvatar = false,
+    this.isUploadingCover = false,
     this.connectionStatus = ConnectionStatus.none,
     this.onConnect,
     this.onCancelRequest,
@@ -41,43 +42,75 @@ class ProfileActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUploading = isUploadingAvatar || isUploadingCover;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         children: [
           if (isMe) ...[
             if (isEditing) ...[
+              // Cancelar
               Expanded(
-                child: _ProfileActionButton(
+                child: _ActionButton(
                   label: context.t('Cancelar', 'Cancel'),
-                  icon: Icons.close,
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black,
-                  onPressed: onCancelEdit ?? () {},
+                  icon: Icons.close_rounded,
+                  style: _ActionStyle.outlined,
+                  onPressed: isUploading ? null : onEditProfile,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
+              // Salvar
               Expanded(
-                child: _ProfileActionButton(
-                  label: context.t('Concluir', 'Done'),
-                  icon: Icons.check,
-                  onPressed: onSaveEdit ?? () {},
-                ),
+                child: isUploading
+                    ? SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: null,
+                          icon: const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          label: Text(context.t('Salvar', 'Save')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: AppTextStyles.button.copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    : _ActionButton(
+                        label: context.t('Salvar', 'Save'),
+                        icon: Icons.check_rounded,
+                        style: _ActionStyle.save,
+                        onPressed: onSave ?? onEditProfile,
+                      ),
               ),
             ] else ...[
               Expanded(
-                child: _ProfileActionButton(
+                child: _ActionButton(
                   label: context.t('Editar perfil', 'Edit profile'),
                   icon: Icons.edit_outlined,
-                  backgroundColor: AppColors.primary,
+                  style: _ActionStyle.filled,
                   onPressed: onEditProfile,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: _ProfileActionButton(
+                child: _ActionButton(
                   label: context.t('Publicar', 'Publish'),
                   icon: Icons.add_circle_outline_rounded,
+                  style: _ActionStyle.outlined,
                   onPressed: onPublish,
                 ),
               ),
@@ -93,147 +126,194 @@ class ProfileActions extends StatelessWidget {
   Widget _buildConnectionButton(BuildContext context) {
     switch (connectionStatus) {
       case ConnectionStatus.none:
-        return _ProfileActionButton(
-          label: context.t('Conectar-se', 'Connect'),
+        return _ActionButton(
+          label: context.t('Conectar', 'Connect'),
           icon: Icons.person_add_outlined,
+          style: _ActionStyle.filled,
           onPressed: onConnect ?? () {},
         );
+
       case ConnectionStatus.pendingSent:
-        return _ProfileActionButton(
+        return _ActionButton(
           label: context.t('Solicitado', 'Requested'),
           icon: Icons.hourglass_empty_rounded,
-          backgroundColor: Colors.grey[400],
+          style: _ActionStyle.muted,
           onPressed: onCancelRequest ?? () {},
         );
+
       case ConnectionStatus.pendingReceived:
         return Row(
           children: [
             Expanded(
-              child: _ProfileActionButton(
+              child: _ActionButton(
                 label: context.t('Aceitar', 'Accept'),
-                icon: Icons.check,
+                icon: Icons.check_rounded,
+                style: _ActionStyle.filled,
                 onPressed: onAccept ?? () {},
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: _ProfileActionButton(
+              child: _ActionButton(
                 label: context.t('Recusar', 'Decline'),
-                icon: Icons.close,
-                backgroundColor: Colors.grey[200],
+                icon: Icons.close_rounded,
+                style: _ActionStyle.outlined,
                 onPressed: onReject ?? () {},
               ),
             ),
           ],
         );
+
       case ConnectionStatus.connected:
         if (phone != null && phone!.isNotEmpty) {
           return Row(
             children: [
-              Expanded(
-                child: _ProfileActionButton(
-                  label: 'WhatsApp',
-                  customIcon: SvgPicture.asset(
-                    'assets/images/whatsapp.svg',
-                    width: 16,
-                    height: 16,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  backgroundColor: const Color(0xFF25D366),
-                  onPressed: () async {
-                    final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
-                    final url = Uri.parse(
-                      'https://wa.me/55$cleanPhone',
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                ),
+              _ActionButton(
+                label: 'WhatsApp',
+                icon: Icons.chat_rounded,
+                style: _ActionStyle.whatsapp,
+                onPressed: () async {
+                  final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
+                  // Telefones novos já são salvos com DDI ("+55 (11) ...");
+                  // legados (sem "+") recebem o 55 do Brasil como fallback.
+                  final waNumber = phone!.trim().startsWith('+')
+                      ? cleanPhone
+                      : '55$cleanPhone';
+                  final url = Uri.parse('https://wa.me/$waNumber');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: _ProfileActionButton(
+                child: _ActionButton(
                   label: context.t('Desconectar', 'Disconnect'),
                   icon: Icons.person_remove_outlined,
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black,
+                  style: _ActionStyle.outlined,
                   onPressed: onDisconnect ?? () {},
                 ),
               ),
             ],
           );
         }
-        return _ProfileActionButton(
+        return _ActionButton(
           label: context.t('Desconectar', 'Disconnect'),
           icon: Icons.person_remove_outlined,
-          backgroundColor: Colors.grey[200],
-          foregroundColor: Colors.black,
+          style: _ActionStyle.outlined,
           onPressed: onDisconnect ?? () {},
         );
     }
   }
 }
 
-class _ProfileActionButton extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final Widget? customIcon;
-  final VoidCallback onPressed;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
+enum _ActionStyle { filled, outlined, muted, whatsapp, save }
 
-  const _ProfileActionButton({
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final _ActionStyle style;
+  final VoidCallback? onPressed;
+
+  const _ActionButton({
     required this.label,
-    this.icon,
-    this.customIcon,
+    required this.icon,
+    required this.style,
     required this.onPressed,
-    this.backgroundColor,
-    this.foregroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.primary,
-          foregroundColor: foregroundColor ?? AppColors.surface,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    switch (style) {
+      case _ActionStyle.filled:
+        return SizedBox(
+          height: 42,
+          child: ElevatedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              textStyle: AppTextStyles.button.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (customIcon != null) ...[
-              customIcon!,
-              if (label.isNotEmpty) const SizedBox(width: 8),
-            ] else if (icon != null) ...[
-              Icon(icon, size: 16),
-              if (label.isNotEmpty) const SizedBox(width: 8),
-            ],
-            if (label.isNotEmpty)
-              Text(
-                label,
-                style: AppTextStyles.button.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+        );
+
+      case _ActionStyle.outlined:
+        return SizedBox(
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: isDark ? 0.25 : 0.2),
               ),
-          ],
-        ),
-      ),
-    );
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              textStyle: AppTextStyles.button.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+
+      case _ActionStyle.save:
+        return SizedBox(
+          height: 42,
+          child: ElevatedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              textStyle: AppTextStyles.button.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+
+      case _ActionStyle.muted:
+        return SizedBox(
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              textStyle: AppTextStyles.button.copyWith(fontSize: 13),
+            ),
+          ),
+        );
+
+      case _ActionStyle.whatsapp:
+        return SizedBox(
+          height: 42,
+          width: 110,
+          child: ElevatedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              textStyle: AppTextStyles.button.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+    }
   }
 }

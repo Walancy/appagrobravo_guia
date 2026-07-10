@@ -548,7 +548,7 @@ class _IncidentModalState extends State<IncidentModal> {
     String? value,
     ValueChanged<String?> onChanged,
   ) {
-    final borderColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.4);
+    final borderColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.03);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -647,7 +647,7 @@ class _AttachPhotoBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Divider(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
+              color: Theme.of(context).dividerColor.withOpacity(0.03),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

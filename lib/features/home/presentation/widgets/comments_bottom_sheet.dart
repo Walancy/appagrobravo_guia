@@ -381,7 +381,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                             AppSpacing.radiusLg,
                           ),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.03),
                             width: 1,
                           ),
                         ),

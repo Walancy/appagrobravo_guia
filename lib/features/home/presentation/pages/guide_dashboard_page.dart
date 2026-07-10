@@ -388,7 +388,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00B289),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: Theme.of(context).cardColor,
@@ -442,7 +442,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                       Icon(
                         Icons.location_on_rounded,
                         size: 16,
-                        color: const Color(0xFF00B289),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -674,13 +674,13 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               children: [
                 Row(
                   children: [
-                    Icon(icon, color: const Color(0xFF00B289), size: 22),
+                    Icon(icon, color: AppColors.primary, size: 22),
                     const SizedBox(width: 8),
                     Text(
                       time,
                       style: AppTextStyles.h3.copyWith(
                         fontSize: 17,
-                        color: const Color(0xFF00B289),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -690,7 +690,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                   width: 32,
                   height: 32,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00B289),
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -934,10 +934,10 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         final company = user?['empresa'] ?? 'Independente';
 
         String statusLabel = 'Confirmado';
-        Color statusColor = const Color(0xFF00B289);
+        Color statusColor = AppColors.primary;
         Widget trailingWidget = const Icon(
           Icons.check_circle_outline_rounded,
-          color: Color(0xFF00B289),
+          color: AppColors.primary,
           size: 28,
         );
 
@@ -1059,7 +1059,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
 
     // Status Logic Logic (duplicated for display purposes, could be refactored)
     String statusLabel = 'Confirmado';
-    Color statusColor = const Color(0xFF00B289);
+    Color statusColor = AppColors.primary;
 
     if (isTraveler) {
       final docs = item['documentos'] as List?;
@@ -1428,7 +1428,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                         Container(
                           width: 1,
                           height: 20,
-                          color: Theme.of(context).dividerColor.withOpacity(0.5),
+                          color: Theme.of(context).dividerColor.withOpacity(0.03),
                         ),
                       ],
                     ),
@@ -1490,7 +1490,7 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                                   ),
                                   backgroundColor: Theme.of(
                                     context,
-                                  ).dividerColor.withOpacity(0.1),
+                                  ).dividerColor.withOpacity(0.03),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(
                                       AppSpacing.radiusMd,

@@ -64,10 +64,12 @@ dependencies:
   geocoding: ^3.0.0
   http: ^1.6.0
   cached_network_image: ^3.4.1
+  pdfx: ^2.9.2
   shimmer: ^3.0.0
   flutter_dotenv: ^6.0.0
   rxdart: ^0.28.0
   mask_text_input_formatter: ^2.9.0
+  country_flags: ^4.1.2
   currency_text_input_formatter: ^2.3.0
   sign_in_with_apple: ^7.0.1
   crypto: ^3.0.7

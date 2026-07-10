@@ -167,7 +167,7 @@ class _LoginFormState extends State<LoginForm> {
           decoration: BoxDecoration(
             color: AppColors.surface.withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(color: AppColors.surface.withOpacity(0.2)),
+            border: Border.all(color: AppColors.surface.withOpacity(0.03)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,7 +246,7 @@ class _LoginFormState extends State<LoginForm> {
           child: Text(
             'Esqueci minha senha',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: const Color(0xFF00E676),
+              color: AppColors.primary,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -542,10 +542,10 @@ class _LoginFormState extends State<LoginForm> {
           child: Text(
             'Reenviar e-mail de confirmação',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: const Color(0xFF00E676),
+              color: AppColors.primary,
               fontWeight: FontWeight.w600,
               decoration: TextDecoration.underline,
-              decorationColor: const Color(0xFF00E676),
+              decorationColor: AppColors.primary,
             ),
           ),
         ),

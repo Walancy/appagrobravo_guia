@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/router/app_router.dart';
@@ -234,74 +235,8 @@ class _AgroBravoAppState extends State<AgroBravoApp> {
                 title: 'AgroBravo',
                 debugShowCheckedModeBanner: false,
                 themeMode: themeMode,
-                theme: ThemeData(
-                  primaryColor: AppColors.primary,
-                  scaffoldBackgroundColor: AppColors.background,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: AppColors.primary,
-                    primary: AppColors.primary,
-                    secondary: AppColors.secondary,
-                    surface: AppColors.surface,
-                    onSurface: AppColors.textPrimary,
-                    brightness: Brightness.light,
-                  ),
-                  useMaterial3: true,
-                  dividerColor: AppColors.backgroundLight,
-                  dividerTheme: const DividerThemeData(
-                    color: AppColors.backgroundLight,
-                  ),
-                  inputDecorationTheme: InputDecorationTheme(
-                    filled: true,
-                    fillColor: AppColors.backgroundLight.withOpacity(0.08),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: AppColors.textPrimary.withOpacity(0.4), width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                    ),
-                  ),
-                ),
-                darkTheme: ThemeData(
-                  primaryColor: AppColors.primary,
-                  scaffoldBackgroundColor: AppColors.backgroundDark,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: AppColors.primary,
-                    primary: AppColors.primary,
-                    secondary: AppColors.secondary,
-                    surface: AppColors.surfaceDark,
-                    onSurface: AppColors.textPrimaryDark,
-                    brightness: Brightness.dark,
-                  ),
-                  useMaterial3: true,
-                  dividerColor: AppColors.backgroundLightDark,
-                  dividerTheme: const DividerThemeData(
-                    color: AppColors.backgroundLightDark,
-                  ),
-                  inputDecorationTheme: InputDecorationTheme(
-                    filled: true,
-                    fillColor: AppColors.backgroundLightDark.withOpacity(0.08),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: AppColors.textPrimaryDark.withOpacity(0.4), width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                    ),
-                  ),
-                ),
+                theme: _buildLightTheme(),
+                darkTheme: _buildDarkTheme(),
                 locale: locale,
                 supportedLocales: const [
                   Locale('pt', 'BR'),
@@ -328,6 +263,182 @@ class _AgroBravoAppState extends State<AgroBravoApp> {
             },
           );
         },
+      ),
+    );
+  }
+
+  ThemeData _buildLightTheme() {
+    final base = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+      surface: AppColors.surface,
+      onSurface: AppColors.textPrimary,
+      brightness: Brightness.light,
+    ).copyWith(
+      outlineVariant: AppColors.textPrimary.withValues(alpha: 0.03),
+      outline: AppColors.textPrimary.withValues(alpha: 0.05),
+    );
+    return ThemeData(
+      useMaterial3: true,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      colorScheme: base,
+      textTheme: GoogleFonts.barlowTextTheme(),
+      dividerColor: AppColors.textPrimary.withValues(alpha: 0.03),
+      dividerTheme: DividerThemeData(color: AppColors.textPrimary.withValues(alpha: 0.01), space: 1),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.01)),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.backgroundLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      listTileTheme: const ListTileThemeData(
+        minLeadingWidth: 0,
+        horizontalTitleGap: 12,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return Colors.grey.shade400;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
+          return Colors.grey.shade300;
+        }),
+      ),
+    );
+  }
+
+  ThemeData _buildDarkTheme() {
+    final base = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+      surface: AppColors.backgroundLightDark,
+      onSurface: AppColors.textPrimaryDark,
+      brightness: Brightness.dark,
+    ).copyWith(
+      outlineVariant: Colors.white.withValues(alpha: 0.03),
+      outline: Colors.white.withValues(alpha: 0.05),
+    );
+    return ThemeData(
+      useMaterial3: true,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+      colorScheme: base,
+      textTheme: GoogleFonts.barlowTextTheme(ThemeData.dark().textTheme),
+      dividerColor: Colors.white.withValues(alpha: 0.03),
+      dividerTheme: DividerThemeData(color: Colors.white.withValues(alpha: 0.01), space: 1),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: AppColors.backgroundLightDark,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.01)),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF2A2A2A),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.backgroundLightDark,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimaryDark,
+      ),
+      listTileTheme: const ListTileThemeData(
+        minLeadingWidth: 0,
+        horizontalTitleGap: 12,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return Colors.grey.shade600;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
+          return const Color(0xFF3A3A3A);
+        }),
       ),
     );
   }

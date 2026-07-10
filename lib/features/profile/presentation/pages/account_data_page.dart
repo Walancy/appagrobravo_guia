@@ -1,18 +1,25 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
-import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/components/phone_field.dart';
 import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/utils/address_data.dart';
+import 'package:agrobravo/core/utils/phone_countries.dart';
+import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:agrobravo/features/profile/presentation/cubit/profile_state.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
+import 'package:country_flags/country_flags.dart';
+import 'package:agrobravo/core/components/account_data_shimmer.dart';
 
 class AccountDataPage extends StatefulWidget {
   const AccountDataPage({super.key});
@@ -26,66 +33,244 @@ class _AccountDataPageState extends State<AccountDataPage> {
   final _phoneController = TextEditingController();
   final _cpfController = TextEditingController();
   final _ssnController = TextEditingController();
+  final _passportController = TextEditingController();
   final _zipCodeController = TextEditingController();
-  final _stateController = TextEditingController();
   final _cityController = TextEditingController();
   final _streetController = TextEditingController();
   final _numberController = TextEditingController();
   final _neighborhoodController = TextEditingController();
   final _complementController = TextEditingController();
-  final _nationalityController = TextEditingController();
-  final _passportController = TextEditingController();
-  DateTime? _birthDate;
+  final _badgeNameController = TextEditingController();
+  final _emergencyNameController = TextEditingController();
+  final _emergencyRelationshipController = TextEditingController();
+  final _emergencyContactController = TextEditingController();
+  final _stateTextController = TextEditingController();
+  final _companyController = TextEditingController();
 
-  final _phoneMaskFormatter = MaskTextInputFormatter(
-    mask: '(##) #####-####',
+  final _cpfMask = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: {'#': RegExp(r'[0-9]')},
+  );
+  final _cepMask = MaskTextInputFormatter(
+    mask: '#####-###',
     filter: {'#': RegExp(r'[0-9]')},
   );
 
+  PhoneCountry _phoneCountry = kDefaultPhoneCountry;
+  PhoneCountry _emergencyCountry = kDefaultPhoneCountry;
+  AddressCountry _selectedCountry = kDefaultAddressCountry;
+  AddressCountry? _nationalityCountry;
+  String? _selectedStateUf;
+
+  bool _loadingCep = false;
   bool _initialized = false;
+  bool _isSaving = false;
+  bool _attemptedSave = false;
+  Map<String, dynamic> _initialData = {};
+
+  List<TextEditingController> get _allControllers => [
+        _nameController, _phoneController, _cpfController, _ssnController,
+        _passportController, _zipCodeController, _cityController,
+        _streetController, _numberController, _neighborhoodController,
+        _complementController, _badgeNameController, _emergencyNameController,
+        _emergencyRelationshipController, _emergencyContactController,
+        _stateTextController, _companyController,
+      ];
+
+  void _onInputChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    for (var c in _allControllers) {
+      c.addListener(_onInputChanged);
+    }
+    _zipCodeController.addListener(_onCepChanged);
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _cpfController.dispose();
-    _ssnController.dispose();
-    _zipCodeController.dispose();
-    _stateController.dispose();
-    _cityController.dispose();
-    _streetController.dispose();
-    _numberController.dispose();
-    _neighborhoodController.dispose();
-    _complementController.dispose();
-    _nationalityController.dispose();
-    _passportController.dispose();
+    for (var c in _allControllers) {
+      c.removeListener(_onInputChanged);
+    }
+    _zipCodeController.removeListener(_onCepChanged);
+    for (var c in _allControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  void _initializeControllers(profile) {
+  void _onCepChanged() {
+    final digits = _zipCodeController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length == 8 && _selectedCountry.code == 'BR') {
+      _fetchCep(digits);
+    }
+  }
+
+  Future<void> _fetchCep(String cep) async {
+    if (_loadingCep) return;
+    setState(() => _loadingCep = true);
+    try {
+      final res = await http.get(
+        Uri.parse('https://viacep.com.br/ws/$cep/json/'),
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body) as Map<String, dynamic>;
+        if (!data.containsKey('erro')) {
+          final uf = data['uf'] as String?;
+          final state = uf != null
+              ? kBrazilianStates.firstWhere(
+                  (s) => s.uf == uf,
+                  orElse: () => BrazilianState(uf: uf, name: uf),
+                )
+              : null;
+          setState(() {
+            _streetController.text = data['logradouro'] ?? '';
+            _neighborhoodController.text = data['bairro'] ?? '';
+            _cityController.text = data['localidade'] ?? '';
+            if (state != null) _selectedStateUf = state.uf;
+          });
+        }
+      }
+    } catch (_) {
+      // user can fill manually on failure
+    } finally {
+      if (mounted) setState(() => _loadingCep = false);
+    }
+  }
+
+  (PhoneCountry, String) _parsePhone(String? raw) {
+    if (raw == null || raw.isEmpty) return (kDefaultPhoneCountry, '');
+    for (final c in kPhoneCountries) {
+      final prefix = '${c.dialCode} ';
+      if (raw.startsWith(prefix)) return (c, raw.substring(prefix.length));
+    }
+    return (kDefaultPhoneCountry, raw);
+  }
+
+  void _initializeControllers(ProfileEntity profile) {
     if (_initialized) return;
+
     _nameController.text = profile.name;
-    final phoneDigits = (profile.phone ?? '').replaceAll(RegExp(r'\D'), '');
-    _phoneController.text = _phoneMaskFormatter
-        .formatEditUpdate(
-          TextEditingValue.empty,
-          TextEditingValue(text: phoneDigits),
-        )
-        .text;
-    _cpfController.text = profile.cpf ?? '';
+    _cpfController.text = _cpfMask.maskText(profile.cpf ?? '');
     _ssnController.text = profile.ssn ?? '';
-    _zipCodeController.text = profile.zipCode ?? '';
-    _stateController.text = profile.state ?? '';
+    _passportController.text = profile.passport ?? '';
     _cityController.text = profile.city ?? '';
     _streetController.text = profile.street ?? '';
     _numberController.text = profile.number ?? '';
     _neighborhoodController.text = profile.neighborhood ?? '';
     _complementController.text = profile.complement ?? '';
-    _nationalityController.text = profile.nationality ?? '';
-    _passportController.text = profile.passport ?? '';
+    _badgeNameController.text = profile.badgeName ?? '';
+    _companyController.text = profile.company ?? '';
     _birthDate = profile.birthDate;
+
+    // CEP — set without triggering the listener
+    _zipCodeController.removeListener(_onCepChanged);
+    _zipCodeController.text = _cepMask.maskText(
+      (profile.zipCode ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+    _zipCodeController.addListener(_onCepChanged);
+
+    // Country
+    final savedCountry = profile.country;
+    if (savedCountry != null && savedCountry.isNotEmpty) {
+      final match = kAddressCountries.firstWhere(
+        (c) => c.name == savedCountry || c.code == savedCountry,
+        orElse: () => kDefaultAddressCountry,
+      );
+      _selectedCountry = match;
+    }
+
+    // Nationality — dados legados do guia foram salvos como texto livre
+    // ("Brasileira", "Americana"...); os novos são código ISO ("BR", "US").
+    // Sem match, deixa null para forçar re-seleção consciente (campo obrigatório)
+    // em vez de coagir silenciosamente para Brasil.
+    final savedNationality = profile.nationality;
+    if (savedNationality != null && savedNationality.isNotEmpty) {
+      _nationalityCountry = _matchNationality(savedNationality);
+    }
+
+    // State
+    final savedState = profile.state;
+    if (savedState != null && savedState.isNotEmpty) {
+      if (_selectedCountry.code == 'BR') {
+        final match = kBrazilianStates.firstWhere(
+          (s) => s.uf == savedState || s.name == savedState,
+          orElse: () => BrazilianState(uf: savedState, name: savedState),
+        );
+        _selectedStateUf = match.uf;
+      } else {
+        _stateTextController.text = savedState;
+      }
+    }
+
+    // Phones
+    final (phoneCo, phoneNum) = _parsePhone(profile.phone);
+    final (emergCo, emergNum) = _parsePhone(profile.emergencyContact);
+    _phoneCountry = phoneCo;
+    _phoneController.text = phoneNum;
+    _emergencyCountry = emergCo;
+    _emergencyContactController.text = emergNum;
+    _emergencyNameController.text = profile.emergencyName ?? '';
+    _emergencyRelationshipController.text = profile.emergencyRelationship ?? '';
+
     _initialized = true;
+    _initialData = _getCurrentData();
   }
+
+  AddressCountry? _matchNationality(String saved) {
+    final value = saved.trim();
+    final lower = value.toLowerCase();
+
+    // 1. Código ISO exato (formato novo)
+    for (final c in kAddressCountries) {
+      if (c.code == value.toUpperCase() && value.length == 2) return c;
+    }
+    // 2. Nome exato do país
+    for (final c in kAddressCountries) {
+      if (c.name.toLowerCase() == lower) return c;
+    }
+    // 3. Gentílicos comuns (dados legados em texto livre)
+    const gentilics = <String, String>{
+      'brasileir': 'BR',
+      'american': 'US',
+      'estadunidense': 'US',
+      'norte-american': 'US',
+      'portugu': 'PT',
+      'argentin': 'AR',
+      'italian': 'IT',
+      'espanhol': 'ES',
+      'alema': 'DE',
+      'alemã': 'DE',
+      'frances': 'FR',
+      'francês': 'FR',
+      'japones': 'JP',
+      'japonês': 'JP',
+      'chines': 'CN',
+      'chinês': 'CN',
+      'mexican': 'MX',
+      'canadense': 'CA',
+      'urugua': 'UY',
+      'paragua': 'PY',
+      'chilen': 'CL',
+      'colombian': 'CO',
+      'peruan': 'PE',
+      'bolivian': 'BO',
+    };
+    for (final entry in gentilics.entries) {
+      if (lower.startsWith(entry.key)) {
+        for (final c in kAddressCountries) {
+          if (c.code == entry.value) return c;
+        }
+      }
+    }
+    return null;
+  }
+
+  DateTime? _birthDate;
 
   Future<void> _selectBirthDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -95,340 +280,60 @@ class _AccountDataPageState extends State<AccountDataPage> {
       lastDate: DateTime.now(),
     );
     if (picked != null && picked != _birthDate) {
-      setState(() {
-        _birthDate = picked;
-      });
+      setState(() => _birthDate = picked);
     }
   }
 
-  void _showDeleteAccountDialog(BuildContext context) async {
-    final confirm = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CustomConfirmBottomSheet(
-        title: context.t('Excluir Conta', 'Delete Account'),
-        message: context.t(
-          'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
-          'Are you sure you want to permanently delete your account? This action is irreversible and all your data will be erased.',
-        ),
-        confirmLabel: context.t('Sim, excluir', 'Yes, delete'),
-        cancelLabel: context.t('Cancelar', 'Cancel'),
-        confirmColor: AppColors.error,
-      ),
-    );
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
-    if (confirm == true && context.mounted) {
-      // Mostrar indicador de progresso
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (loadingContext) => const Center(
-          child: CircularProgressIndicator(),
+  InputDecoration _inputDecoration(BuildContext context, {Widget? suffix, bool hasError = false, String? helperText}) {
+    final fillColor = Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.surface
+        : const Color(0xFFFAFAFA);
+
+    final borderColor = hasError ? AppColors.error : Theme.of(context).dividerColor;
+
+    return InputDecoration(
+      filled: true,
+      fillColor: fillColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: hasError ? AppColors.error : AppColors.primary),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      suffixIcon: suffix,
+      helperText: helperText,
+      helperMaxLines: 3,
+    );
+  }
+
+  Widget _label(BuildContext context, String text, {bool isMandatory = false}) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            children: [
+              if (isMandatory)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: AppColors.error),
+                ),
+            ],
+          ),
         ),
       );
-
-      final authCubit = context.read<AuthCubit>();
-      final result = await authCubit.deleteAccount();
-      
-      if (context.mounted) {
-        Navigator.pop(context); // Remove o loading indicador
-        result.fold(
-          (error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.t('Erro ao excluir conta: $error', 'Error deleting account: $error')),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          },
-          (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.t('Sua conta foi excluída com sucesso.', 'Your account has been successfully deleted.')),
-                backgroundColor: AppColors.primary,
-              ),
-            );
-          },
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<ProfileCubit>()..loadProfile(),
-      child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        appBar: AppHeader(mode: HeaderMode.back, title: context.t('Dados da conta', 'Account details')),
-        body: BlocConsumer<ProfileCubit, ProfileState>(
-          listener: (context, state) {
-            state.maybeWhen(
-              loaded: (profile, _, __, ___, ____, _____, ______, _______) {
-                _initializeControllers(profile);
-              },
-              orElse: () {},
-            );
-          },
-          builder: (context, state) {
-            return state.when(
-              initial: () => const Center(child: CircularProgressIndicator()),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (message) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.error,
-                          size: 48,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          context.t('Não foi possível carregar os dados. Verifique sua conexão.', 'Could not load data. Check your connection.'),
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.bodyLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<ProfileCubit>().loadProfile();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                            ),
-                          ),
-                          child: Text(
-                            context.t('Tentar Novamente', 'Try Again'),
-                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              loaded: (profile, _, __, ___, ____, _____, ______, _______) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.t('Informações Pessoais', 'Personal Information'),
-                          style: AppTextStyles.h3.copyWith(fontSize: 18),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildTextField(
-                          context,
-                          _nameController,
-                          context.t('Nome Completo', 'Full Name'),
-                        ),
-                        _buildTextField(
-                          context,
-                          _phoneController,
-                          context.t('Telefone', 'Phone'),
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [_phoneMaskFormatter],
-                        ),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                context,
-                                _cpfController,
-                                'CPF',
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: _buildTextField(
-                                context,
-                                _ssnController,
-                                'SSN',
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: AppSpacing.md),
-                        _buildDatePicker(context, context.t('Data de Nascimento', 'Date of Birth')),
-
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          context.t('Endereço', 'Address'),
-                          style: AppTextStyles.h3.copyWith(fontSize: 18),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildTextField(
-                          context,
-                          _zipCodeController,
-                          context.t('CEP', 'Zip Code'),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                context,
-                                _stateController,
-                                context.t('Estado', 'State'),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: _buildTextField(
-                                context,
-                                _cityController,
-                                context.t('Cidade', 'City'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        _buildTextField(
-                          context,
-                          _neighborhoodController,
-                          context.t('Bairro', 'Neighborhood'),
-                        ),
-                        _buildTextField(context, _streetController, context.t('Rua', 'Street')),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                context,
-                                _numberController,
-                                context.t('Número', 'Number'),
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              flex: 2,
-                              child: _buildTextField(
-                                context,
-                                _complementController,
-                                context.t('Complemento', 'Complement'),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          context.t('Documentação Internacional', 'International Documentation'),
-                          style: AppTextStyles.h3.copyWith(fontSize: 18),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildTextField(
-                          context,
-                          _nationalityController,
-                          context.t('Nacionalidade', 'Nationality'),
-                        ),
-                        _buildTextField(
-                          context,
-                          _passportController,
-                          context.t('Passaporte', 'Passport'),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xl),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              final data = {
-                                'name': _nameController.text,
-                                'phone': _phoneController.text,
-                                'cpf': _cpfController.text,
-                                'ssn': _ssnController.text,
-                                'zipCode': _zipCodeController.text,
-                                'state': _stateController.text,
-                                'city': _cityController.text,
-                                'street': _streetController.text,
-                                'number': _numberController.text,
-                                'neighborhood': _neighborhoodController.text,
-                                'complement': _complementController.text,
-                                'nationality': _nationalityController.text,
-                                'passport': _passportController.text,
-                                if (_birthDate != null) 'birthDate': _birthDate,
-                              };
-                              context.read<ProfileCubit>().updateAccountData(data);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(context.t('Dados atualizados com sucesso!', 'Data updated successfully!')),
-                                  backgroundColor: AppColors.primary,
-                                ),
-                              );
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.radiusLg,
-                                ),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              context.t('Salvar Alterações', 'Save Changes'),
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: TextButton(
-                            onPressed: () => _showDeleteAccountDialog(context),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.error,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.radiusLg,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              context.t('Excluir conta', 'Delete account'),
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.error,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
 
   Widget _buildTextField(
     BuildContext context,
@@ -436,14 +341,310 @@ class _AccountDataPageState extends State<AccountDataPage> {
     String label, {
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
+    Widget? suffixIcon,
+    bool readOnly = false,
+    bool isMandatory = false,
+    String? helperText,
   }) {
+    final hasError = _attemptedSave && isMandatory && controller.text.trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: AppTextField(
-        label: label,
-        controller: controller,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label(context, label, isMandatory: isMandatory),
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
+            readOnly: readOnly,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            decoration: _inputDecoration(context, suffix: suffixIcon, hasError: hasError, helperText: helperText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Generic bottom-sheet picker used for both country and state.
+  Future<T?> _showPickerSheet<T>({
+    required BuildContext context,
+    required String title,
+    required List<T> items,
+    required String Function(T) labelOf,
+    required Widget Function(T) flagOf,
+    required bool Function(T) isSelected,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PickerSheet<T>(
+        title: title,
+        items: items,
+        labelOf: labelOf,
+        flagOf: flagOf,
+        isSelected: isSelected,
+      ),
+    );
+  }
+
+  Widget _buildCountryDropdown(BuildContext context) {
+    final fillColor = Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.surface
+        : const Color(0xFFFAFAFA);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label(context, context.t('País', 'Country'), isMandatory: true),
+          GestureDetector(
+            onTap: () async {
+              final result = await _showPickerSheet<AddressCountry>(
+                context: context,
+                title: context.t('Selecionar País', 'Select country'),
+                items: kAddressCountries,
+                labelOf: (c) => c.name,
+                flagOf: (c) => CountryFlag.fromCountryCode(
+                  c.code,
+                  theme: const ImageTheme(width: 36, height: 24, shape: RoundedRectangle(3)),
+                ),
+                isSelected: (c) => c.code == _selectedCountry.code,
+              );
+              if (result != null && result.code != _selectedCountry.code) {
+                setState(() {
+                  _selectedCountry = result;
+                  _selectedStateUf = null;
+                  _stateTextController.clear();
+                });
+              }
+            },
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: fillColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _attemptedSave && _selectedCountry.code.trim().isEmpty ? AppColors.error : Theme.of(context).dividerColor),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CountryFlag.fromCountryCode(
+                        _selectedCountry.code,
+                        theme: const ImageTheme(width: 24, height: 16, shape: RoundedRectangle(2)),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _selectedCountry.code,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNationalityDropdown(BuildContext context) {
+    final fillColor = Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.surface
+        : const Color(0xFFFAFAFA);
+
+    final hasError = _attemptedSave && _nationalityCountry == null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label(context, context.t('Nacionalidade', 'Nationality'), isMandatory: true),
+          GestureDetector(
+            onTap: () async {
+              final result = await _showPickerSheet<AddressCountry>(
+                context: context,
+                title: context.t('Selecionar Nacionalidade', 'Select Nationality'),
+                items: kAddressCountries,
+                labelOf: (c) => c.name,
+                flagOf: (c) => CountryFlag.fromCountryCode(
+                  c.code,
+                  theme: const ImageTheme(width: 36, height: 24, shape: RoundedRectangle(3)),
+                ),
+                isSelected: (c) => c.code == (_nationalityCountry?.code ?? ''),
+              );
+              if (result != null) {
+                setState(() {
+                  _nationalityCountry = result;
+                  // Clear document fields if nationality changed
+                  if (result.code != 'BR') _cpfController.clear();
+                  if (result.code != 'US') _ssnController.clear();
+                });
+              }
+            },
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: fillColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasError
+                      ? AppColors.error
+                      : Theme.of(context).dividerColor,
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (_nationalityCountry != null) ...[
+                    CountryFlag.fromCountryCode(
+                      _nationalityCountry!.code,
+                      theme: const ImageTheme(width: 28, height: 18, shape: RoundedRectangle(3)),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        _nationalityCountry!.name,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ] else
+                    Expanded(
+                      child: Text(
+                        context.t('Selecionar', 'Select'),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStateField(BuildContext context) {
+    final isBrazil = _selectedCountry.code == 'BR';
+
+    if (!isBrazil) {
+      return _buildTextField(
+        context,
+        _stateTextController,
+        context.t('Estado / Província', 'State / Province'),
+        isMandatory: true,
+      );
+    }
+
+    final fillColor = Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.surface
+        : const Color(0xFFFAFAFA);
+
+    final hasError = _attemptedSave && (_selectedStateUf ?? '').trim().isEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label(context, context.t('Estado', 'State'), isMandatory: true),
+          GestureDetector(
+            onTap: () async {
+              final result = await _showPickerSheet<BrazilianState>(
+                context: context,
+                title: context.t('Selecionar Estado', 'Select state'),
+                items: kBrazilianStates,
+                labelOf: (s) => s.name,
+                flagOf: (s) => SizedBox(
+                  width: 36,
+                  child: Center(
+                    child: Text(
+                      s.uf,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                ),
+                isSelected: (s) => s.uf == _selectedStateUf,
+              );
+              if (result != null) {
+                setState(() => _selectedStateUf = result.uf);
+              }
+            },
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: fillColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: hasError ? AppColors.error : Theme.of(context).dividerColor),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _selectedStateUf ?? '—',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: _selectedStateUf != null
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
+                        fontWeight: _selectedStateUf != null ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -454,25 +655,18 @@ class _AccountDataPageState extends State<AccountDataPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
+          _label(context, label, isMandatory: true),
           InkWell(
             onTap: () => _selectBirthDate(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  width: 1,
-                ),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surface
+                    : const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _attemptedSave && _birthDate == null ? AppColors.error : Theme.of(context).dividerColor),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -480,7 +674,9 @@ class _AccountDataPageState extends State<AccountDataPage> {
                   Text(
                     _birthDate == null
                         ? context.t('Selecionar data', 'Select date')
-                        : '${_birthDate!.day}/${_birthDate!.month}/${_birthDate!.year}',
+                        : '${_birthDate!.day.toString().padLeft(2, '0')}/'
+                            '${_birthDate!.month.toString().padLeft(2, '0')}/'
+                            '${_birthDate!.year}',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -488,12 +684,658 @@ class _AccountDataPageState extends State<AccountDataPage> {
                   Icon(
                     Icons.calendar_today,
                     size: 20,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => getIt<ProfileCubit>()..loadProfile(),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: AppHeader(mode: HeaderMode.back, title: context.t('Dados da conta', 'Account data')),
+        body: BlocConsumer<ProfileCubit, ProfileState>(
+          listener: (context, state) {
+            state.maybeMap(
+              loaded: (s) {
+                _initializeControllers(s.profile);
+                if (_isSaving) {
+                  setState(() => _isSaving = false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.t(
+                        'Dados atualizados com sucesso!',
+                        'Data updated successfully!',
+                      )),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              error: (s) {
+                if (_isSaving) {
+                  setState(() => _isSaving = false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(s.message),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              orElse: () {},
+            );
+          },
+          builder: (context, state) {
+            return state.maybeMap(
+              loading: (_) => _initialized
+                  ? _buildForm(context)
+                  : const AccountDataShimmer(),
+              error: (s) => _initialized
+                  ? _buildForm(context)
+                  : Center(child: Text(s.message)),
+              orElse: () => _buildForm(context),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Text(
+              context.t(
+                'Não esqueça de salvar suas alterações',
+                "Don't forget to save your changes",
+              ),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // ── Dados pessoais ──────────────────────────────────────────────
+          _buildTextField(context, _nameController, context.t('Nome Completo', 'Full name'), isMandatory: true),
+          _buildTextField(
+            context,
+            _badgeNameController,
+            context.t('Nome para o crachá', 'Name for badge'),
+            helperText: context.t(
+              'Esse nome será usado no seu crachá quando estiver em viagem.',
+              'This name will be used on your badge while traveling.',
+            ),
+          ),
+          PhoneField(
+            controller: _phoneController,
+            label: context.t('Telefone', 'Phone'),
+            initialCountry: _phoneCountry,
+            onCountryChanged: (c) => setState(() => _phoneCountry = c),
+            hasError: _attemptedSave && _phoneController.text.trim().isEmpty,
+            isMandatory: true,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : AppColors.primary.withValues(alpha: 0.05),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.health_and_safety_outlined, color: AppColors.primary, size: 20),
+                    const SizedBox(width: AppSpacing.xs),
+                    _buildSectionTitle(
+                      context,
+                      context.t('Contato de Emergência', 'Emergency Contact'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildTextField(context, _emergencyNameController, context.t('Nome do Contato', 'Contact name'), isMandatory: true),
+                _buildTextField(context, _emergencyRelationshipController, context.t('Grau de Parentesco (Ex: Pai, Mãe, etc)', 'Relationship (e.g.: Father, Mother, etc.)'), isMandatory: true),
+                PhoneField(
+                  controller: _emergencyContactController,
+                  label: context.t('Telefone de Emergência', 'Emergency phone'),
+                  initialCountry: _emergencyCountry,
+                  onCountryChanged: (c) => setState(() => _emergencyCountry = c),
+                  hasError: _attemptedSave && _emergencyContactController.text.trim().isEmpty,
+                  isMandatory: true,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _buildTextField(context, _companyController, context.t('Empresa', 'Company')),
+          _buildNationalityDropdown(context),
+          if (_nationalityCountry?.code == 'BR')
+            _buildTextField(
+              context,
+              _cpfController,
+              'CPF',
+              keyboardType: TextInputType.number,
+              inputFormatters: [_cpfMask],
+              isMandatory: true,
+            )
+          else if (_nationalityCountry?.code == 'US')
+            _buildTextField(
+              context,
+              _ssnController,
+              'SSN',
+              keyboardType: TextInputType.number,
+              isMandatory: true,
+            ),
+          _buildTextField(
+            context,
+            _passportController,
+            context.t('Passaporte', 'Passport'),
+          ),
+          _buildDatePicker(context, context.t('Data de Nascimento', 'Date of birth')),
+
+          // ── Endereço ────────────────────────────────────────────────────
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : AppColors.primary.withValues(alpha: 0.05),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
+                    const SizedBox(width: AppSpacing.xs),
+                    _buildSectionTitle(context, context.t('Endereço', 'Address')),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // CEP (expande) + País (compacto)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        context,
+                        _zipCodeController,
+                        context.t('CEP', 'ZIP code'),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [_cepMask],
+                        isMandatory: true,
+                        suffixIcon: _loadingCep
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    SizedBox(width: 96, child: _buildCountryDropdown(context)),
+                  ],
+                ),
+
+                // Estado (compacto se BR, expandido se outro país) + Cidade (expande)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_selectedCountry.code == 'BR')
+                      SizedBox(width: 80, child: _buildStateField(context))
+                    else
+                      Expanded(child: _buildStateField(context)),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _buildTextField(context, _cityController, context.t('Cidade', 'City'), isMandatory: true),
+                    ),
+                  ],
+                ),
+
+                _buildTextField(context, _neighborhoodController, context.t('Bairro', 'Neighborhood'), isMandatory: true),
+                _buildTextField(context, _streetController, context.t('Rua', 'Street'), isMandatory: true),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: _buildTextField(
+                        context,
+                        _numberController,
+                        context.t('Número', 'Number'),
+                        keyboardType: TextInputType.number,
+                        isMandatory: true,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _buildTextField(
+                        context,
+                        _complementController,
+                        context.t('Complemento', 'Complement'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: (_isSaving || !_hasChanges) ? null : () => _save(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                ),
+                elevation: 0,
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      context.t('Salvar Alterações', 'Save changes'),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: TextButton(
+              onPressed: () => _showDeleteAccountDialog(context),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                ),
+              ),
+              child: Text(
+                context.t('Excluir conta', 'Delete account'),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: AppTextStyles.bodyMedium.copyWith(
+        fontWeight: FontWeight.bold,
+        color: AppColors.primary,
+      ),
+    );
+  }
+
+  Future<void> _showDeleteAccountDialog(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          context.t('Excluir Conta', 'Delete Account'),
+          style: AppTextStyles.bodyLarge.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          context.t(
+            'Tem certeza de que deseja excluir permanentemente sua conta? Esta ação é irreversível e todos os seus dados serão apagados.',
+            'Are you sure you want to permanently delete your account? This action is irreversible and all your data will be erased.',
+          ),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              context.t('Cancelar', 'Cancel'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(
+              context.t('Sim, excluir', 'Yes, delete'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      // Exibe loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final authCubit = getIt<AuthCubit>();
+      final result = await authCubit.deleteAccount();
+
+      if (context.mounted) {
+        Navigator.pop(context); // Remove o loading
+        result.fold(
+          (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.t(
+                  'Erro ao excluir conta. Tente novamente.',
+                  'Error deleting account. Please try again.',
+                )),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          },
+          (_) {
+            // AuthCubit.deleteAccount() já fez logout e emitiu unauthenticated.
+            // O roteador do app redireciona para a tela de login automaticamente.
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.t(
+                  'Sua conta foi excluída com sucesso.',
+                  'Your account has been successfully deleted.',
+                )),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          },
+        );
+      }
+    }
+  }
+
+  Map<String, dynamic> _getCurrentData() {
+    final stateValue = _selectedCountry.code == 'BR'
+        ? (_selectedStateUf ?? '')
+        : _stateTextController.text;
+
+    return {
+      'name': _nameController.text,
+      'phone': '${_phoneCountry.dialCode} ${_phoneController.text}',
+      'cpf': _cpfController.text,
+      'ssn': _ssnController.text,
+      'passport': _passportController.text,
+      'company': _companyController.text,
+      'nationality': _nationalityCountry?.code ?? '',
+      'zipCode': _zipCodeController.text,
+      'state': stateValue,
+      'city': _cityController.text,
+      'street': _streetController.text,
+      'number': _numberController.text,
+      'neighborhood': _neighborhoodController.text,
+      'complement': _complementController.text,
+      'country': _selectedCountry.name,
+      'badgeName': _badgeNameController.text,
+      'emergencyName': _emergencyNameController.text,
+      'emergencyRelationship': _emergencyRelationshipController.text,
+      'emergencyContact':
+          '${_emergencyCountry.dialCode} ${_emergencyContactController.text}',
+      if (_birthDate != null) 'birthDate': _birthDate,
+    };
+  }
+
+  bool get _hasChanges {
+    if (!_initialized) return false;
+    final currentData = _getCurrentData();
+    for (final key in _initialData.keys) {
+      if (_initialData[key] != currentData[key]) return true;
+    }
+    for (final key in currentData.keys) {
+      if (_initialData[key] != currentData[key]) return true;
+    }
+    return false;
+  }
+
+  bool _validateFields() {
+    final stateValue = _selectedCountry.code == 'BR'
+        ? (_selectedStateUf ?? '')
+        : _stateTextController.text;
+
+    if (_nameController.text.trim().isEmpty ||
+        _phoneController.text.trim().isEmpty ||
+        _emergencyNameController.text.trim().isEmpty ||
+        _emergencyRelationshipController.text.trim().isEmpty ||
+        _emergencyContactController.text.trim().isEmpty ||
+        _zipCodeController.text.trim().isEmpty ||
+        stateValue.trim().isEmpty ||
+        _cityController.text.trim().isEmpty ||
+        _neighborhoodController.text.trim().isEmpty ||
+        _streetController.text.trim().isEmpty ||
+        _numberController.text.trim().isEmpty ||
+        _birthDate == null) {
+      return false;
+    }
+    final nat = _nationalityCountry?.code;
+    final cpfRequired = nat == null || nat == 'BR';
+    final ssnRequired = nat == 'US';
+    if (cpfRequired && _cpfController.text.trim().isEmpty) return false;
+    if (ssnRequired && _ssnController.text.trim().isEmpty) return false;
+    return true;
+  }
+
+  void _save(BuildContext context) {
+    setState(() => _attemptedSave = true);
+    if (!_validateFields()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t(
+            'Por favor, preencha todos os campos obrigatórios.',
+            'Please fill in all required fields.',
+          )),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    context.read<ProfileCubit>().updateAccountData(_getCurrentData());
+  }
+}
+
+// ── Generic picker bottom sheet ──────────────────────────────────────────────
+
+class _PickerSheet<T> extends StatefulWidget {
+  final String title;
+  final List<T> items;
+  final String Function(T) labelOf;
+  final Widget Function(T) flagOf;
+  final bool Function(T) isSelected;
+
+  const _PickerSheet({
+    required this.title,
+    required this.items,
+    required this.labelOf,
+    required this.flagOf,
+    required this.isSelected,
+  });
+
+  @override
+  State<_PickerSheet<T>> createState() => _PickerSheetState<T>();
+}
+
+class _PickerSheetState<T> extends State<_PickerSheet<T>> {
+  final _search = TextEditingController();
+  late List<T> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.items;
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _filter(String q) {
+    final lower = q.toLowerCase();
+    setState(() {
+      _filtered = widget.items
+          .where((item) => widget.labelOf(item).toLowerCase().contains(lower))
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final bg = Theme.of(context).colorScheme.surface;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.72,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(context).dividerColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Text(
+              widget.title,
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: onSurface,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: _search,
+              onChanged: _filter,
+              style: TextStyle(color: onSurface),
+              decoration: InputDecoration(
+                hintText: context.t('Buscar...', 'Search...'),
+                hintStyle:
+                    TextStyle(color: onSurface.withValues(alpha: 0.45)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: onSurface.withValues(alpha: 0.45),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surface
+                    : const Color(0xFFF0F0F0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filtered.length,
+              itemBuilder: (context, i) {
+                final item = _filtered[i];
+                final selected = widget.isSelected(item);
+                return ListTile(
+                  leading: widget.flagOf(item),
+                  title: Text(
+                    widget.labelOf(item),
+                    style: TextStyle(
+                      color: onSurface,
+                      fontWeight:
+                          selected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  selected: selected,
+                  selectedTileColor: AppColors.primary.withValues(alpha: 0.08),
+                  onTap: () => Navigator.pop(context, item),
+                );
+              },
             ),
           ),
         ],

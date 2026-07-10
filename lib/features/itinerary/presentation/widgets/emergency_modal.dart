@@ -220,7 +220,7 @@ class _EmergencyModalState extends State<EmergencyModal> {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withOpacity(0.03),
           ),
           borderRadius: BorderRadius.circular(16),
         ),

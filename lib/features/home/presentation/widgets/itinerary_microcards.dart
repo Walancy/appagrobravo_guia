@@ -152,7 +152,7 @@ class ItineraryMicrocards extends StatelessWidget {
                   : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.5),
+            color: Theme.of(context).dividerColor.withOpacity(0.03),
             width: 1,
           ),
           boxShadow: [

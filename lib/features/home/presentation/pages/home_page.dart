@@ -8,7 +8,6 @@ import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
 
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
-import 'package:agrobravo/core/tokens/assets.gen.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/home/presentation/cubit/feed_cubit.dart';
 import 'package:agrobravo/features/home/presentation/cubit/feed_state.dart';
@@ -32,6 +31,7 @@ import 'package:agrobravo/features/home/presentation/widgets/mission_alert_dialo
 import 'package:agrobravo/features/itinerary/presentation/widgets/emergency_modal.dart';
 import 'package:agrobravo/features/home/presentation/pages/guide_home_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/guide_dashboard_page.dart';
+import 'package:agrobravo/features/home/presentation/pages/community_tab.dart';
 import 'package:agrobravo/core/components/feed_shimmer.dart';
 import 'package:agrobravo/core/components/empty_mission_state.dart';
 import 'dart:async';
@@ -60,19 +60,6 @@ class _HomePageState extends State<HomePage> {
     _selectedIndex = widget.initialTab;
     _selectedGroupId = widget.initialGroupId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialGroupId != null) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('DEBUG ROTEAMENTO'),
-            content: Text('HomePage carregada!\nTab inicial: ${widget.initialTab}\nGrupo: ${widget.initialGroupId}'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
-            ],
-          ),
-        );
-      }
-
       final documentsCubit = context.read<DocumentsCubit>();
       documentsCubit.state.maybeMap(
         initial: (_) => documentsCubit.loadDocuments(),
@@ -101,21 +88,13 @@ class _HomePageState extends State<HomePage> {
     }
     if (widget.initialGroupId != oldWidget.initialGroupId) {
       _selectedGroupId = widget.initialGroupId;
-    }
-    
-    if (widget.initialGroupId != oldWidget.initialGroupId || widget.initialTab != oldWidget.initialTab) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('DEBUG ROTEAMENTO (UPDATE)'),
-            content: Text('HomePage atualizada!\nTab inicial: ${widget.initialTab}\nGrupo: ${widget.initialGroupId}'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
-            ],
-          ),
-        );
-      });
+      if (_selectedGroupId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<ItineraryCubit>().loadItinerary(_selectedGroupId!);
+          }
+        });
+      }
     }
   }
 
@@ -218,38 +197,6 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
-        if (_selectedIndex == 4)
-          BlocBuilder<DocumentsCubit, DocumentsState>(
-            builder: (context, state) {
-              final hasPending = state.hasPendingAction;
-              return IconButton(
-                onPressed: () => context.push('/settings'),
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.settings_outlined, size: 28),
-                    if (hasPending)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.surface,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
         BlocBuilder<NotificationsCubit, NotificationsState>(
           builder: (context, state) {
             final hasUnread = state.hasUnread;
@@ -308,111 +255,127 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBody(BuildContext context) {
-    if (_selectedIndex == 0) {
-      if (_selectedGroupId != null) {
-        return GuideDashboardPage(
-          groupId: _selectedGroupId!,
-          onSwitchGroup: () {
-            setState(() {
-              _selectedGroupId = null;
-            });
-          },
-          onTabChange: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          onNavigateToEvent: (itemId) {
-            setState(() {
-              _itineraryScrollToItemId = itemId;
-              _selectedIndex = 1;
-            });
-          },
-        );
-      }
-      return GuideHomePage(
-        onGroupSelected: (groupId) {
-          setState(() {
-            _selectedGroupId = groupId;
-            _selectedIndex = 0; // Stay on home but show dashboard
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              context.read<FeedCubit>().state.maybeMap(
-                loaded: (s) {
-                  if (s.missionToAlert != null) {
-                    _showMissionAlert(context, s.missionToAlert!);
-                  }
+    return IndexedStack(
+      index: _selectedIndex,
+      children: [
+        // Tab 0
+        Builder(
+          builder: (context) {
+            if (_selectedGroupId != null) {
+              return GuideDashboardPage(
+                groupId: _selectedGroupId!,
+                onSwitchGroup: () {
+                  setState(() {
+                    _selectedGroupId = null;
+                  });
                 },
-                orElse: () {},
+                onTabChange: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                onNavigateToEvent: (itemId) {
+                  setState(() {
+                    _itineraryScrollToItemId = itemId;
+                    _selectedIndex = 1;
+                  });
+                },
               );
             }
-          });
-        },
-      );
-    }
-    if (_selectedIndex == 1) {
-      if (_selectedGroupId == null) {
-        return EmptyMissionState(
-          icon: Icons.explore_off_outlined,
-          title: context.t('Nenhum itinerário ativo', 'No active itinerary'),
-          description: context.t(
-            'Selecione uma missão na aba Início para visualizar o itinerário.',
-            'Select a mission on the Home tab to view the itinerary.',
-          ),
-          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
-          onActionPressed: () => setState(() => _selectedIndex = 0),
-        );
-      }
-      return ItineraryTab(
-        key: ValueKey(_selectedGroupId),
-        groupId: _selectedGroupId,
-        scrollToItemId: _itineraryScrollToItemId,
-        onSwitchGroup: () {
-          setState(() {
-            _selectedGroupId = null;
-            _selectedIndex = 0;
-          });
-        },
-        onGroupChanged: (groupId) {
-          setState(() {
-            _selectedGroupId = groupId;
-          });
-        },
-      );
-    }
-    if (_selectedIndex == 2) {
-      if (_selectedGroupId == null) {
-        return EmptyMissionState(
-          icon: Icons.chat_bubble_outline_rounded,
-          title: context.t('Nenhum chat ativo', 'No active chat'),
-          description: context.t(
-            'Selecione uma missão na aba Início para conversar com os viajantes e guias.',
-            'Select a mission on the Home tab to chat with travelers and guides.',
-          ),
-          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
-          onActionPressed: () => setState(() => _selectedIndex = 0),
-        );
-      }
-      return ChatPage(groupId: _selectedGroupId);
-    }
-    if (_selectedIndex == 4) {
-      return const ProfileTab();
-    }
+            return GuideHomePage(
+              onGroupSelected: (groupId) {
+                setState(() {
+                  _selectedGroupId = groupId;
+                  _selectedIndex = 0; // Stay on home but show dashboard
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context.read<ItineraryCubit>().loadItinerary(groupId);
+                    context.read<FeedCubit>().state.maybeMap(
+                      loaded: (s) {
+                        if (s.missionToAlert != null) {
+                          _showMissionAlert(context, s.missionToAlert!);
+                        }
+                      },
+                      orElse: () {},
+                    );
+                  }
+                });
+              },
+            );
+          },
+        ),
+        // Tab 1
+        Builder(
+          builder: (context) {
+            if (_selectedGroupId == null) {
+              return EmptyMissionState(
+                icon: Icons.explore_off_outlined,
+                title: context.t('Nenhum itinerário ativo', 'No active itinerary'),
+                description: context.t(
+                  'Selecione uma missão na aba Início para visualizar o itinerário.',
+                  'Select a mission on the Home tab to view the itinerary.',
+                ),
+                actionLabel: context.t('Selecionar Missão', 'Select Mission'),
+                onActionPressed: () => setState(() => _selectedIndex = 0),
+              );
+            }
+            return ItineraryTab(
+              key: ValueKey(_selectedGroupId),
+              groupId: _selectedGroupId,
+              scrollToItemId: _itineraryScrollToItemId,
+              onSwitchGroup: () {
+                setState(() {
+                  _selectedGroupId = null;
+                  _selectedIndex = 0;
+                });
+              },
+              onGroupChanged: (groupId) {
+                setState(() {
+                  _selectedGroupId = groupId;
+                });
+              },
+            );
+          },
+        ),
+        // Tab 2
+        Builder(
+          builder: (context) {
+            if (_selectedGroupId == null) {
+              return EmptyMissionState(
+                icon: Icons.chat_bubble_outline_rounded,
+                title: context.t('Nenhum chat ativo', 'No active chat'),
+                description: context.t(
+                  'Selecione uma missão na aba Início para conversar com os viajantes e guias.',
+                  'Select a mission on the Home tab to chat with travelers and guides.',
+                ),
+                actionLabel: context.t('Selecionar Missão', 'Select Mission'),
+                onActionPressed: () => setState(() => _selectedIndex = 0),
+              );
+            }
+            return ChatPage(groupId: _selectedGroupId);
+          },
+        ),
+        // Tab 3
+        CommunityTab(feedWidget: _buildFeedWidget(context)),
+        // Tab 4
+        const ProfileTab(),
+      ],
+    );
+  }
 
-    if (_selectedIndex == 3) {
-      if (_selectedGroupId == null) {
-        return EmptyMissionState(
-          icon: Icons.dynamic_feed_outlined,
-          title: context.t('Nenhum feed ativo', 'No active feed'),
-          description: context.t(
-            'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
-            'Select a mission on the Home tab to view and interact with posts.',
-          ),
-          actionLabel: context.t('Selecionar Missão', 'Select Mission'),
-          onActionPressed: () => setState(() => _selectedIndex = 0),
-        );
-      }
+  Widget _buildFeedWidget(BuildContext context) {
+    if (_selectedGroupId == null) {
+      return EmptyMissionState(
+        icon: Icons.dynamic_feed_outlined,
+        title: context.t('Nenhum feed ativo', 'No active feed'),
+        description: context.t(
+          'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
+          'Select a mission on the Home tab to view and interact with posts.',
+        ),
+        actionLabel: context.t('Selecionar Missão', 'Select Mission'),
+        onActionPressed: () => setState(() => _selectedIndex = 0),
+      );
     }
 
     return BlocBuilder<FeedCubit, FeedState>(
@@ -424,12 +387,10 @@ class _HomePageState extends State<HomePage> {
           loaded: (posts, _, __) {
             if (posts.isEmpty) {
               return RefreshIndicator(
-                edgeOffset: 120,
                 onRefresh: () => context.read<FeedCubit>().loadFeed(),
                 child: ListView(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(top: 8),
                   children: [
-                    const HeaderSpacer(extraHeight: 0),
                     BlocBuilder<DocumentsCubit, DocumentsState>(
                       builder: (context, state) {
                         if (state.hasPendingDocuments) {
@@ -455,14 +416,12 @@ class _HomePageState extends State<HomePage> {
               );
             }
             return RefreshIndicator(
-              edgeOffset: 120,
               onRefresh: () => context.read<FeedCubit>().loadFeed(),
               child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: posts.length + 3,
+                padding: const EdgeInsets.only(top: 8),
+                itemCount: posts.length + 2,
                 itemBuilder: (context, index) {
-                  if (index == 0) return const HeaderSpacer(extraHeight: 0);
-                  if (index == 1) {
+                  if (index == 0) {
                     return BlocBuilder<DocumentsCubit, DocumentsState>(
                       builder: (context, state) {
                         if (state.hasPendingDocuments) {
@@ -475,13 +434,13 @@ class _HomePageState extends State<HomePage> {
                       },
                     );
                   }
-                  if (index == 2) {
+                  if (index == 1) {
                     return ItineraryMicrocards(
-                      onSeeAll: () => setState(() => _selectedIndex = 2),
+                      onSeeAll: () => setState(() => _selectedIndex = 1),
                     );
                   }
 
-                  final post = posts[index - 3];
+                  final post = posts[index - 2];
                   final currentUserId =
                       getIt<FeedRepository>().getCurrentUserId();
                   final isOwner = post.userId == currentUserId;
@@ -591,53 +550,70 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBottomNav() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.fromLTRB(
         0,
         10,
         0,
-        MediaQuery.of(context).padding.bottom + 10,
+        MediaQuery.of(context).padding.bottom + 8,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
+        border: isDark
+            ? Border(
+                top: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(
+                    alpha: 0.03,
+                  ),
+                  width: 1,
+                ),
+              )
+            : null,
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, -3),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(0, Icons.home_outlined, Icons.home_outlined, context.t('Início', 'Home')),
+          _buildNavItem(
+            0,
+            Icons.home_outlined,
+            Icons.home_rounded,
+            context.t('Início', 'Home'),
+          ),
           _buildNavItem(
             1,
             Icons.explore_outlined,
-            Icons.explore_outlined,
+            Icons.explore_rounded,
             context.t('Itinerário', 'Itinerary'),
           ),
           _buildNavItem(
             2,
             Icons.chat_bubble_outline_rounded,
-            Icons.chat_bubble_outline_rounded,
+            Icons.chat_bubble_rounded,
             context.t('Chats', 'Chats'),
           ),
           _buildNavItem(
             3,
-            Icons.dynamic_feed_outlined,
-            Icons.dynamic_feed,
-            context.t('Feed', 'Feed'),
+            Icons.group_outlined,
+            Icons.group,
+            context.t('Comunidade', 'Community'),
           ),
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {
               return _buildNavItem(
                 4,
-                Icons.person_outline_rounded,
-                Icons.person_outline_rounded,
-                context.t('Perfil', 'Profile'),
+                Icons.badge_outlined,
+                Icons.badge,
+                context.t('Meus dados', 'My data'),
                 hasBadge: state.hasPendingAction,
               );
             },
@@ -655,19 +631,17 @@ class _HomePageState extends State<HomePage> {
     bool hasBadge = false,
   }) {
     final isSelected = _selectedIndex == index;
-    final color =
-        isSelected
-            ? AppColors.primary
-            : Theme.of(context).colorScheme.onSurface;
+    final color = isSelected
+        ? AppColors.primary
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45);
 
-    return GestureDetector(
-      onTap: () => setState(() {
-        _selectedIndex = index;
-        _itineraryScrollToItemId = null;
-      }),
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() {
+          _selectedIndex = index;
+          _itineraryScrollToItemId = null;
+        }),
+        behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -700,22 +674,25 @@ class _HomePageState extends State<HomePage> {
               style: AppTextStyles.bodyMedium.copyWith(
                 color: color,
                 fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              height: 3,
+              width: isSelected ? 18.0 : 0.0,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(1.5),
               ),
             ),
           ],
         ),
-      ).animate(isSelected),
-    );
-  }
-}
-
-extension on Widget {
-  Widget animate(bool isSelected) {
-    return AnimatedScale(
-      scale: isSelected ? 1.1 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      child: this,
+      ),
     );
   }
 }

@@ -39,7 +39,7 @@ class NewPostBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Divider(
               height: 1,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
+              color: Theme.of(context).dividerColor.withOpacity(0.03),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

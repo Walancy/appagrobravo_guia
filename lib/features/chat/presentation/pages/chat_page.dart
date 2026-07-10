@@ -554,7 +554,7 @@ class _ChatPageState extends State<ChatPage>
                           indent: 72,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.06),
+                          ).colorScheme.onSurface.withValues(alpha: 0.03),
                         ),
                     itemBuilder: (context, i) {
                       final t = filtered[i];
@@ -709,7 +709,7 @@ class _ChatPageState extends State<ChatPage>
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.07),
+                              ).colorScheme.onSurface.withValues(alpha: 0.03),
                               shape: BoxShape.circle,
                               image:
                                   _groupImageMap[e.key] != null
@@ -857,7 +857,7 @@ class _ChatPageState extends State<ChatPage>
                           indent: 72,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.06),
+                          ).colorScheme.onSurface.withValues(alpha: 0.03),
                         ),
                     itemBuilder: (context, i) {
                       final g = filtered[i];
@@ -1004,7 +1004,7 @@ class _ChatPageState extends State<ChatPage>
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.07),
+                              ).colorScheme.onSurface.withValues(alpha: 0.03),
                               shape: BoxShape.circle,
                               image:
                                   _groupImageMap[e.key] != null
@@ -1098,7 +1098,7 @@ class _ChatPageState extends State<ChatPage>
                           indent: 72,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.06),
+                          ).colorScheme.onSurface.withValues(alpha: 0.03),
                         ),
                     itemBuilder: (context, i) {
                       final g = filtered[i];
@@ -1227,7 +1227,7 @@ class _FilterButton extends StatelessWidget {
                   ? AppColors.primary.withValues(alpha: 0.1)
                   : Theme.of(
                     context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.07),
+                  ).colorScheme.onSurface.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:
@@ -1635,7 +1635,7 @@ class _ChatTabSkeletonState extends State<_ChatTabSkeleton>
           separatorBuilder: (_, __) => Divider(
             height: 1,
             indent: 72,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
           ),
           itemBuilder: (_, __) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

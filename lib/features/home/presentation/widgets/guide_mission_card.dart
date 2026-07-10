@@ -15,7 +15,7 @@ class GuideMissionCard extends StatelessWidget {
   });
 
   static const _statusConfig = <String, Map<String, dynamic>>{
-    'ATIVA': {'label': 'Ativa', 'color': Color(0xFF00B289)},
+    'ATIVA': {'label': 'Ativa', 'color': AppColors.primary},
     'PLANEJADA': {'label': 'Planejada', 'color': Color(0xFF3B82F6)},
     'CONCLUIDA': {'label': 'Concluída', 'color': Color(0xFF9CA3AF)},
     'CANCELADA': {'label': 'Cancelada', 'color': Color(0xFFEF4444)},
@@ -99,7 +99,7 @@ class GuideMissionCard extends StatelessWidget {
                         Icon(
                           Icons.location_on_rounded,
                           size: 16,
-                          color: const Color(0xFF00B289),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -167,7 +167,7 @@ class GuideMissionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Divider(color: theme.dividerColor.withOpacity(0.5)),
+          Divider(color: theme.dividerColor.withOpacity(0.03)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -239,7 +239,7 @@ class GuideMissionCard extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onViewGroups,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00B289),
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

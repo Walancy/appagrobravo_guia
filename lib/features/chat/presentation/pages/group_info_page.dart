@@ -348,13 +348,11 @@ class _GroupInfoView extends StatelessWidget {
                                               vertical: 2,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(
-                                                0xFF00AA6C,
-                                              ).withOpacity(0.1),
+                                              color: AppColors.primary.withOpacity(0.1),
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                               border: Border.all(
-                                                color: const Color(0xFF00AA6C),
+                                                color: AppColors.primary,
                                                 width: 0.5,
                                               ),
                                             ),
@@ -363,9 +361,7 @@ class _GroupInfoView extends StatelessWidget {
                                               style: AppTextStyles.bodySmall
                                                   .copyWith(
                                                     fontSize: 10,
-                                                    color: const Color(
-                                                      0xFF00AA6C,
-                                                    ),
+                                                    color: AppColors.primary,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                             ),

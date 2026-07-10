@@ -68,10 +68,11 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   Future<void> uploadDocument({
     String? id,
     required DocumentType type,
-    required File file,
+    File? file,
     String? documentNumber,
     DateTime? expiryDate,
     String? documentName,
+    String? visaCountry,
   }) async {
     final result = await _repository.uploadDocument(
       id: id,
@@ -80,6 +81,7 @@ class DocumentsCubit extends Cubit<DocumentsState> {
       documentNumber: documentNumber,
       expiryDate: expiryDate,
       documentName: documentName,
+      visaCountry: visaCountry,
     );
 
     result.fold(

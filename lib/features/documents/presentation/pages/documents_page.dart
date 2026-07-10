@@ -1,12 +1,12 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
-import 'package:agrobravo/core/di/injection.dart';
-import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/components/documents_shimmer.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
@@ -14,30 +14,40 @@ import 'package:agrobravo/features/documents/presentation/cubit/documents_state.
 import 'package:agrobravo/features/documents/domain/entities/document_entity.dart';
 import 'package:agrobravo/features/documents/domain/entities/document_enums.dart';
 
-class DocumentsPage extends StatelessWidget {
+enum DocumentUserState { nuncaParticipou, semMissao, emMissao }
+
+class DocumentsPage extends StatefulWidget {
   const DocumentsPage({super.key});
 
   @override
+  State<DocumentsPage> createState() => _DocumentsPageState();
+}
+
+class _DocumentsPageState extends State<DocumentsPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<DocumentsCubit>().loadDocuments();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<DocumentsCubit>()..loadDocuments(),
-      child: Scaffold(
-        appBar: AppHeader(
-          mode: HeaderMode.back,
-          title: context.t('Meus documentos', 'My documents'),
-        ),
-        body: BlocBuilder<DocumentsCubit, DocumentsState>(
-          builder: (context, state) {
-            return state.when(
-              initial: () => const SizedBox.shrink(),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (message) => Center(child: Text(message)),
-              loaded: (documents, isAlertDismissed, profile, mission) {
-                return _buildBody(context, documents, profile, mission);
-              },
-            );
-          },
-        ),
+    return Scaffold(
+      appBar: AppHeader(
+        mode: HeaderMode.back,
+        title: context.t('Meus documentos', 'My documents'),
+      ),
+      body: BlocBuilder<DocumentsCubit, DocumentsState>(
+        builder: (context, state) {
+          return state.when(
+            initial: () => const DocumentsShimmer(),
+            loading: () => const DocumentsShimmer(),
+            error: (message) => Center(child: Text(message)),
+            loaded: (documents, isAlertDismissed, profile, mission) {
+              return _buildBody(context, documents, profile, mission);
+            },
+          );
+        },
       ),
     );
   }
@@ -63,25 +73,12 @@ class DocumentsPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          Text(
-            context.t('Pendências e Atualizações', 'Pending & Updates'),
-            style: AppTextStyles.h3.copyWith(fontSize: 18),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            context.t(
-              'Mantenha seus documentos em dia para sua viagem.',
-              'Keep your documents up to date for your trip.',
-            ),
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: AppSpacing.lg),
           ...allTypes.map((type) {
             final doc = documents.cast<DocumentEntity?>().firstWhere(
               (d) => d?.type == type,
               orElse: () => null,
             );
-            return _DocumentTypeButton(
+            return DocumentTypeButton(
               type: type,
               document: doc,
               profile: profile,
@@ -95,57 +92,30 @@ class DocumentsPage extends StatelessWidget {
   }
 }
 
-class _DocumentTypeButton extends StatelessWidget {
+class DocumentTypeButton extends StatelessWidget {
   final DocumentType type;
   final DocumentEntity? document;
   final ProfileEntity? profile;
   final MissionEntity? mission;
 
-  const _DocumentTypeButton({
+  const DocumentTypeButton({
+    super.key,
     required this.type,
     this.document,
     this.profile,
     this.mission,
   });
 
-  String _getTypeLabel(BuildContext context, DocumentType type) {
-    switch (type) {
-      case DocumentType.passaporte:
-        return context.t('Passaporte', 'Passport');
-      case DocumentType.visto:
-        return context.t('Visto', 'Visa');
-      case DocumentType.vacina:
-        return context.t('Carteira de Vacinação', 'Vaccination Card');
-      case DocumentType.seguro:
-        return context.t('Seguro Viagem', 'Travel Insurance');
-      case DocumentType.carteiraMotorista:
-        return context.t('Carteira de Motorista', 'Driver\'s License');
-      case DocumentType.autorizacaoMenores:
-        return context.t('Autorização de Menores', 'Minor Authorization');
-      case DocumentType.outro:
-        return context.t('Outro', 'Other');
-    }
-  }
-
-  String _getStatusText(BuildContext context) {
-    if (document == null) return context.t('Pendente de envio', 'Pending upload');
-    if (document!.status == DocumentStatus.pendente) {
-      return context.t('Aguardando aprovação', 'Awaiting approval');
-    }
-    if (document!.status == DocumentStatus.aprovado) {
-      return context.t('Documento em dia', 'Document up to date');
-    }
-    if (document!.status == DocumentStatus.recusado) {
-      return context.t('Recusado - Clique para reenviar', 'Rejected - Tap to resubmit');
-    }
-    if (document!.status == DocumentStatus.expirado) {
-      return context.t('Expirado - Clique para atualizar', 'Expired - Tap to update');
-    }
-    return '';
+  DocumentUserState _getUserState() {
+    if (mission != null) return DocumentUserState.emMissao;
+    if ((profile?.missionsCount ?? 0) > 0) return DocumentUserState.semMissao;
+    return DocumentUserState.nuncaParticipou;
   }
 
   @override
   Widget build(BuildContext context) {
+    final userState = _getUserState();
+
     // Calculate Age
     bool isUnder18 = false;
     if (profile?.birthDate != null) {
@@ -162,7 +132,7 @@ class _DocumentTypeButton extends StatelessWidget {
     // MANDATORY LOGIC
     bool isTypeMandatory = false;
 
-    if (mission != null) {
+    if (userState == DocumentUserState.emMissao) {
       switch (type) {
         case DocumentType.passaporte:
           isTypeMandatory = mission!.passaporteObrigatorio;
@@ -174,8 +144,7 @@ class _DocumentTypeButton extends StatelessWidget {
           isTypeMandatory = mission!.vacinaObrigatoria;
           break;
         case DocumentType.seguro:
-          // O seguro viagem é gerado pelo painel administrativo, então não é exigido do viajante
-          isTypeMandatory = false;
+          isTypeMandatory = mission!.seguroObrigatorio;
           break;
         case DocumentType.carteiraMotorista:
           isTypeMandatory = mission!.carteiraObrigatoria;
@@ -187,42 +156,43 @@ class _DocumentTypeButton extends StatelessWidget {
           isTypeMandatory = false;
           break;
       }
-    } else {
-      // Se não estiver em nenhuma missão não precisamos cobrar os documentos
-      isTypeMandatory = false;
     }
 
     bool isPending = false;
-    if (document == null) {
-      // If document is missing, it's only pending if it's mandatory
-      isPending = isTypeMandatory;
-    } else {
-      // If document exists, it's pending if status is PENDENTE
-      isPending = document!.status == DocumentStatus.pendente;
-    }
+    bool isAlert = false;
 
-    final bool isAlert =
-        document != null &&
-        (document!.status == DocumentStatus.recusado ||
-            document!.status == DocumentStatus.expirado);
+    if (userState == DocumentUserState.emMissao) {
+      if (document == null) {
+        // Exception for "seguro", does not show pendency if missing
+        isPending = isTypeMandatory && type != DocumentType.seguro;
+      } else {
+        isPending = document!.status == DocumentStatus.pendente;
+        isAlert = document!.status == DocumentStatus.recusado ||
+            document!.status == DocumentStatus.expirado;
+      }
+    }
 
     // Status visual
     Color statusColor = AppColors.primary;
-    if (document == null) {
-      statusColor = isPending ? Colors.orange : Colors.grey;
-    } else {
-      switch (document!.status) {
-        case DocumentStatus.aprovado:
-          statusColor = AppColors.primary;
-          break;
-        case DocumentStatus.pendente:
-          statusColor = Colors.orange;
-          break;
-        case DocumentStatus.recusado:
-        case DocumentStatus.expirado:
-          statusColor = AppColors.error;
-          break;
+    if (userState == DocumentUserState.emMissao) {
+      if (document == null) {
+        statusColor = isPending ? Colors.orange : Colors.grey;
+      } else {
+        switch (document!.status) {
+          case DocumentStatus.aprovado:
+            statusColor = AppColors.primary;
+            break;
+          case DocumentStatus.pendente:
+            statusColor = Colors.orange;
+            break;
+          case DocumentStatus.recusado:
+          case DocumentStatus.expirado:
+            statusColor = AppColors.error;
+            break;
+        }
       }
+    } else {
+      statusColor = AppColors.textSecondary.withOpacity(0.5);
     }
 
     return Padding(
@@ -233,7 +203,7 @@ class _DocumentTypeButton extends StatelessWidget {
               type == DocumentType.visto ||
               type == DocumentType.vacina;
 
-          if (isHistoryType) {
+          if (userState == DocumentUserState.semMissao || isHistoryType) {
             context.push(
               '/document-history',
               extra: {
@@ -269,7 +239,7 @@ class _DocumentTypeButton extends StatelessWidget {
             border: Border.all(
               color: (isPending || isAlert)
                   ? statusColor.withOpacity(0.5)
-                  : Theme.of(context).dividerColor.withOpacity(0.1),
+                  : Theme.of(context).dividerColor.withOpacity(0.03),
               width: (isPending || isAlert) ? 1.5 : 1,
             ),
             boxShadow: [
@@ -285,10 +255,18 @@ class _DocumentTypeButton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: userState == DocumentUserState.emMissao
+                      ? statusColor.withOpacity(0.1)
+                      : Theme.of(context).dividerColor.withOpacity(0.03),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(_getIcon(type), color: statusColor, size: 24),
+                child: Icon(
+                  _getIcon(type),
+                  color: userState == DocumentUserState.emMissao
+                      ? statusColor
+                      : AppColors.textSecondary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -302,7 +280,7 @@ class _DocumentTypeButton extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _getStatusText(context),
+                      _getStatusText(context, userState),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: (isPending || isAlert)
                             ? statusColor
@@ -315,23 +293,36 @@ class _DocumentTypeButton extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isPending || isAlert)
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.priority_high,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                )
+              if (userState == DocumentUserState.emMissao)
+                if (isPending || isAlert)
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.priority_high,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  )
+                else if (document?.status == DocumentStatus.aprovado)
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppColors.primary,
+                    size: 24,
+                  )
+                else
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondary,
+                    size: 24,
+                  )
               else
                 const Icon(
-                  Icons.check_circle,
-                  color: AppColors.primary,
+                  Icons.chevron_right,
+                  color: AppColors.textSecondary,
                   size: 24,
                 ),
             ],
@@ -339,6 +330,52 @@ class _DocumentTypeButton extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getTypeLabel(BuildContext context, DocumentType type) {
+    switch (type) {
+      case DocumentType.passaporte:
+        return context.t('Passaporte', 'Passport');
+      case DocumentType.visto:
+        return context.t('Visto', 'Visa');
+      case DocumentType.vacina:
+        return context.t('Carteira de Vacinação', 'Vaccination Card');
+      case DocumentType.seguro:
+        return context.t('Seguro Viagem', 'Travel Insurance');
+      case DocumentType.carteiraMotorista:
+        return context.t('Carteira de Motorista', "Driver's License");
+      case DocumentType.autorizacaoMenores:
+        return context.t('Autorização de Menores', 'Minor Authorization');
+      case DocumentType.outro:
+        return context.t('Outro', 'Other');
+    }
+  }
+
+  String _getStatusText(BuildContext context, DocumentUserState state) {
+    if (state != DocumentUserState.emMissao) {
+      if (state == DocumentUserState.semMissao) {
+        return context.t('Ver documentos', 'View documents');
+      } else {
+        return context.t('Adicionar / Ver documentos', 'Add / View documents');
+      }
+    }
+
+    if (document == null) {
+      return context.t('Pendente de envio', 'Pending upload');
+    }
+    if (document!.status == DocumentStatus.pendente) {
+      return context.t('Aguardando aprovação', 'Awaiting approval');
+    }
+    if (document!.status == DocumentStatus.aprovado) {
+      return context.t('Documento em dia', 'Document up to date');
+    }
+    if (document!.status == DocumentStatus.recusado) {
+      return context.t('Recusado - Clique para reenviar', 'Rejected - Click to resubmit');
+    }
+    if (document!.status == DocumentStatus.expirado) {
+      return context.t('Expirado - Clique para atualizar', 'Expired - Click to update');
+    }
+    return '';
   }
 
   IconData _getIcon(DocumentType type) {

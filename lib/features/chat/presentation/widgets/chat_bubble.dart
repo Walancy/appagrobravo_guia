@@ -69,7 +69,7 @@ class ChatBubble extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bgColor = isMe
-        ? const Color(0xFF00AA6C)
+        ? AppColors.primary
         : (isDark
             ? Theme.of(context).colorScheme.surfaceContainerHigh
             : Colors.white);
@@ -215,14 +215,16 @@ class ChatBubble extends StatelessWidget {
     BorderRadius borderRadius,
     bool isDark,
   ) {
-    return Column(
+    final bool showText = message.isNotEmpty && audioUrl == null;
+
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         // Sender name (group, other messages only)
         if (!isMe && isGroupChat && showAvatar)
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: _buildHeader(context),
           ),
 
@@ -245,10 +247,25 @@ class ChatBubble extends StatelessWidget {
           ),
 
         // Message text (caption below attachment or audio, or standalone)
-        if (message.isNotEmpty && audioUrl == null)
+        if (showText)
           _buildMessageText(context, textColor),
       ],
     );
+
+    if (showText) {
+      return Stack(
+        children: [
+          content,
+          Positioned(
+            bottom: 6,
+            right: 12,
+            child: _buildTimeRow(context, textColor),
+          ),
+        ],
+      );
+    }
+
+    return content;
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -271,7 +288,7 @@ class ChatBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF00AA6C),
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -301,7 +318,7 @@ class ChatBubble extends StatelessWidget {
           border: Border(
             left: BorderSide(
               color:
-                  isMe ? Colors.white.withOpacity(0.8) : const Color(0xFF00AA6C),
+                  isMe ? Colors.white.withOpacity(0.8) : AppColors.primary,
               width: 3,
             ),
           ),
@@ -312,7 +329,7 @@ class ChatBubble extends StatelessWidget {
             Text(
               repliedUserName ?? context.t('Usuário', 'User'),
               style: AppTextStyles.bodySmall.copyWith(
-                color: isMe ? Colors.white : const Color(0xFF00AA6C),
+                color: isMe ? Colors.white : AppColors.primary,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -425,37 +442,33 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildMessageText(BuildContext context, Color textColor) {
     final timeWidth = (isEdited ? 46.0 : 0.0) + 40.0;
+    final bool hasHeader = !isMe && isGroupChat && showAvatar;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
         12,
-        attachmentUrl != null ? 6 : 10,
-        8,
+        attachmentUrl != null ? 4 : (hasHeader ? 2 : 8),
+        12,
         6,
       ),
-      child: Stack(
-        children: [
-          RichText(
-            text: TextSpan(
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: textColor,
-                fontSize: 15,
-                height: 1.4,
-              ),
-              children: [
-                ..._buildMessageSpans(context, textColor),
-                WidgetSpan(
-                  child: SizedBox(width: timeWidth + 4),
-                ),
-              ],
+      child: RichText(
+        text: TextSpan(
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: textColor,
+            fontSize: 15,
+            height: 1.4,
+          ),
+          children: [
+            ..._buildMessageSpans(context, textColor),
+            const TextSpan(
+              text: '\n',
+              style: TextStyle(fontSize: 2, height: 1),
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: _buildTimeRow(context, textColor),
-          ),
-        ],
+            WidgetSpan(
+              child: SizedBox(width: timeWidth, height: 14),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -592,7 +605,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   Color _getUserColor(String name) {
-    if (name.isEmpty) return const Color(0xFF00AA6C);
+    if (name.isEmpty) return AppColors.primary;
     const colors = [
       Color(0xFFE91E63),
       Color(0xFF9C27B0),

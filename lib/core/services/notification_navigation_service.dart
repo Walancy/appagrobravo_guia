@@ -140,7 +140,7 @@ class NotificationNavigationService {
   /// Maps deep-link routes to their parent home tab so the navigation stack
   /// has the navbar screen behind the detail screen.
   /// Returns (parentRoute, detailRoute) or null if no stacking is needed.
-  /// No Guia: 0=Início, 1=Itinerário, 2=Chats, 3=Feed, 4=Perfil
+  /// No Guia: 0=Início, 1=Itinerário, 2=Chats, 3=Comunidade (Feed + Meu Perfil), 4=Meus Dados
   static (String, String)? _resolveStack(String route) {
     final uri = Uri.tryParse(route);
     if (uri == null) return null;
@@ -167,22 +167,22 @@ class NotificationNavigationService {
       return ('/home', route);
     }
 
-    // /profile/:userId → Home feed tab (3) + social profile
+    // /profile/:userId → Home aba Comunidade (3) + perfil social
     if (uri.path.startsWith('/profile/')) {
       return ('/home?tab=3', route);
     }
 
-    // /user-feed/:id → Home feed tab (3) + user feed
+    // /user-feed/:id → Home aba Comunidade (3) + user feed
     if (uri.path.startsWith('/user-feed/')) {
       return ('/home?tab=3', route);
     }
 
-    // /connections/:id → Home profile tab (4) + connections
+    // /connections/:id → Home aba Meus Dados (4) + connections
     if (uri.path.startsWith('/connections/')) {
       return ('/home?tab=4', route);
     }
 
-    // /documents → Home profile tab (4) + documents
+    // /documents → Home aba Meus Dados (4) + documents
     if (uri.path == '/documents') {
       return ('/home?tab=4', route);
     }

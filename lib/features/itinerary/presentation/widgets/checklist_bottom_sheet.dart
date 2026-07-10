@@ -408,7 +408,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withOpacity(0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -516,7 +516,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
           decoration: BoxDecoration(
             color: Colors.blue.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            border: Border.all(color: Colors.blue.withOpacity(0.06)),
           ),
           child: Row(
             children: [
@@ -577,7 +577,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       decoration: BoxDecoration(
         color: Colors.green.withOpacity(0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.25)),
+        border: Border.all(color: Colors.green.withOpacity(0.06)),
       ),
       child: Row(
         children: [
@@ -616,7 +616,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         decoration: BoxDecoration(
           color: accentColor.withOpacity(0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accentColor.withOpacity(0.25)),
+          border: Border.all(color: accentColor.withOpacity(0.06)),
         ),
         child: Row(
           children: [
@@ -771,7 +771,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Theme.of(context).dividerColor.withOpacity(0.1),
+                  color: Theme.of(context).dividerColor.withOpacity(0.03),
                   border: Border.all(
                     color: isChecked ? AppColors.primary : Colors.transparent,
                     width: isChecked ? 3 : 0,

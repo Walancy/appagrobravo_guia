@@ -122,10 +122,10 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFF00B289).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF00B289)),
+              child: const Icon(Icons.send_rounded, size: 18, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -181,7 +181,7 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B289),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
@@ -202,7 +202,7 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.t('Lembrete enviado!', 'Reminder sent!')),
-            backgroundColor: const Color(0xFF00B289),
+            backgroundColor: AppColors.primary,
           ),
         );
         _load();
@@ -627,7 +627,7 @@ class _AgendadoCard extends StatelessWidget {
                         label: Text(context.t('Editar', 'Edit')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF5B6EF5),
-                          side: const BorderSide(color: Color(0xFF5B6EF5)),
+                          side: BorderSide(color: const Color(0xFF5B6EF5).withOpacity(0.15)),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -642,7 +642,7 @@ class _AgendadoCard extends StatelessWidget {
                         label: Text(context.t('Cancelar', 'Cancel')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          side: BorderSide(color: Colors.red.withOpacity(0.3)),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -663,7 +663,7 @@ class _AgendadoCard extends StatelessWidget {
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00B289),
+                      backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
@@ -982,13 +982,13 @@ class _LembreteCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00B289).withValues(alpha: 0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     context.t('Enviado', 'Sent'),
                     style: const TextStyle(
-                      color: Color(0xFF00B289),
+                      color: AppColors.primary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1308,7 +1308,7 @@ class _EditarLembreteSheetState extends State<_EditarLembreteSheet> {
                             decoration: BoxDecoration(
                               color: isDark ? Colors.grey[850] : Colors.grey[50],
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFF5B6EF5)),
+                              border: Border.all(color: const Color(0xFF5B6EF5).withOpacity(0.15)),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             child: Row(
