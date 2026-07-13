@@ -119,11 +119,15 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) {
         final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
         final groupId = state.uri.queryParameters['groupId'];
+        final popupTitle = state.uri.queryParameters['popup_title'];
+        final popupBody = state.uri.queryParameters['popup_body'];
         return NoTransitionPage(
           child: HomePage(
             key: ValueKey(state.uri.toString()),
             initialTab: tab,
             initialGroupId: groupId,
+            popupTitle: popupTitle,
+            popupBody: popupBody,
           ),
         );
       },

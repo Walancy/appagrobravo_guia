@@ -22,7 +22,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agrobravo/core/services/event_alarm_service.dart';
 import 'package:agrobravo/core/services/notification_navigation_service.dart';
-import 'dart:developer';
+import 'package:agrobravo/core/services/local_notification_service.dart';
 
 /// Handler de mensagens em background (precisa ser top-level)
 @pragma('vm:entry-point')
@@ -36,8 +36,33 @@ Future<void> setupFCM() async {
   try {
     final messaging = FirebaseMessaging.instance;
 
+    // Habilita exibição nativa de notificação push em primeiro plano (iOS)
+    try {
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      debugPrint('Erro ao setar ForegroundNotificationPresentationOptions: $e');
+    }
+
     // Registra handler de background
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Escuta mensagens recebidas em primeiro plano (foreground)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('FCM foreground message received: ${message.messageId}');
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final notification = message.notification;
+        if (notification != null) {
+          LocalNotificationService.showNotification(
+            notification.title ?? '',
+            notification.body ?? '',
+          );
+        }
+      }
+    });
 
     // Solicita permissão ao usuário (iOS mostra o diálogo nativo)
     final settings = await messaging.requestPermission(
@@ -179,6 +204,7 @@ void main() async {
 
   if (isFirebaseSupported) {
     try {
+      await LocalNotificationService.initialize();
       setupFCM();
       NotificationNavigationService.initialize();
     } catch (e) {

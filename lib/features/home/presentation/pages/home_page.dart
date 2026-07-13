@@ -16,6 +16,7 @@ import 'package:agrobravo/features/home/presentation/widgets/comments_bottom_she
 import 'package:agrobravo/features/home/presentation/widgets/new_post_bottom_sheet.dart';
 import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/features/chat/presentation/pages/chat_page.dart';
+import 'package:agrobravo/features/notifications/presentation/widgets/notification_detail_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart';
 import 'package:agrobravo/features/itinerary/presentation/pages/itinerary_tab.dart';
@@ -39,11 +40,15 @@ import 'dart:async';
 class HomePage extends StatefulWidget {
   final int initialTab;
   final String? initialGroupId;
+  final String? popupTitle;
+  final String? popupBody;
 
   const HomePage({
     super.key,
     this.initialTab = 0,
     this.initialGroupId,
+    this.popupTitle,
+    this.popupBody,
   });
 
   @override
@@ -54,12 +59,16 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   String? _selectedGroupId;
   String? _itineraryScrollToItemId;
+  String? _lastShownTitle;
+  String? _lastShownBody;
+
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialTab;
     _selectedGroupId = widget.initialGroupId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+
       final documentsCubit = context.read<DocumentsCubit>();
       documentsCubit.state.maybeMap(
         initial: (_) => documentsCubit.loadDocuments(),
@@ -77,6 +86,14 @@ class _HomePageState extends State<HomePage> {
         initial: (_) => itineraryCubit.loadUserItinerary(),
         orElse: () {},
       );
+
+      // Show notification modal if query params are present
+      if (widget.popupTitle != null && widget.popupTitle!.isNotEmpty) {
+        _showNotificationDialog(
+          widget.popupTitle!,
+          widget.popupBody ?? '',
+        );
+      }
     });
   }
 
@@ -96,6 +113,54 @@ class _HomePageState extends State<HomePage> {
         });
       }
     }
+
+    if (widget.popupTitle != null &&
+        widget.popupTitle!.isNotEmpty &&
+        (widget.popupTitle != oldWidget.popupTitle ||
+            widget.popupBody != oldWidget.popupBody)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showNotificationDialog(
+          widget.popupTitle!,
+          widget.popupBody ?? '',
+        );
+      });
+    }
+  }
+
+  void _showNotificationDialog(String title, String body) {
+    if (_lastShownTitle == title && _lastShownBody == body) return;
+    _lastShownTitle = title;
+    _lastShownBody = body;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'NotificationDetail',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return NotificationDetailDialog(
+          title: title,
+          body: body,
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: CurvedAnimation(
+            parent: anim1,
+            curve: Curves.easeOutBack,
+          ).value,
+          child: FadeTransition(
+            opacity: anim1,
+            child: child,
+          ),
+        );
+      },
+    ).then((_) {
+      if (mounted) {
+        context.go('/home?tab=$_selectedIndex${_selectedGroupId != null ? '&groupId=$_selectedGroupId' : ''}');
+      }
+    });
   }
 
   @override
