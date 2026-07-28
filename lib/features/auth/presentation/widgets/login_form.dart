@@ -71,6 +71,8 @@ class _LoginFormState extends State<LoginForm> {
   int _resendTimer = 0;
   Timer? _timer;
 
+  String get _cleanEmail => _emailController.text.trim().toLowerCase();
+
   @override
   void initState() {
     super.initState();
@@ -224,6 +226,8 @@ class _LoginFormState extends State<LoginForm> {
         hint: 'example@gmail.com',
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
+        autocorrect: false,
+        textCapitalization: TextCapitalization.none,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
@@ -258,7 +262,7 @@ class _LoginFormState extends State<LoginForm> {
         label: 'Entrar',
         onPressed: () {
           widget.onLoginAction?.call(
-            _emailController.text,
+            _cleanEmail,
             _passwordController.text,
           );
         },
@@ -282,6 +286,8 @@ class _LoginFormState extends State<LoginForm> {
         hint: 'example@gmail.com',
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
+        autocorrect: false,
+        textCapitalization: TextCapitalization.none,
       ),
       const SizedBox(height: AppSpacing.sm),
       AppTextField(
@@ -345,8 +351,8 @@ class _LoginFormState extends State<LoginForm> {
             return;
           }
           widget.onRegisterAction?.call(
-            _nameController.text,
-            _emailController.text,
+            _nameController.text.trim(),
+            _cleanEmail,
             _passwordController.text,
             _confirmPasswordController.text,
           );
@@ -439,12 +445,14 @@ class _LoginFormState extends State<LoginForm> {
         hint: 'example@gmail.com',
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
+        autocorrect: false,
+        textCapitalization: TextCapitalization.none,
       ),
       const SizedBox(height: AppSpacing.md),
       PrimaryButton(
         label: 'Enviar',
         onPressed: () {
-          widget.onRecoverPasswordAction?.call(_emailController.text);
+          widget.onRecoverPasswordAction?.call(_cleanEmail);
         },
       ),
     ];
@@ -533,7 +541,7 @@ class _LoginFormState extends State<LoginForm> {
       else
         TextButton(
           onPressed: () {
-            final email = _emailController.text.trim();
+            final email = _cleanEmail;
             if (email.isNotEmpty) {
               widget.onResendEmailAction?.call(email);
               _startResendTimer();

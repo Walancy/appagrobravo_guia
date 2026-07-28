@@ -45,9 +45,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
       final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
+        email: cleanEmail,
         password: password,
       );
 
@@ -101,10 +102,11 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
     required String userType,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
       // Enviar metadados para que (se houver trigger) o banco saiba o que fazer
       final response = await _supabaseClient.auth.signUp(
-        email: email,
+        email: cleanEmail,
         password: password,
         data: {
           'nome': name,
@@ -117,23 +119,14 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (response.session == null) {
-        // O Supabase não lança AuthException quando o e-mail já está cadastrado
-        // e a confirmação de e-mail está ativa — ele retorna session=null silenciosamente.
-        // Verificamos na tabela users se o e-mail já existe antes de tratar como
-        // novo cadastro aguardando confirmação.
-        try {
-          final existing = await _supabaseClient
-              .from('users')
-              .select('id')
-              .eq('email', email)
-              .maybeSingle();
-          if (existing != null) {
-            return Left(Exception('Este e-mail já está cadastrado.'));
-          }
-        } catch (checkError) {
-          log('Erro ao verificar e-mail duplicado: $checkError');
+        // No Supabase com confirmação de e-mail ativa, se o e-mail JÁ existir,
+        // o Supabase retorna um usuário com a lista `identities` VAZIA (identities.isEmpty).
+        final identities = response.user!.identities;
+        if (identities != null && identities.isEmpty) {
+          return Left(Exception('Este e-mail já está cadastrado.'));
         }
-        // E-mail de confirmação é obrigatório e foi enviado, portanto não há sessão ativa ainda
+
+        // E-mail de confirmação é obrigatório e foi enviado com sucesso
         return Left(EmailNotConfirmedException());
       }
 
@@ -238,8 +231,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Exception, void>> resetPassword(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
-      await _supabaseClient.auth.resetPasswordForEmail(email);
+      await _supabaseClient.auth.resetPasswordForEmail(cleanEmail);
       return const Right(null);
     } on AuthException catch (e) {
       return Left(_mapAuthException(e));
@@ -264,9 +258,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Exception, void>> verifyOTP(String email, String token) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
       final res = await _supabaseClient.auth.verifyOTP(
-        email: email,
+        email: cleanEmail,
         token: token,
         type: OtpType.recovery,
       );
@@ -387,10 +382,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Exception, void>> resendSignUpEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
       await _supabaseClient.auth.resend(
         type: OtpType.signup,
-        email: email,
+        email: cleanEmail,
       );
       return const Right(null);
     } on AuthException catch (e) {

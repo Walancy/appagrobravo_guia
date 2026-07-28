@@ -26,6 +26,7 @@ import 'package:agrobravo/features/home/presentation/pages/member_details_page.d
 import 'package:agrobravo/features/home/presentation/pages/incident_list_page.dart';
 import 'package:agrobravo/features/home/presentation/pages/expense_list_page.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
+import 'package:agrobravo/features/auth/presentation/pages/pending_guide_page.dart';
 import 'package:agrobravo/features/notifications/presentation/pages/lembretes_historico_page.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -74,8 +75,15 @@ final appRouter = GoRouter(
     final isPublicRoute = state.matchedLocation == '/' ||
                         state.matchedLocation == '/reset-password';
 
+    final isPendingRoute = state.matchedLocation == '/pending';
+
     final isAuthenticated = authState.maybeWhen(
       authenticated: (_) => true,
+      orElse: () => false,
+    );
+
+    final isPendingGuide = authState.maybeWhen(
+      pendingGuide: (_) => true,
       orElse: () => false,
     );
 
@@ -86,9 +94,15 @@ final appRouter = GoRouter(
     );
     if (isLoading) return null;
 
+    // Guia pendente: só pode acessar /pending
+    if (isPendingGuide) {
+      if (!isPendingRoute) return '/pending';
+      return null;
+    }
+
     if (isAuthenticated) {
-      // Se o usuário estiver logado e cair em páginas públicas, manda para a home
-      if (isPublicRoute) {
+      // Se o usuário estiver logado e cair em páginas públicas ou /pending, manda para a home
+      if (isPublicRoute || isPendingRoute) {
         return '/home';
       }
     } else {
@@ -102,6 +116,11 @@ final appRouter = GoRouter(
   },
 
   routes: [
+    GoRoute(
+      path: '/pending',
+      pageBuilder:
+          (context, state) => const NoTransitionPage(child: PendingGuidePage()),
+    ),
     GoRoute(
       path: '/',
       pageBuilder:

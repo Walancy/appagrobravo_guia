@@ -12,6 +12,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/auth/presentation/widgets/login_form.dart';
+import 'package:agrobravo/features/auth/presentation/widgets/traveler_access_modal.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthMode initialAuthMode;
@@ -146,8 +147,14 @@ class _LoginPageState extends State<LoginPage>
             }
             context.go('/home');
           },
+          pendingGuide: (user) {
+            context.go('/pending');
+          },
+          travelerAccess: () {
+            showTravelerAccessModal(context);
+          },
           error: (message) {
-            // Feedback agora é exibido apenas via texto vermelho noLoginForm
+            // Feedback agora é exibido apenas via texto vermelho no LoginForm
           },
           passwordResetEmailSent: () {
             _switchMode(AuthMode.otpVerification);

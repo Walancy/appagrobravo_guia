@@ -15,9 +15,8 @@ class $AssetsImagesGen {
   const $AssetsImagesGen();
 
   /// File path: assets/images/app_icon.png
-  AssetGenImage get appIconPng =>
+  AssetGenImage get appIcon =>
       const AssetGenImage('assets/images/app_icon.png');
-
 
   /// File path: assets/images/apple_logo.svg
   String get appleLogo => 'assets/images/apple_logo.svg';
@@ -55,7 +54,7 @@ class $AssetsImagesGen {
 
   /// List of all assets
   List<dynamic> get values => [
-    appIconPng,
+    appIcon,
     appleLogo,
     background,
     chatPattern,

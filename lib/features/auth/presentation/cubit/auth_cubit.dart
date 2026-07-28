@@ -42,6 +42,20 @@ class AuthCubit extends Cubit<AuthState> {
     userOption.fold(
       () => emit(const AuthState.unauthenticated()),
       (user) {
+        // Bloqueia quem não tem nenhum role de guia (ex: USER_APP)
+        if (!user.isGuide) {
+          _authRepository.signOut();
+          emit(const AuthState.unauthenticated());
+          return;
+        }
+        // Guia pendente: logado mas sem acesso ao app
+        if (user.roles.contains('GUIA_PENDENTE') &&
+            !user.roles.contains('GUIA') &&
+            !user.roles.contains('COLABORADOR') &&
+            !user.roles.contains('MASTER')) {
+          emit(AuthState.pendingGuide(user));
+          return;
+        }
         if (user.isFirstAccess) {
           emit(AuthState.requireFirstAccessPasswordChange(user));
         } else {
@@ -68,6 +82,20 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
       (user) {
+        // Bloqueia quem não tem nenhum role de guia (ex: USER_APP)
+        if (!user.isGuide) {
+          _authRepository.signOut();
+          emit(const AuthState.travelerAccess());
+          return;
+        }
+        // Guia pendente: logado mas sem acesso ao app
+        if (user.roles.contains('GUIA_PENDENTE') &&
+            !user.roles.contains('GUIA') &&
+            !user.roles.contains('COLABORADOR') &&
+            !user.roles.contains('MASTER')) {
+          emit(AuthState.pendingGuide(user));
+          return;
+        }
         if (user.isFirstAccess) {
           emit(AuthState.requireFirstAccessPasswordChange(user));
         } else {
@@ -89,12 +117,12 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     emit(const AuthState.loading());
-    // Default to USER_APP for self-registration via app
+    // Novo guia entra sempre como GUIA_PENDENTE — aguarda aprovação manual
     final result = await _authRepository.signUpWithEmailAndPassword(
       email: email,
       password: password,
       name: name,
-      userType: 'USER_APP',
+      userType: 'GUIA_PENDENTE',
     );
 
     result.fold(
@@ -106,7 +134,8 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
       (user) {
-        emit(AuthState.authenticated(user));
+        // Recém-cadastrado entra direto na tela de pendência
+        emit(AuthState.pendingGuide(user));
       },
     );
   }

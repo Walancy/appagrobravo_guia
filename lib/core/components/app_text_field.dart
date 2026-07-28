@@ -27,6 +27,8 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final TextCapitalization textCapitalization;
+  final bool autocorrect;
+  final bool enableSuggestions;
 
   const AppTextField({
     super.key,
@@ -52,6 +54,8 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.textCapitalization = TextCapitalization.none,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
   });
 
   @override
@@ -102,6 +106,8 @@ class AppTextField extends StatelessWidget {
           readOnly: readOnly,
           onTap: onTap,
           textCapitalization: textCapitalization,
+          autocorrect: autocorrect,
+          enableSuggestions: enableSuggestions,
           style: textStyle ?? AppTextStyles.bodyMedium.copyWith(color: textColor),
           decoration: InputDecoration(
             hintText: hint,

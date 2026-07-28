@@ -16,5 +16,7 @@ class AuthState with _$AuthState {
   const factory AuthState.requireFirstAccessPasswordChange(UserEntity user) = _RequireFirstAccessPasswordChange;
   const factory AuthState.passwordUpdated() = _PasswordUpdated;
   const factory AuthState.emailVerificationRequired(String email) = _EmailVerificationRequired;
+  const factory AuthState.pendingGuide(UserEntity user) = _PendingGuide;
+  const factory AuthState.travelerAccess() = _TravelerAccess;
 }
 
