@@ -13,14 +13,17 @@ class ProfilePostGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (posts.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60),
-        child: EmptyStateWidget(
-          icon: Icons.photo_library_outlined,
-          title: context.t('Nenhuma publicação', 'No posts'),
-          description: context.t(
-            'Nenhuma publicação foi feita ainda.',
-            'No posts have been made yet.',
+      return SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 32),
+          child: EmptyStateWidget(
+            icon: Icons.photo_library_outlined,
+            title: context.t('Nenhuma publicação', 'No posts'),
+            description: context.t(
+              'Nenhuma publicação foi feita ainda.',
+              'No posts have been made yet.',
+            ),
           ),
         ),
       );

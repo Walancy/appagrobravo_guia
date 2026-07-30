@@ -183,11 +183,9 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+      builder: (context) => Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -202,6 +200,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ),
             const SizedBox(height: 16),
             ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
               leading: const Icon(Icons.edit_outlined),
               title: const Text('Editar comentário'),
               onTap: () {
@@ -210,6 +209,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
               },
             ),
             ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
               leading: const Icon(Icons.delete_outline, color: Colors.red),
               title: const Text(
                 'Excluir comentário',

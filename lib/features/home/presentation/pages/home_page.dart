@@ -471,9 +471,54 @@ class _HomePageState extends State<HomePage> {
                       onSeeAll: () => setState(() => _selectedIndex = 1),
                     ),
                     Center(
-                      child: Text(
-                        context.t('Nenhuma publicação encontrada.', 'No posts found.'),
-                        style: AppTextStyles.bodyMedium,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 32,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.dynamic_feed_outlined,
+                                size: 38,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              context.t(
+                                'Nenhuma publicação ainda',
+                                'No posts yet',
+                              ),
+                              style: AppTextStyles.h3.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.t(
+                                'As publicações do grupo aparecerão aqui.',
+                                'Group posts will appear here.',
+                              ),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

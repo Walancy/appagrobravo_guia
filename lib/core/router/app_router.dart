@@ -29,6 +29,7 @@ import 'package:agrobravo/features/auth/presentation/widgets/auth_mode.dart';
 import 'package:agrobravo/features/auth/presentation/pages/pending_guide_page.dart';
 import 'package:agrobravo/features/notifications/presentation/pages/lembretes_historico_page.dart';
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/auth/presentation/cubit/auth_cubit.dart';
@@ -165,7 +166,7 @@ final appRouter = GoRouter(
           postToEdit = extra['postToEdit'] as PostEntity?;
         }
 
-        return NoTransitionPage(
+        return CupertinoPage(
           child: CreatePostPage(initialImages: images, postToEdit: postToEdit),
         );
       },
@@ -174,7 +175,7 @@ final appRouter = GoRouter(
       path: '/itinerary/:groupId',
       pageBuilder: (context, state) {
         final groupId = state.pathParameters['groupId']!;
-        return NoTransitionPage(child: ItineraryPage(groupId: groupId));
+        return CupertinoPage(child: ItineraryPage(groupId: groupId));
       },
     ),
     GoRoute(
@@ -182,7 +183,7 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) {
         final userId = state.pathParameters['userId']!;
         final postId = state.uri.queryParameters['postId'];
-        return NoTransitionPage(
+        return CupertinoPage(
           child: UserFeedPage(userId: userId, initialPostId: postId),
         );
       },
@@ -193,7 +194,7 @@ final appRouter = GoRouter(
         final userId = state.pathParameters['userId']!;
         final initialIndex =
             int.tryParse(state.uri.queryParameters['initialIndex'] ?? '0') ?? 0;
-        return NoTransitionPage(
+        return CupertinoPage(
           child: ConnectionsPage(userId: userId, initialIndex: initialIndex),
         );
       },
@@ -202,7 +203,7 @@ final appRouter = GoRouter(
       path: '/notifications',
       pageBuilder:
           (context, state) =>
-              const NoTransitionPage(child: NotificationsPage()),
+              const CupertinoPage(child: NotificationsPage()),
     ),
     GoRoute(
       // A tela de Configurações virou "Meus Dados" (tab 4 da home).
@@ -213,31 +214,32 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/documents',
       pageBuilder:
-          (context, state) => const NoTransitionPage(child: DocumentsPage()),
+          (context, state) =>
+              const CupertinoPage(child: DocumentsPage()),
     ),
     GoRoute(
       path: '/food-preferences',
       pageBuilder:
           (context, state) =>
-              const NoTransitionPage(child: FoodPreferencesPage()),
+              const CupertinoPage(child: FoodPreferencesPage()),
     ),
     GoRoute(
       path: '/medical-restrictions',
       pageBuilder:
           (context, state) =>
-              const NoTransitionPage(child: MedicalRestrictionsPage()),
+              const CupertinoPage(child: MedicalRestrictionsPage()),
     ),
     GoRoute(
       path: '/notification-preferences',
       pageBuilder:
           (context, state) =>
-              const NoTransitionPage(child: NotificationPreferencesPage()),
+              const CupertinoPage(child: NotificationPreferencesPage()),
     ),
     GoRoute(
       path: '/document-details',
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
-        return NoTransitionPage(
+        return CupertinoPage(
           child: DocumentDetailsPage(
             type: extra['type'] as DocumentType,
             currentDocument: extra['document'] as DocumentEntity?,
@@ -250,7 +252,7 @@ final appRouter = GoRouter(
       path: '/document-history',
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
-        return NoTransitionPage(
+        return CupertinoPage(
           child: DocumentHistoryPage(
             type: extra['type'] as DocumentType,
             cubit: extra['cubit'] as DocumentsCubit,
@@ -261,31 +263,31 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/account-data',
       pageBuilder:
-          (context, state) => const NoTransitionPage(child: AccountDataPage()),
+          (context, state) => const CupertinoPage(child: AccountDataPage()),
     ),
     GoRoute(
       path: '/privacy-policy',
       pageBuilder:
           (context, state) =>
-              const NoTransitionPage(child: PrivacyPolicyPage()),
+              const CupertinoPage(child: PrivacyPolicyPage()),
     ),
     GoRoute(
       path: '/profile/:userId',
       pageBuilder: (context, state) {
         final userId = state.pathParameters['userId'];
-        return NoTransitionPage(child: SocialProfilePage(userId: userId));
+        return CupertinoPage(child: SocialProfilePage(userId: userId));
       },
     ),
     GoRoute(
       path: '/about-us',
       pageBuilder:
-          (context, state) => const NoTransitionPage(child: AboutUsPage()),
+          (context, state) => const CupertinoPage(child: AboutUsPage()),
     ),
     GoRoute(
       path: '/member-details',
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
-        return NoTransitionPage(child: MemberDetailsPage(memberData: extra));
+        return CupertinoPage(child: MemberDetailsPage(memberData: extra));
       },
     ),
     GoRoute(
@@ -299,28 +301,28 @@ final appRouter = GoRouter(
           role: extra['role'] as String? ?? '',
           avatarUrl: extra['avatarUrl'] as String?,
         );
-        return NoTransitionPage(child: IndividualChatPage(guide: guide));
+        return CupertinoPage(child: IndividualChatPage(guide: guide));
       },
     ),
     GoRoute(
       path: '/incident-list/:groupId',
       pageBuilder: (context, state) {
         final groupId = state.pathParameters['groupId']!;
-        return NoTransitionPage(child: IncidentListPage(groupId: groupId));
+        return CupertinoPage(child: IncidentListPage(groupId: groupId));
       },
     ),
     GoRoute(
       path: '/expense-list/:groupId',
       pageBuilder: (context, state) {
         final groupId = state.pathParameters['groupId']!;
-        return NoTransitionPage(child: ExpenseListPage(groupId: groupId));
+        return CupertinoPage(child: ExpenseListPage(groupId: groupId));
       },
     ),
     GoRoute(
       path: '/lembretes-historico/:groupId',
       pageBuilder: (context, state) {
         final groupId = state.pathParameters['groupId']!;
-        return NoTransitionPage(
+        return CupertinoPage(
           child: LembretesHistoricoPage(groupId: groupId),
         );
       },

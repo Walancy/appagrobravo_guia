@@ -93,11 +93,14 @@ class ItineraryContent extends StatefulWidget {
 class _ItineraryContentState extends State<ItineraryContent> {
   DateTime? _selectedDate;
   ItineraryFilters _filters = const ItineraryFilters();
+  late PageController _pageController;
+  late List<DateTime> _days;
 
   @override
   void initState() {
     super.initState();
-    // Default to first day if valid range
+    _days = _getDaysInBetween(widget.group.startDate, widget.group.endDate);
+
     // Default to current date if valid range
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -117,6 +120,49 @@ class _ItineraryContentState extends State<ItineraryContent> {
         _selectedDate!.year,
         _selectedDate!.month,
         _selectedDate!.day,
+      );
+    }
+
+    final initialPage = _selectedDate != null
+        ? _days.indexWhere(
+            (d) =>
+                d.year == _selectedDate!.year &&
+                d.month == _selectedDate!.month &&
+                d.day == _selectedDate!.day,
+          )
+        : 0;
+
+    _pageController = PageController(initialPage: initialPage < 0 ? 0 : initialPage);
+  }
+
+  List<DateTime> _getDaysInBetween(DateTime start, DateTime end) {
+    if (end.isBefore(start)) return [start];
+    return List.generate(
+      end.difference(start).inDays + 1,
+      (i) => start.add(Duration(days: i)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onDateSelected(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    final idx = _days.indexWhere(
+      (d) =>
+          d.year == normalized.year &&
+          d.month == normalized.month &&
+          d.day == normalized.day,
+    );
+    setState(() => _selectedDate = normalized);
+    if (idx >= 0 && _pageController.hasClients) {
+      _pageController.animateToPage(
+        idx,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
     }
   }
@@ -178,11 +224,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
           ItineraryHeaderCard(
             group: widget.group,
             selectedDate: _selectedDate,
-            onDateSelected: (date) {
-              setState(() {
-                _selectedDate = DateTime(date.year, date.month, date.day);
-              });
-            },
+            onDateSelected: _onDateSelected,
             onTrocar: _showSwitchModal,
           ),
 
@@ -214,7 +256,7 @@ class _ItineraryContentState extends State<ItineraryContent> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 10, // Increased for better tap area
+                      vertical: 10,
                     ),
                     decoration: BoxDecoration(
                       color:
@@ -264,16 +306,26 @@ class _ItineraryContentState extends State<ItineraryContent> {
 
           const SizedBox(height: 16),
 
-          // List
+          // List com swipe entre dias
           Expanded(
-            child: ItineraryList(
-              items: widget.items,
-              travelTimes: widget.travelTimes,
-              selectedDate: _selectedDate,
-              groupId: widget.group.id,
-              filters: _filters,
-              pendingDocs: widget.pendingDocs,
-              scrollToItemId: widget.scrollToItemId,
+            child: PageView.builder(
+              controller: _pageController,
+              physics: const ClampingScrollPhysics(),
+              itemCount: _days.length,
+              onPageChanged: (index) {
+                setState(() => _selectedDate = _days[index]);
+              },
+              itemBuilder: (context, index) {
+                return ItineraryList(
+                  items: widget.items,
+                  travelTimes: widget.travelTimes,
+                  selectedDate: _days[index],
+                  groupId: widget.group.id,
+                  filters: _filters,
+                  pendingDocs: widget.pendingDocs,
+                  scrollToItemId: widget.scrollToItemId,
+                );
+              },
             ),
           ),
         ],

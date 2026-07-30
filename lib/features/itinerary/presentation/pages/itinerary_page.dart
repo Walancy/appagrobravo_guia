@@ -80,10 +80,14 @@ class _ItineraryContent extends StatefulWidget {
 
 class _ItineraryContentState extends State<_ItineraryContent> {
   DateTime? _selectedDate;
+  late PageController _pageController;
+  late List<DateTime> _days;
 
   @override
   void initState() {
     super.initState();
+    _days = _getDaysInBetween(widget.group.startDate, widget.group.endDate);
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     if (widget.group.startDate.year > 0) {
@@ -102,6 +106,48 @@ class _ItineraryContentState extends State<_ItineraryContent> {
         _selectedDate!.year,
         _selectedDate!.month,
         _selectedDate!.day,
+      );
+    }
+
+    final initialPage = _selectedDate != null
+        ? _days.indexWhere(
+            (d) =>
+                d.year == _selectedDate!.year &&
+                d.month == _selectedDate!.month &&
+                d.day == _selectedDate!.day,
+          )
+        : 0;
+
+    _pageController = PageController(initialPage: initialPage < 0 ? 0 : initialPage);
+  }
+
+  List<DateTime> _getDaysInBetween(DateTime start, DateTime end) {
+    if (end.isBefore(start)) return [start];
+    return List.generate(
+      end.difference(start).inDays + 1,
+      (i) => start.add(Duration(days: i)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onDateSelected(DateTime date) {
+    final idx = _days.indexWhere(
+      (d) =>
+          d.year == date.year &&
+          d.month == date.month &&
+          d.day == date.day,
+    );
+    setState(() => _selectedDate = date);
+    if (idx >= 0 && _pageController.hasClients) {
+      _pageController.animateToPage(
+        idx,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
     }
   }
@@ -130,18 +176,26 @@ class _ItineraryContentState extends State<_ItineraryContent> {
         ItineraryHeaderCard(
           group: widget.group,
           selectedDate: _selectedDate,
-          onDateSelected: (date) {
-            setState(() => _selectedDate = date);
-          },
-          onTrocar: () => Navigator.of(context).pop(), // Goes back to Dashboard
+          onDateSelected: _onDateSelected,
+          onTrocar: () => Navigator.of(context).pop(),
         ),
         Expanded(
-          child: ItineraryList(
-            items: widget.items,
-            travelTimes: widget.travelTimes,
-            selectedDate: _selectedDate,
-            pendingDocs: widget.pendingDocs,
-            groupId: widget.group.id,
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const ClampingScrollPhysics(),
+            itemCount: _days.length,
+            onPageChanged: (index) {
+              setState(() => _selectedDate = _days[index]);
+            },
+            itemBuilder: (context, index) {
+              return ItineraryList(
+                items: widget.items,
+                travelTimes: widget.travelTimes,
+                selectedDate: _days[index],
+                pendingDocs: widget.pendingDocs,
+                groupId: widget.group.id,
+              );
+            },
           ),
         ),
       ],

@@ -266,6 +266,8 @@ class _ConnectionsPageState extends State<ConnectionsPage>
                     children: [
                       Text(
                         user.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -273,6 +275,8 @@ class _ConnectionsPageState extends State<ConnectionsPage>
                       if (user.jobTitle != null && user.jobTitle!.isNotEmpty)
                         Text(
                           user.jobTitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Theme.of(
                               context,
@@ -285,7 +289,7 @@ class _ConnectionsPageState extends State<ConnectionsPage>
               ),
 
               // Action Buttons
-              if (!isSelf) _buildDynamicActionButton(user, isRequestTab),
+              if (!isSelf) ...[const SizedBox(width: 8), _buildDynamicActionButton(user, isRequestTab)],
             ],
           ),
         );
@@ -305,8 +309,9 @@ class _ConnectionsPageState extends State<ConnectionsPage>
               _loadData();
             },
             isPrimary: true,
+            compact: true,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _buildActionButton(
             label: 'Excluir',
             onPressed: () async {
@@ -314,6 +319,7 @@ class _ConnectionsPageState extends State<ConnectionsPage>
               _loadData();
             },
             isPrimary: false,
+            compact: true,
           ),
         ],
       );
@@ -375,32 +381,34 @@ class _ConnectionsPageState extends State<ConnectionsPage>
     required String label,
     required VoidCallback onPressed,
     required bool isPrimary,
+    bool compact = false,
   }) {
-    return SizedBox(
-      height: 32,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary
-              ? AppColors.primary
-              : (Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey.shade800
-                    : Colors.grey[200]),
-          foregroundColor: isPrimary
-              ? Colors.white
-              : Theme.of(context).colorScheme.onSurface,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    final bgColor = isPrimary
+        ? AppColors.primary
+        : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade800
+              : Colors.grey[200]!);
+    final fgColor = isPrimary
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
+
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 32,
+        padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
         ),
+        alignment: Alignment.center,
         child: Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
             fontWeight: FontWeight.w600,
             fontSize: 13,
-            color: isPrimary
-                ? Colors.white
-                : Theme.of(context).colorScheme.onSurface,
+            color: fgColor,
           ),
         ),
       ),

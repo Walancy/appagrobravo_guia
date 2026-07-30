@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
@@ -42,9 +43,11 @@ class _ChatInputState extends State<ChatInput> {
   // Recording state
   bool _isRecording = false;
   bool _cancelledBySlide = false;
+  bool _hasMicPermission = false;
+  String? _cachedTempPath;
   Duration _recordDuration = Duration.zero;
   Timer? _recordTimer;
-  AudioRecorder? _recorder;
+  late final AudioRecorder _recorder;
   Offset _longPressStartPosition = Offset.zero;
 
   @override
@@ -52,6 +55,16 @@ class _ChatInputState extends State<ChatInput> {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
     _controller.addListener(_onTextChanged);
+    _recorder = AudioRecorder();
+    _initRecorderPermission();
+  }
+
+  Future<void> _initRecorderPermission() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      _cachedTempPath = dir.path;
+      _hasMicPermission = await _recorder.hasPermission();
+    } catch (_) {}
   }
 
   void _onTextChanged() {
@@ -74,7 +87,7 @@ class _ChatInputState extends State<ChatInput> {
   @override
   void dispose() {
     _recordTimer?.cancel();
-    _recorder?.dispose();
+    _recorder.dispose();
     _controller.removeListener(_onTextChanged);
     if (widget.controller == null) _controller.dispose();
     super.dispose();
@@ -87,44 +100,50 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   Future<void> _startRecording(Offset globalPosition) async {
-    final recorder = AudioRecorder();
-    final hasPermission = await recorder.hasPermission();
-    if (!hasPermission) {
-      await recorder.dispose();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.t(
-                'Permissão de microfone necessária para enviar áudios.',
-                'Microphone permission required to send audio messages.',
+    if (!_hasMicPermission) {
+      final startTime = DateTime.now();
+      final hasPerm = await _recorder.hasPermission();
+      _hasMicPermission = hasPerm;
+
+      if (!hasPerm) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.t(
+                  'Permissão de microfone necessária para enviar áudios.',
+                  'Microphone permission required to send audio messages.',
+                ),
               ),
+              behavior: SnackBarBehavior.floating,
             ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
+        return;
       }
-      return;
+
+      // Se o diálogo de permissão abriu e fechou, não inicia gravação agora
+      final dialogShown = DateTime.now().difference(startTime).inMilliseconds > 300;
+      if (dialogShown) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permissão concedida! Mantenha pressionado para gravar.'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        }
+        return;
+      }
     }
 
-    final dir = await getTemporaryDirectory();
-    final path =
-        '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    final basePath = _cachedTempPath ?? (await getTemporaryDirectory()).path;
+    final path = '$basePath/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-    await recorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        sampleRate: 44100,
-        numChannels: 1,
-        androidConfig: AndroidRecordConfig(
-          audioSource: AndroidAudioSource.mic,
-        ),
-      ),
-      path: path,
-    );
-
+    // Feedback visual e tátil imediato — sem esperar o start()
+    HapticFeedback.mediumImpact();
     setState(() {
-      _recorder = recorder;
       _isRecording = true;
       _cancelledBySlide = false;
       _recordDuration = Duration.zero;
@@ -134,15 +153,34 @@ class _ChatInputState extends State<ChatInput> {
     _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _recordDuration += const Duration(seconds: 1));
     });
+
+    try {
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          sampleRate: 44100,
+          numChannels: 1,
+          androidConfig: AndroidRecordConfig(
+            audioSource: AndroidAudioSource.mic,
+          ),
+        ),
+        path: path,
+      );
+    } catch (_) {
+      _stopRecording(cancel: true);
+    }
   }
 
   Future<void> _stopRecording({bool cancel = false}) async {
     _recordTimer?.cancel();
     _recordTimer = null;
-
-    final recorder = _recorder;
-    _recorder = null;
     final capturedDurationMs = _recordDuration.inMilliseconds;
+
+    if (cancel) {
+      HapticFeedback.lightImpact();
+    } else {
+      HapticFeedback.selectionClick();
+    }
 
     setState(() {
       _isRecording = false;
@@ -150,13 +188,12 @@ class _ChatInputState extends State<ChatInput> {
       _recordDuration = Duration.zero;
     });
 
-    if (recorder != null) {
-      final path = await recorder.stop();
-      await recorder.dispose();
+    try {
+      final path = await _recorder.stop();
       if (!cancel && path != null && mounted) {
         widget.onAudioRecorded?.call(path, capturedDurationMs);
       }
-    }
+    } catch (_) {}
   }
 
   String _formatDuration(Duration d) {
@@ -204,15 +241,74 @@ class _ChatInputState extends State<ChatInput> {
                 const SizedBox(width: 6),
                 // Send / Mic animated button
                 GestureDetector(
-                  onTap: showSend && !_isRecording ? _send : null,
+                  onTap: showSend && !_isRecording
+                      ? _send
+                      : (!_isRecording
+                          ? () {
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  duration: const Duration(seconds: 3),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  backgroundColor:
+                                      Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.grey.shade900
+                                          : const Color(0xFF2C2C2C),
+                                  content: InkWell(
+                                    onTap: () =>
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.mic_rounded,
+                                          color: AppColors.primary,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            context.t(
+                                              'Segure o microfone para gravar áudio.',
+                                              'Hold the mic button to record audio.',
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => ScaffoldMessenger.of(context)
+                                              .hideCurrentSnackBar(),
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            color: Colors.white70,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          : null),
+                  onLongPressDown: (!showSend && !_isRecording)
+                      ? (details) => _startRecording(details.globalPosition)
+                      : null,
                   onLongPressStart: (!showSend && !_isRecording)
-                      ? (details) =>
-                          _startRecording(details.globalPosition)
+                      ? (details) {
+                          if (!_isRecording) _startRecording(details.globalPosition);
+                        }
                       : null,
                   onLongPressMoveUpdate: _isRecording
                       ? (details) {
-                          final dx = details.globalPosition.dx -
-                              _longPressStartPosition.dx;
+                          final dx =
+                              details.globalPosition.dx - _longPressStartPosition.dx;
                           if (dx < -80 && !_cancelledBySlide) {
                             setState(() => _cancelledBySlide = true);
                             _stopRecording(cancel: true);
@@ -221,13 +317,11 @@ class _ChatInputState extends State<ChatInput> {
                       : null,
                   onLongPressEnd: _isRecording
                       ? (details) {
-                          if (!_cancelledBySlide)
-                            _stopRecording(cancel: false);
+                          if (!_cancelledBySlide) _stopRecording(cancel: false);
                         }
                       : null,
-                  onLongPressCancel: _isRecording
-                      ? () => _stopRecording(cancel: true)
-                      : null,
+                  onLongPressCancel:
+                      _isRecording ? () => _stopRecording(cancel: true) : null,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: 48,

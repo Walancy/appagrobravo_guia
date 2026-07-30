@@ -41,7 +41,6 @@ class _CommunityTabState extends State<CommunityTab>
     return Column(
       children: [
         const HeaderSpacer(),
-        const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
             color: Colors.transparent,
@@ -65,9 +64,11 @@ class _CommunityTabState extends State<CommunityTab>
             dividerColor: Colors.transparent,
             labelStyle: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
             unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w500,
+              fontSize: 12,
             ),
             tabs: [
               Tab(text: context.t('Feed', 'Feed')),
