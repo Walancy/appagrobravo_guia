@@ -6,6 +6,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/widgets/date_time_picker_sheet.dart';
 import 'package:agrobravo/core/services/event_alarm_service.dart';
 import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repository.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/guia_evento_status.dart';
@@ -131,13 +132,12 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
 
   /// Abre o time picker para o guia editar o horário.
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-      helpText: context.t('Confirme o horário', 'Confirm the time'),
+    final picked = await DateTimePickerSheet.show(
+      context,
+      initial: _selectedDateTime,
     );
     if (picked != null && mounted) {
-      setState(() => _selectedTime = picked);
+      setState(() => _selectedTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
     }
   }
 

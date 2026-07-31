@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrobravo/core/components/documents_alert_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
@@ -67,6 +68,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedIndex = widget.initialTab;
     _selectedGroupId = widget.initialGroupId;
+    _restoreLastGroup();
     WidgetsBinding.instance.addPostFrameCallback((_) {
 
       final documentsCubit = context.read<DocumentsCubit>();
@@ -95,6 +97,43 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
+  }
+
+  Future<void> _restoreLastGroup() async {
+    // Se já tem groupId via rota, salvar e usar ele
+    if (widget.initialGroupId != null) {
+      _saveLastGroup(widget.initialGroupId!);
+      return;
+    }
+    // Caso contrário, restaurar o último grupo salvo
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('last_selected_group_id');
+      if (saved != null && mounted) {
+        setState(() {
+          _selectedGroupId = saved;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<ItineraryCubit>().loadItinerary(saved);
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveLastGroup(String groupId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_selected_group_id', groupId);
+    } catch (_) {}
+  }
+
+  Future<void> _clearLastGroup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_selected_group_id');
+    } catch (_) {}
   }
 
   @override
@@ -332,7 +371,12 @@ class _HomePageState extends State<HomePage> {
                 onSwitchGroup: () {
                   setState(() {
                     _selectedGroupId = null;
+                    // Se estava numa tab que requer grupo, volta para home
+                    if (_selectedIndex == 1 || _selectedIndex == 2) {
+                      _selectedIndex = 0;
+                    }
                   });
+                  _clearLastGroup();
                 },
                 onTabChange: (index) {
                   setState(() {
@@ -351,8 +395,9 @@ class _HomePageState extends State<HomePage> {
               onGroupSelected: (groupId) {
                 setState(() {
                   _selectedGroupId = groupId;
-                  _selectedIndex = 0; // Stay on home but show dashboard
+                  _selectedIndex = 0;
                 });
+                _saveLastGroup(groupId);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     context.read<ItineraryCubit>().loadItinerary(groupId);
@@ -430,19 +475,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildFeedWidget(BuildContext context) {
-    if (_selectedGroupId == null) {
-      return EmptyMissionState(
-        icon: Icons.dynamic_feed_outlined,
-        title: context.t('Nenhum feed ativo', 'No active feed'),
-        description: context.t(
-          'Selecione uma missão na aba Início para visualizar e interagir com as publicações.',
-          'Select a mission on the Home tab to view and interact with posts.',
-        ),
-        actionLabel: context.t('Selecionar Missão', 'Select Mission'),
-        onActionPressed: () => setState(() => _selectedIndex = 0),
-      );
-    }
-
     return BlocBuilder<FeedCubit, FeedState>(
       builder: (context, state) {
         return state.when(
@@ -661,6 +693,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNav() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasGroup = _selectedGroupId != null;
     return Container(
       padding: EdgeInsets.fromLTRB(
         0,
@@ -699,18 +732,20 @@ class _HomePageState extends State<HomePage> {
             Icons.home_rounded,
             context.t('Início', 'Home'),
           ),
-          _buildNavItem(
-            1,
-            Icons.explore_outlined,
-            Icons.explore_rounded,
-            context.t('Itinerário', 'Itinerary'),
-          ),
-          _buildNavItem(
-            2,
-            Icons.chat_bubble_outline_rounded,
-            Icons.chat_bubble_rounded,
-            context.t('Chats', 'Chats'),
-          ),
+          if (hasGroup)
+            _buildNavItem(
+              1,
+              Icons.explore_outlined,
+              Icons.explore_rounded,
+              context.t('Itinerário', 'Itinerary'),
+            ),
+          if (hasGroup)
+            _buildNavItem(
+              2,
+              Icons.chat_bubble_outline_rounded,
+              Icons.chat_bubble_rounded,
+              context.t('Chats', 'Chats'),
+            ),
           _buildNavItem(
             3,
             Icons.group_outlined,

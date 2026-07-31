@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/components/app_header.dart';
+import 'package:agrobravo/core/components/document_preview_page.dart';
 
 class MemberDetailsPage extends StatelessWidget {
   final Map<String, dynamic> memberData;
@@ -286,67 +287,136 @@ class MemberDetailsPage extends StatelessWidget {
                                   doc['tipo'] ??
                                   doc['nome_documento'] ??
                                   'Documento';
+                              final docUrl = doc['foto_doc'] as String?;
+                              final hasFile =
+                                  docUrl != null && docUrl.trim().isNotEmpty;
+
                               Color statusColor;
+                              String statusLabel = status;
                               if (status == 'APROVADO' ||
                                   status == 'VALIDADO') {
                                 statusColor = AppColors.primary;
+                                statusLabel = 'APROVADO';
                               } else if (status == 'PENDENTE') {
                                 statusColor = Colors.amber;
+                                statusLabel = 'EM ANÁLISE';
                               } else if (status == 'EXPIRADO') {
                                 statusColor = Colors.redAccent;
+                                statusLabel = 'EXPIRADO';
                               } else {
                                 statusColor = Colors.grey;
                               }
 
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).dividerColor.withOpacity(0.05),
+                              IconData docIcon = Icons.description_outlined;
+                              if (hasFile) {
+                                final lowerUrl = docUrl.toLowerCase();
+                                if (lowerUrl.contains('.pdf')) {
+                                  docIcon = Icons.picture_as_pdf_outlined;
+                                } else if (lowerUrl.contains('.jpg') ||
+                                    lowerUrl.contains('.jpeg') ||
+                                    lowerUrl.contains('.png') ||
+                                    lowerUrl.contains('.webp')) {
+                                  docIcon = Icons.image_outlined;
+                                }
+                              }
+
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.03),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.description_outlined,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        type,
-                                        style: AppTextStyles.bodyMedium
-                                            .copyWith(
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                  onTap: hasFile
+                                      ? () {
+                                          DocumentPreviewPage.show(
+                                            context,
+                                            url: docUrl,
+                                            title: type.toString(),
+                                          );
+                                        }
+                                      : null,
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
+                                        context,
+                                      ).dividerColor.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Theme.of(
+                                          context,
+                                        ).dividerColor.withOpacity(0.03),
                                       ),
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        status,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: statusColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          docIcon,
+                                          color: hasFile
+                                              ? AppColors.primary
+                                              : Colors.grey[400],
                                         ),
-                                      ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                type.toString(),
+                                                style: AppTextStyles.bodyMedium
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                hasFile
+                                                    ? 'Toque para visualizar'
+                                                    : 'Sem arquivo anexo',
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                      color: hasFile
+                                                          ? AppColors.primary
+                                                          : Colors.grey[500],
+                                                      fontSize: 11,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            statusLabel,
+                                            style: AppTextStyles.bodySmall
+                                                .copyWith(
+                                                  color: statusColor,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 10,
+                                                ),
+                                          ),
+                                        ),
+                                        if (hasFile) ...[
+                                          const SizedBox(width: 8),
+                                          const Icon(
+                                            Icons.visibility_outlined,
+                                            color: AppColors.primary,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               );
                             },

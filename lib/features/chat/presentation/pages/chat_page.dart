@@ -1,23 +1,25 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
-import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/components/documents_alert_card.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
-import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/chat/domain/entities/chat_entity.dart';
 import 'package:agrobravo/features/chat/domain/repositories/chat_repository.dart';
 import 'package:agrobravo/features/chat/presentation/pages/chat_detail_page.dart';
 import 'package:agrobravo/features/chat/presentation/pages/individual_chat_page.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 
 // ─── Mission info model ────────────────────────────────────────────────────────
 class _MissionInfo {
@@ -25,6 +27,8 @@ class _MissionInfo {
   final String? logo;
   _MissionInfo({required this.name, this.logo});
 }
+
+
 
 class ChatPage extends StatefulWidget {
   final String? groupId;
@@ -35,9 +39,7 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ChatPageState extends State<ChatPage> {
   final _repo = getIt<ChatRepository>();
   final _supabase = Supabase.instance.client;
 
@@ -60,7 +62,7 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, String?> _groupImageMap = {};
 
   // Unread counts per entity-id
-  Map<String, int> _unreadCounts = {};
+  final Map<String, int> _unreadCounts = {};
 
   // Last-visit timestamps (loaded from SharedPreferences)
   Map<String, DateTime> _lastVisit = {};
@@ -72,22 +74,9 @@ class _ChatPageState extends State<ChatPage>
   bool _isLoading = true;
   String? _error;
 
-  // Travelers tab filters
-  String? _travelerMissionFilter;
-  String? _travelerGroupFilter;
-
-  // Groups tab filter
-  String? _selectedMissionFilter;
-
-  // Guides tab filters
-  String? _guideMissionFilter;
-  String? _guideGroupFilter;
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _loadLastVisits().then((_) => _loadAll());
   }
 
@@ -126,13 +115,9 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
     _realtimeChannel?.unsubscribe();
     super.dispose();
   }
-
-  void _onTabChanged() => setState(() {});
 
   // ─── Data loading ────────────────────────────────────────────────────────────
 
@@ -143,6 +128,8 @@ class _ChatPageState extends State<ChatPage>
     });
 
     try {
+      debugPrint('[ChatPage] _loadAll iniciando — groupId=${widget.groupId}');
+
       final results = await Future.wait([
         _repo.getAllTravelers(),
         _repo.getGuideInfos(),
@@ -150,17 +137,138 @@ class _ChatPageState extends State<ChatPage>
       ]);
 
       final travelers = results[0].fold(
-        (e) => <TravelerInfo>[],
-        (l) => l as List<TravelerInfo>,
+        (e) {
+          debugPrint('[ChatPage] getAllTravelers ERRO: $e');
+          return <TravelerInfo>[];
+        },
+        (l) => List<TravelerInfo>.from(l as List),
       );
       final guides = results[1].fold(
-        (e) => <GuideInfo>[],
-        (l) => l as List<GuideInfo>,
+        (e) {
+          debugPrint('[ChatPage] getGuideInfos ERRO: $e');
+          return <GuideInfo>[];
+        },
+        (l) => List<GuideInfo>.from(l as List),
       );
       final groups = results[2].fold(
-        (e) => <ChatEntity>[],
-        (l) => l as List<ChatEntity>,
+        (e) {
+          debugPrint('[ChatPage] getAllGroups ERRO: $e');
+          return <ChatEntity>[];
+        },
+        (l) => List<ChatEntity>.from(l as List),
       );
+
+      debugPrint('[ChatPage] dados carregados — travelers=${travelers.length}, guides=${guides.length}, groups=${groups.length}');
+
+      // Ensure active groupId is present in groups list
+      if (widget.groupId != null && !groups.any((g) => g.id == widget.groupId)) {
+        try {
+          final gRes = await _supabase
+              .from('grupos')
+              .select('id, nome, missao_id')
+              .eq('id', widget.groupId!)
+              .maybeSingle();
+          if (gRes != null) {
+            String missionName = '';
+            final missaoId = gRes['missao_id'] as String?;
+            if (missaoId != null) {
+              try {
+                final mRes = await _supabase
+                    .from('missoes')
+                    .select('nome')
+                    .eq('id', missaoId)
+                    .maybeSingle();
+                missionName = mRes?['nome'] as String? ?? '';
+              } catch (_) {}
+            }
+            groups.add(
+              ChatEntity(
+                id: widget.groupId!,
+                title: gRes['nome'] as String? ?? 'Grupo da Missão',
+                subtitle: missionName,
+                unreadCount: 0,
+              ),
+            );
+          } else {
+            groups.add(
+              ChatEntity(
+                id: widget.groupId!,
+                title: 'Grupo da Missão',
+                subtitle: '',
+                unreadCount: 0,
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('[ChatPage] erro ao buscar grupo fallback: $e');
+          groups.add(
+            ChatEntity(
+              id: widget.groupId!,
+              title: 'Grupo da Missão',
+              subtitle: '',
+              unreadCount: 0,
+            ),
+          );
+        }
+      }
+
+      // Fetch all guides for active groups to ensure guides are always populated
+      final groupIdsToFetchGuides = groups.map((g) => g.id).toSet();
+      if (widget.groupId != null) groupIdsToFetchGuides.add(widget.groupId!);
+
+      if (groupIdsToFetchGuides.isNotEmpty) {
+        try {
+          final currentUserId = _supabase.auth.currentUser?.id;
+          final leadersRes = await _supabase
+              .from('lideresGrupo')
+              .select('lider_id, grupo_id')
+              .inFilter('grupo_id', groupIdsToFetchGuides.toList());
+
+          final leaderIds = (leadersRes as List)
+              .map((l) => l['lider_id'] as String?)
+              .where((id) => id != null && id != currentUserId)
+              .cast<String>()
+              .toSet();
+
+          if (leaderIds.isNotEmpty) {
+            final usersRes = await _supabase
+                .from('users')
+                .select('id, nome, foto, cargo')
+                .inFilter('id', leaderIds.toList());
+
+            for (final u in usersRes as List) {
+              final uid = u['id'] as String?;
+              if (uid == null) continue;
+
+              if (!guides.any((g) => g.id == uid)) {
+                final leaderEntry = (leadersRes as List).firstWhere(
+                  (l) => l['lider_id'] == uid,
+                  orElse: () => null,
+                );
+                final gid = leaderEntry?['grupo_id'] as String? ?? '';
+                final matchingGroup = groups.firstWhere(
+                  (g) => g.id == gid,
+                  orElse: () => ChatEntity(id: gid, title: 'Grupo', subtitle: ''),
+                );
+
+                guides.add(
+                  GuideInfo(
+                    id: uid,
+                    name: u['nome'] as String? ?? 'Guia',
+                    role: u['cargo'] as String? ?? 'Guia da Missão',
+                    avatarUrl: u['foto'] as String?,
+                    groupIds: gid.isNotEmpty ? [gid] : [],
+                    groupNames: matchingGroup.title.isNotEmpty ? [matchingGroup.title] : [],
+                    missionNames: matchingGroup.subtitle.isNotEmpty ? {matchingGroup.subtitle} : {},
+                  ),
+                );
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[ChatPage] erro ao buscar líderes extras: $e');
+        }
+      }
 
       // Build mission info map from groups
       final missionInfoMap = <String, _MissionInfo>{};
@@ -188,7 +296,9 @@ class _ChatPageState extends State<ChatPage>
               missionInfoMap[nome] = _MissionInfo(name: nome, logo: logo);
             }
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[ChatPage] erro ao buscar logos de missão: $e');
+        }
       }
 
       // Also add mission info from travelers
@@ -239,7 +349,10 @@ class _ChatPageState extends State<ChatPage>
       }
 
       _subscribeToMessages();
-    } catch (e) {
+      debugPrint('[ChatPage] _loadAll concluído com sucesso');
+    } catch (e, st) {
+      debugPrint('[ChatPage] _loadAll ERRO FATAL: $e');
+      debugPrint('[ChatPage] StackTrace: $st');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -324,7 +437,7 @@ class _ChatPageState extends State<ChatPage>
 
           if (mounted) {
             setState(() {
-              _unreadCounts[entityId] = countResp.count ?? 0;
+              _unreadCounts[entityId] = countResp.count;
             });
           }
         } catch (_) {}
@@ -360,7 +473,8 @@ class _ChatPageState extends State<ChatPage>
                   setState(() {
                     _lastMessages[entityId] = text;
                     if (createdAt != null) {
-                      _lastMessageTimes[entityId] = DateTime.parse(createdAt).toLocal();
+                      _lastMessageTimes[entityId] =
+                          DateTime.parse(createdAt).toLocal();
                     }
                     // Only increment if the sender is not the current user
                     final senderId = newRow['user_id'] as String?;
@@ -384,38 +498,14 @@ class _ChatPageState extends State<ChatPage>
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
-          SafeArea(
-            bottom: false,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
-              labelStyle: AppTextStyles.bodySmall.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-              unselectedLabelStyle: AppTextStyles.bodySmall.copyWith(
-                fontSize: 13,
-              ),
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              tabs: [
-                Tab(text: context.t('Viajantes', 'Travelers')),
-                Tab(text: context.t('Guias', 'Guides')),
-                Tab(text: widget.groupId != null ? context.t('Grupo', 'Group') : context.t('Grupos', 'Groups')),
-              ],
-            ),
-          ),
+          // Espaço para não sobrepor a AppBar — padrão do projeto
+          const HeaderSpacer(extraHeight: 51),
 
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {
               if (state.hasPendingDocuments) {
                 return const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: DocumentsAlertCard(),
                 );
               }
@@ -425,27 +515,170 @@ class _ChatPageState extends State<ChatPage>
 
           Expanded(
             child:
-                _error != null
+                _isLoading
+                    ? const _ChatTabSkeleton()
+                    : _error != null
                     ? _buildError()
-                    : TabBarView(
-                      controller: _tabController,
-                      children: _isLoading
-                          ? [
-                            const _ChatTabSkeleton(),
-                            const _ChatTabSkeleton(),
-                            const _ChatTabSkeleton(),
-                          ]
-                          : [
-                            _buildTravelersList(),
-                            _buildGuidesList(),
-                            widget.groupId != null
-                                ? _buildDirectGroupChat()
-                                : _buildGroupsList(),
-                          ],
-                    ),
+                    : _buildUnifiedList(),
           ),
         ],
       ),
+    );
+  }
+
+  // ─── Unified List Builder ────────────────────────────────────────────────────
+
+  Widget _buildUnifiedList() {
+    // Filter Groups by groupId if provided
+    List<ChatEntity> filteredGroups = _allGroups;
+    if (widget.groupId != null) {
+      filteredGroups = filteredGroups.where((g) => g.id == widget.groupId).toList();
+    }
+
+    // Filter Guides by groupId if provided — sem fallback, mostra apenas os do grupo
+    List<GuideInfo> filteredGuides = _guides;
+    if (widget.groupId != null) {
+      filteredGuides = filteredGuides.where((g) => g.groupIds.contains(widget.groupId)).toList();
+    }
+
+    // Filter Travelers by groupId if provided — sem fallback
+    List<TravelerInfo> filteredTravelers = _allTravelers;
+    if (widget.groupId != null) {
+      filteredTravelers = filteredTravelers.where((t) => t.groupId == widget.groupId).toList();
+    }
+
+    if (filteredGroups.isEmpty && filteredGuides.isEmpty && filteredTravelers.isEmpty) {
+      return _buildEmpty(
+        context.t('Nenhuma conversa encontrada.', 'No conversations found.'),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        // ─── Groups Section ───────────────────────────────────────────────
+        if (filteredGroups.isNotEmpty) ...[
+          _buildSectionHeader(context.t('Grupo da Missão', 'Mission Group')),
+          ...filteredGroups.map((g) => _buildGroupTile(g)),
+        ],
+
+        // ─── Guides Section ───────────────────────────────────────────────
+        if (filteredGuides.isNotEmpty) ...[
+          _buildSectionHeader(context.t('Guias da Missão', 'Mission Guides')),
+          ...filteredGuides.map((g) => _buildGuideTile(g)),
+        ],
+
+        // ─── Travelers Section ───────────────────────────────────────────
+        if (filteredTravelers.isNotEmpty) ...[
+          _buildSectionHeader(context.t('Viajantes', 'Travelers')),
+          ...filteredTravelers.map((t) => _buildTravelerTile(t)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 14, AppSpacing.md, 6),
+      child: Text(
+        title.toUpperCase(),
+        style: AppTextStyles.bodySmall.copyWith(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupTile(ChatEntity g) {
+    return _ChatListTile(
+      id: g.id,
+      name: g.title,
+      subtitle: _lastMessages[g.id] ?? '',
+      imageUrl: g.imageUrl,
+      isGroup: true,
+      lastTime: _lastMessageTimes[g.id],
+      unreadCount: _unreadCounts[g.id] ?? 0,
+      onTap: () async {
+        _markAsRead(g.id);
+        await Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, _, _) => ChatDetailPage(chat: g),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+        _markAsRead(g.id);
+      },
+    );
+  }
+
+  Widget _buildGuideTile(GuideInfo g) {
+    final guideEntity = GuideEntity(
+      id: g.id,
+      name: g.name,
+      role: g.role,
+      avatarUrl: g.avatarUrl,
+    );
+    return _ChatListTile(
+      id: g.id,
+      name: g.name,
+      subtitle: _lastMessages[g.id] ?? g.role,
+      imageUrl: g.avatarUrl,
+      isGroup: false,
+      lastTime: _lastMessageTimes[g.id],
+      unreadCount: _unreadCounts[g.id] ?? 0,
+      onTap: () async {
+        _markAsRead(g.id);
+        await Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, _, _) => IndividualChatPage(guide: guideEntity),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+        _markAsRead(g.id);
+      },
+    );
+  }
+
+  Widget _buildTravelerTile(TravelerInfo t) {
+    final lastMsg = _lastMessages[t.id];
+    final lastTime = _lastMessageTimes[t.id];
+    return _ChatListTile(
+      id: t.id,
+      name: t.name,
+      subtitle: lastMsg ?? '',
+      imageUrl: t.avatarUrl,
+      isGroup: false,
+      lastTime: lastTime,
+      unreadCount: _unreadCounts[t.id] ?? 0,
+      onTap: () async {
+        _markAsRead(t.id);
+        await Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder:
+                (_, _, _) => IndividualChatPage(
+                  guide: GuideEntity(
+                    id: t.id,
+                    name: t.name,
+                    role: t.role ?? t.groupName,
+                    avatarUrl: t.avatarUrl,
+                  ),
+                ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+        _markAsRead(t.id);
+      },
     );
   }
 
@@ -458,7 +691,10 @@ class _ChatPageState extends State<ChatPage>
         children: [
           const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
-          Text(context.t('Erro ao carregar', 'Error loading'), style: AppTextStyles.bodyMedium),
+          Text(
+            context.t('Erro ao carregar', 'Error loading'),
+            style: AppTextStyles.bodyMedium,
+          ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: _loadAll,
@@ -469,788 +705,27 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  // ─── Viajantes tab ───────────────────────────────────────────────────────────
-
-  Widget _buildTravelersList() {
-    // Unique missions and groups for filter
-    final missions = <String>{};
-    for (final t in _allTravelers) {
-      if (t.missionName.isNotEmpty) missions.add(t.missionName);
-    }
-
-    // Groups available for the selected mission (or all)
-    final availableGroups = <String, String>{}; // groupId → groupName
-    for (final t in _allTravelers) {
-      if (_travelerMissionFilter == null ||
-          t.missionName == _travelerMissionFilter) {
-        availableGroups[t.groupId] = t.groupName;
-      }
-    }
-
-    // Filter travelers
-    List<TravelerInfo> filtered = _allTravelers;
-    if (widget.groupId != null) {
-      filtered =
-          filtered.where((t) => t.groupId == widget.groupId).toList();
-    } else {
-      if (_travelerMissionFilter != null) {
-        filtered =
-            filtered
-                .where((t) => t.missionName == _travelerMissionFilter)
-                .toList();
-      }
-      if (_travelerGroupFilter != null) {
-        filtered =
-            filtered.where((t) => t.groupId == _travelerGroupFilter).toList();
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Filter row
-        if (widget.groupId == null && (missions.isNotEmpty || availableGroups.isNotEmpty))
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              10,
-              AppSpacing.md,
-              6,
-            ),
-            child: Row(
-              children: [
-                // Mission filter
-                _FilterButton(
-                  label: _travelerMissionFilter ?? context.t('Missão', 'Mission'),
-                  icon: Icons.map_outlined,
-                  isActive: _travelerMissionFilter != null,
-                  onTap: () => _showTravelerMissionSheet(missions.toList()),
-                ),
-                const SizedBox(width: 8),
-                if (availableGroups.isNotEmpty)
-                  _FilterButton(
-                    label:
-                        _travelerGroupFilter != null
-                            ? (availableGroups[_travelerGroupFilter] ?? context.t('Grupo', 'Group'))
-                            : context.t('Grupo', 'Group'),
-                    icon: Icons.group_outlined,
-                    isActive: _travelerGroupFilter != null,
-                    onTap: () => _showTravelerGroupSheet(availableGroups),
-                  ),
-              ],
-            ),
-          ),
-
-        Expanded(
-          child:
-              filtered.isEmpty
-                  ? _buildEmpty(context.t('Nenhum viajante encontrado.', 'No travelers found.'))
-                  : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: filtered.length,
-                    separatorBuilder:
-                        (_, __) => Divider(
-                          height: 1,
-                          indent: 72,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.03),
-                        ),
-                    itemBuilder: (context, i) {
-                      final t = filtered[i];
-                      // Use DM last message if available
-                      final lastMsg = _lastMessages[t.id];
-                      final lastTime = _lastMessageTimes[t.id];
-                      return _ChatListTile(
-                        id: t.id,
-                        name: t.name,
-                        subtitle: lastMsg ?? '',
-                        imageUrl: t.avatarUrl,
-                        isGroup: false,
-                        lastTime: lastTime,
-                        unreadCount: _unreadCounts[t.id] ?? 0,
-                        badge:
-                            _travelerGroupFilter == null &&
-                                    _travelerMissionFilter == null
-                                ? t.groupName
-                                : null,
-                        onTap: () async {
-                          _markAsRead(t.id);
-                          await Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, __, ___) => IndividualChatPage(
-                                    guide: GuideEntity(
-                                      id: t.id,
-                                      name: t.name,
-                                      role: t.role ?? t.groupName,
-                                      avatarUrl: t.avatarUrl,
-                                    ),
-                                  ),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-                          _markAsRead(t.id);
-                        },
-                      );
-                    },
-                  ),
-        ),
-      ],
-    );
-  }
-
-  void _showTravelerMissionSheet(List<String> missions) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => _MissionFilterSheet(
-            missions: missions,
-            missionInfoMap: _missionInfoMap,
-            selectedMission: _travelerMissionFilter,
-            onSelect: (m) {
-              setState(() {
-                _travelerMissionFilter = m;
-                _travelerGroupFilter = null; // reset group when mission changes
-              });
-              Navigator.pop(ctx);
-            },
-          ),
-    );
-  }
-
-  void _showTravelerGroupSheet(Map<String, String> groups) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.6,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              16,
-              AppSpacing.md,
-              MediaQuery.of(ctx).padding.bottom + AppSpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Text(
-                  context.t('Filtrar por grupo', 'Filter by group'),
-                  style: AppTextStyles.h3.copyWith(fontSize: 17),
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.group_rounded,
-                            color: AppColors.primary,
-                            size: 22,
-                          ),
-                        ),
-                        title: Text(context.t('Todos os grupos', 'All groups')),
-                        trailing:
-                            _travelerGroupFilter == null
-                                ? const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: AppColors.primary,
-                                )
-                                : null,
-                        onTap: () {
-                          setState(() => _travelerGroupFilter = null);
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                      const Divider(height: 1),
-                      ...groups.entries.map(
-                        (e) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.03),
-                              shape: BoxShape.circle,
-                              image:
-                                  _groupImageMap[e.key] != null
-                                      ? DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                          _groupImageMap[e.key]!,
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                      : null,
-                            ),
-                            child:
-                                _groupImageMap[e.key] == null
-                                    ? Icon(
-                                      Icons.group_outlined,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.45),
-                                      size: 22,
-                                    )
-                                    : null,
-                          ),
-                          title: Text(
-                            e.value,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing:
-                              _travelerGroupFilter == e.key
-                                  ? const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.primary,
-                                  )
-                                  : null,
-                          onTap: () {
-                            setState(
-                              () =>
-                                  _travelerGroupFilter =
-                                      _travelerGroupFilter == e.key
-                                          ? null
-                                          : e.key,
-                            );
-                            Navigator.pop(ctx);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  // ─── Guias tab ───────────────────────────────────────────────────────────────
-
-  // ─── Guias tab ───────────────────────────────────────────────────────────────
-
-  Widget _buildGuidesList() {
-    if (_guides.isEmpty) return _buildEmpty(context.t('Nenhum guia encontrado.', 'No guides found.'));
-
-    // Filters data
-    final missions = <String>{};
-    final availableGroups = <String, String>{}; // groupId → groupName
-
-    for (final g in _guides) {
-      missions.addAll(g.missionNames);
-      for (int i = 0; i < g.groupIds.length; i++) {
-        if (_guideMissionFilter == null ||
-            g.missionNames.contains(_guideMissionFilter)) {
-          availableGroups[g.groupIds[i]] = g.groupNames[i];
-        }
-      }
-    }
-
-    // Apply filtering
-    List<GuideInfo> filtered = _guides;
-    if (widget.groupId != null) {
-      filtered =
-          filtered
-              .where((g) => g.groupIds.contains(widget.groupId))
-              .toList();
-    } else {
-      if (_guideMissionFilter != null) {
-        filtered =
-            filtered
-                .where((g) => g.missionNames.contains(_guideMissionFilter))
-                .toList();
-      }
-      if (_guideGroupFilter != null) {
-        filtered =
-            filtered
-                .where((g) => g.groupIds.contains(_guideGroupFilter))
-                .toList();
-      }
-    }
-
-    return Column(
-      children: [
-        // Filter row
-        if (widget.groupId == null && (missions.isNotEmpty || availableGroups.isNotEmpty))
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              10,
-              AppSpacing.md,
-              6,
-            ),
-            child: Row(
-              children: [
-                _FilterButton(
-                  label: _guideMissionFilter ?? context.t('Missão', 'Mission'),
-                  icon: Icons.map_outlined,
-                  isActive: _guideMissionFilter != null,
-                  onTap: () => _showGuideMissionSheet(missions.toList()),
-                ),
-                const SizedBox(width: 8),
-                if (availableGroups.isNotEmpty)
-                  _FilterButton(
-                    label:
-                        _guideGroupFilter != null
-                            ? (availableGroups[_guideGroupFilter] ?? context.t('Grupo', 'Group'))
-                            : context.t('Grupo', 'Group'),
-                    icon: Icons.group_outlined,
-                    isActive: _guideGroupFilter != null,
-                    onTap: () => _showGuideGroupSheet(availableGroups),
-                  ),
-              ],
-            ),
-          ),
-        Expanded(
-          child:
-              filtered.isEmpty
-                  ? _buildEmpty(
-                    context.t('Nenhum guia encontrado para os filtros selecionados.', 'No guides found for the selected filters.'),
-                  )
-                  : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: filtered.length,
-                    separatorBuilder:
-                        (_, __) => Divider(
-                          height: 1,
-                          indent: 72,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.03),
-                        ),
-                    itemBuilder: (context, i) {
-                      final g = filtered[i];
-                      final guideEntity = GuideEntity(
-                        id: g.id,
-                        name: g.name,
-                        role: g.role,
-                        avatarUrl: g.avatarUrl,
-                      );
-                      return _ChatListTile(
-                        id: g.id,
-                        name: g.name,
-                        subtitle: _lastMessages[g.id] ?? g.role,
-                        imageUrl: g.avatarUrl,
-                        isGroup: false,
-                        lastTime: _lastMessageTimes[g.id],
-                        unreadCount: _unreadCounts[g.id] ?? 0,
-                        badge:
-                            g.groupNames.isNotEmpty && _guideGroupFilter == null
-                                ? g.groupNames.first
-                                : null,
-                        onTap: () async {
-                          _markAsRead(g.id);
-                          await Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, __, ___) =>
-                                      IndividualChatPage(guide: guideEntity),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-                          _markAsRead(g.id);
-                        },
-                      );
-                    },
-                  ),
-        ),
-      ],
-    );
-  }
-
-  void _showGuideMissionSheet(List<String> missions) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => _MissionFilterSheet(
-            missions: missions,
-            missionInfoMap: _missionInfoMap,
-            selectedMission: _guideMissionFilter,
-            onSelect: (m) {
-              setState(() {
-                _guideMissionFilter = m;
-                _guideGroupFilter = null;
-              });
-              Navigator.pop(ctx);
-            },
-          ),
-    );
-  }
-
-  void _showGuideGroupSheet(Map<String, String> groups) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.6,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              16,
-              AppSpacing.md,
-              MediaQuery.of(ctx).padding.bottom + AppSpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Text(context.t('Filtrar por Grupo', 'Filter by Group'), style: AppTextStyles.h3),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView(
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.group_outlined,
-                            color: AppColors.primary,
-                            size: 22,
-                          ),
-                        ),
-                        title: Text(context.t('Todos os grupos', 'All groups')),
-                        trailing:
-                            _guideGroupFilter == null
-                                ? const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: AppColors.primary,
-                                )
-                                : null,
-                        onTap: () {
-                          setState(() => _guideGroupFilter = null);
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                      const Divider(height: 1),
-                      ...groups.entries.map(
-                        (e) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.03),
-                              shape: BoxShape.circle,
-                              image:
-                                  _groupImageMap[e.key] != null
-                                      ? DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                          _groupImageMap[e.key]!,
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                      : null,
-                            ),
-                            child:
-                                _groupImageMap[e.key] == null
-                                    ? const Icon(
-                                      Icons.group_outlined,
-                                      color: Colors.grey,
-                                      size: 22,
-                                    )
-                                    : null,
-                          ),
-                          title: Text(
-                            e.value,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing:
-                              _guideGroupFilter == e.key
-                                  ? const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.primary,
-                                  )
-                                  : null,
-                          onTap: () {
-                            setState(() => _guideGroupFilter = e.key);
-                            Navigator.pop(ctx);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  // ─── Grupos tab ──────────────────────────────────────────────────────────────
-
-  Widget _buildGroupsList() {
-    final missions = <String>{};
-    for (final g in _allGroups) {
-      if (g.subtitle.isNotEmpty) missions.add(g.subtitle);
-    }
-
-    final filtered =
-        _selectedMissionFilter == null
-            ? _allGroups
-            : _allGroups
-                .where((g) => g.subtitle == _selectedMissionFilter)
-                .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (missions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              10,
-              AppSpacing.md,
-              6,
-            ),
-            child: _FilterButton(
-              label: _selectedMissionFilter ?? context.t('Todas as missões', 'All missions'),
-              icon: Icons.filter_list_rounded,
-              isActive: _selectedMissionFilter != null,
-              onTap: () => _showMissionFilterSheet(missions.toList()),
-            ),
-          ),
-        Expanded(
-          child:
-              filtered.isEmpty
-                  ? _buildEmpty(context.t('Nenhum grupo encontrado.', 'No groups found.'))
-                  : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: filtered.length,
-                    separatorBuilder:
-                        (_, __) => Divider(
-                          height: 1,
-                          indent: 72,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.03),
-                        ),
-                    itemBuilder: (context, i) {
-                      final g = filtered[i];
-                      return _ChatListTile(
-                        id: g.id,
-                        name: g.title,
-                        subtitle: _lastMessages[g.id] ?? '',
-                        imageUrl: g.imageUrl,
-                        isGroup: true,
-                        lastTime: _lastMessageTimes[g.id],
-                        unreadCount: _unreadCounts[g.id] ?? 0,
-                        badge:
-                            g.subtitle.isNotEmpty &&
-                                    _selectedMissionFilter == null
-                                ? g.subtitle
-                                : null,
-                        onTap: () async {
-                          _markAsRead(g.id);
-                          await Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, __, ___) => ChatDetailPage(chat: g),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-                          _markAsRead(g.id);
-                        },
-                      );
-                    },
-                  ),
-        ),
-      ],
-    );
-  }
-
-  void _showMissionFilterSheet(List<String> missions) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => _MissionFilterSheet(
-            missions: missions,
-            missionInfoMap: _missionInfoMap,
-            selectedMission: _selectedMissionFilter,
-            onSelect: (m) {
-              setState(() => _selectedMissionFilter = m);
-              Navigator.pop(ctx);
-            },
-          ),
-    );
-  }
-
-  Widget _buildDirectGroupChat() {
-    final group = _allGroups.firstWhere(
-      (g) => g.id == widget.groupId,
-      orElse:
-          () => ChatEntity(
-            id: widget.groupId!,
-            title: context.t('Grupo', 'Group'),
-            subtitle: '',
-            unreadCount: 0,
-          ),
-    );
-
-    return ChatDetailPage(
-      chat: group,
-      showAppBar: false,
-    );
-  }
 
   // ─── Empty ────────────────────────────────────────────────────────────────────
 
   Widget _buildEmpty(String msg) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline_rounded,
-            size: 48,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            msg,
-            style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Filter button ────────────────────────────────────────────────────────────
-
-class _FilterButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _FilterButton({
-    required this.label,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color =
-        isActive
-            ? AppColors.primary
-            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color:
-              isActive
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isActive
-                    ? AppColors.primary.withValues(alpha: 0.4)
-                    : Colors.transparent,
-          ),
-        ),
-        child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 48,
+              color: Colors.grey[300],
             ),
-            const SizedBox(width: 3),
-            Icon(Icons.expand_more_rounded, size: 14, color: color),
+            const SizedBox(height: 12),
+            Text(
+              msg,
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -1258,145 +733,9 @@ class _FilterButton extends StatelessWidget {
   }
 }
 
-// ─── Mission filter BottomSheet ───────────────────────────────────────────────
 
-class _MissionFilterSheet extends StatelessWidget {
-  final List<String> missions;
-  final Map<String, _MissionInfo> missionInfoMap;
-  final String? selectedMission;
-  final void Function(String?) onSelect;
 
-  const _MissionFilterSheet({
-    required this.missions,
-    required this.missionInfoMap,
-    required this.selectedMission,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.65,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        16,
-        AppSpacing.md,
-        MediaQuery.of(context).padding.bottom + AppSpacing.md,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            context.t('Filtrar por missão', 'Filter by mission'),
-            style: AppTextStyles.h3.copyWith(fontSize: 17),
-          ),
-          const SizedBox(height: 12),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.all_inbox_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                  ),
-                  title: Text(context.t('Todas as missões', 'All missions')),
-                  trailing:
-                      selectedMission == null
-                          ? const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.primary,
-                          )
-                          : null,
-                  onTap: () => onSelect(null),
-                ),
-                const Divider(height: 1),
-                ...missions.map((m) {
-                  final info = missionInfoMap[m];
-                  final logoUrl = info?.logo;
-                  final isSelected = selectedMission == m;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.08),
-                      backgroundImage:
-                          logoUrl != null
-                              ? CachedNetworkImageProvider(logoUrl)
-                              : null,
-                      child:
-                          logoUrl == null
-                              ? Icon(
-                                Icons.location_on_outlined,
-                                size: 20,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.45),
-                              )
-                              : null,
-                    ),
-                    title: Text(
-                      m,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? AppColors.primary : null,
-                      ),
-                    ),
-                    trailing:
-                        isSelected
-                            ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.primary,
-                            )
-                            : null,
-                    onTap: () => onSelect(isSelected ? null : m),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Reusable chat tile ───────────────────────────────────────────────────────
+// ─── Reusable Chat List Tile ──────────────────────────────────────────────────
 
 class _ChatListTile extends StatelessWidget {
   final String id;
@@ -1405,7 +744,6 @@ class _ChatListTile extends StatelessWidget {
   final String? imageUrl;
   final bool isGroup;
   final DateTime? lastTime;
-  final String? badge;
   final int unreadCount;
   final VoidCallback onTap;
 
@@ -1417,7 +755,6 @@ class _ChatListTile extends StatelessWidget {
     required this.onTap,
     this.imageUrl,
     this.lastTime,
-    this.badge,
     this.unreadCount = 0,
   });
 
@@ -1428,7 +765,8 @@ class _ChatListTile extends StatelessWidget {
         now.month == localDate.month &&
         now.year == localDate.year) {
       return DateFormat('HH:mm').format(localDate);
-    } else if (now.difference(localDate).inDays < 2 && now.day != localDate.day) {
+    } else if (now.difference(localDate).inDays < 2 &&
+        now.day != localDate.day) {
       return context.t('Ontem', 'Yesterday');
     } else {
       return DateFormat('dd/MM').format(localDate);
@@ -1443,7 +781,7 @@ class _ChatListTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: 12,
+          vertical: 10,
         ),
         child: Row(
           children: [
@@ -1453,7 +791,9 @@ class _ChatListTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                   backgroundImage:
                       imageUrl != null
                           ? CachedNetworkImageProvider(imageUrl!)
@@ -1464,7 +804,9 @@ class _ChatListTile extends StatelessWidget {
                             isGroup
                                 ? Icons.group_rounded
                                 : Icons.person_rounded,
-                            color: Colors.grey[500],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                           )
                           : null,
                 ),
@@ -1555,27 +897,6 @@ class _ChatListTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (badge != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            badge!,
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
                     ],
                   ),
                 ],
@@ -1624,72 +945,88 @@ class _ChatTabSkeletonState extends State<_ChatTabSkeleton>
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {
-        final baseColor = isDark
-            ? Color.lerp(const Color(0xFF2A2A2A), const Color(0xFF3A3A3A), _animation.value)!
-            : Color.lerp(const Color(0xFFE8E8E8), const Color(0xFFF5F5F5), _animation.value)!;
+        final baseColor =
+            isDark
+                ? Color.lerp(
+                  const Color(0xFF2A2A2A),
+                  const Color(0xFF3A3A3A),
+                  _animation.value,
+                )!
+                : Color.lerp(
+                  const Color(0xFFE8E8E8),
+                  const Color(0xFFF5F5F5),
+                  _animation.value,
+                )!;
 
         return ListView.separated(
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: 8,
           physics: const NeverScrollableScrollPhysics(),
-          separatorBuilder: (_, __) => Divider(
-            height: 1,
-            indent: 72,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
-          ),
-          itemBuilder: (_, __) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                // Avatar placeholder
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    shape: BoxShape.circle,
-                  ),
+          separatorBuilder:
+              (_, _) => Divider(
+                height: 1,
+                indent: 72,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.03),
+              ),
+          itemBuilder:
+              (_, _) => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name line
-                      Container(
-                        height: 13,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                child: Row(
+                  children: [
+                    // Avatar placeholder
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 8),
-                      // Message line
-                      Container(
-                        height: 11,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Name line
+                          Container(
+                            height: 13,
+                            width: 120,
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Message line
+                          Container(
+                            height: 11,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Time placeholder
+                    Container(
+                      height: 10,
+                      width: 28,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                // Time placeholder
-                Container(
-                  height: 10,
-                  width: 28,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
         );
       },
     );

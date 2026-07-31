@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:agrobravo/core/components/app_text_field.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -290,9 +291,7 @@ class _ReminderModalState extends State<ReminderModal> {
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _send,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _isAgendando
-                                      ? const Color(0xFF5B6EF5)
-                                      : AppColors.primary,
+                                  backgroundColor: AppColors.primary,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
@@ -355,7 +354,7 @@ class _ReminderModalState extends State<ReminderModal> {
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Icon(Icons.group_outlined, size: 20, color: AppColors.primary),
@@ -369,9 +368,9 @@ class _ReminderModalState extends State<ReminderModal> {
               ),
             ),
           ),
-          Switch(
+          CupertinoSwitch(
             value: _isSendingToAll,
-            activeThumbColor: AppColors.primary,
+            activeTrackColor: AppColors.primary,
             onChanged: (val) {
               setState(() {
                 _isSendingToAll = val;
@@ -392,24 +391,24 @@ class _ReminderModalState extends State<ReminderModal> {
     return Container(
       decoration: BoxDecoration(
         color: _isAgendando
-            ? const Color(0xFF5B6EF5).withValues(alpha: 0.08)
+            ? AppColors.primary.withValues(alpha: 0.08)
             : isDark
                 ? Colors.grey[850]
                 : Colors.grey[100],
         borderRadius: BorderRadius.circular(14),
         border: _isAgendando
             ? Border.all(
-                color: const Color(0xFF5B6EF5).withValues(alpha: 0.3))
+                color: AppColors.primary.withValues(alpha: 0.3))
             : null,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Icon(
             Icons.schedule_rounded,
             size: 20,
             color: _isAgendando
-                ? const Color(0xFF5B6EF5)
+                ? AppColors.primary
                 : Theme.of(context)
                     .colorScheme
                     .onSurface
@@ -422,14 +421,14 @@ class _ReminderModalState extends State<ReminderModal> {
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
                 color: _isAgendando
-                    ? const Color(0xFF5B6EF5)
+                    ? AppColors.primary
                     : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
-          Switch(
+          CupertinoSwitch(
             value: _isAgendando,
-            activeThumbColor: const Color(0xFF5B6EF5),
+            activeTrackColor: AppColors.primary,
             onChanged: (val) {
               setState(() {
                 _isAgendando = val;
@@ -462,7 +461,7 @@ class _ReminderModalState extends State<ReminderModal> {
                 color: hasError
                     ? Colors.red
                     : _agendadoPara != null
-                        ? const Color(0xFF5B6EF5)
+                        ? AppColors.primary
                         : Theme.of(context).dividerColor,
                 width: hasError ? 1.5 : 1,
               ),
@@ -477,7 +476,7 @@ class _ReminderModalState extends State<ReminderModal> {
                   color: hasError
                       ? Colors.red
                       : _agendadoPara != null
-                          ? const Color(0xFF5B6EF5)
+                          ? AppColors.primary
                           : Colors.grey,
                 ),
                 const SizedBox(width: 12),

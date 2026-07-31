@@ -5,6 +5,7 @@ import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/widgets/date_time_picker_sheet.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -68,32 +69,30 @@ class _IncidentModalState extends State<IncidentModal> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+    final initialDt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
     );
-    if (picked != null) {
+    final result = await DateTimePickerSheet.show(
+      context,
+      initial: initialDt,
+    );
+    if (result != null && mounted) {
       setState(() {
-        _selectedDate = picked;
-        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
+        _selectedDate = DateTime(result.year, result.month, result.day);
+        _selectedTime = TimeOfDay(hour: result.hour, minute: result.minute);
+        _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate);
+        _timeController.text =
+            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
       });
     }
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedTime = picked;
-        _timeController.text =
-            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      });
-    }
+    await _pickDate();
   }
 
   List<String> _getTypes(BuildContext context) => [

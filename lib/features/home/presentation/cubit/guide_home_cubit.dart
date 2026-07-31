@@ -19,10 +19,12 @@ class GuideHomeCubit extends Cubit<GuideHomeState> {
     final result = await _repository.getGuideMissions();
 
     result.fold(
-      (failure) => emit(GuideHomeState.error(failure.toString())),
+      (failure) {
+        if (!isClosed) emit(GuideHomeState.error(failure.toString()));
+      },
       (missions) {
         _allMissions = missions;
-        emit(GuideHomeState.loaded(_allMissions));
+        if (!isClosed) emit(GuideHomeState.loaded(_allMissions));
       },
     );
   }
@@ -34,6 +36,6 @@ class GuideHomeCubit extends Cubit<GuideHomeState> {
             .where((gm) =>
                 gm.mission.status?.toUpperCase() == status.toUpperCase())
             .toList();
-    emit(GuideHomeState.loaded(filtered, activeFilter: status));
+    if (!isClosed) emit(GuideHomeState.loaded(filtered, activeFilter: status));
   }
 }

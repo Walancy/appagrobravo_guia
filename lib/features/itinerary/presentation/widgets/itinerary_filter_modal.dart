@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
+import '../../../../core/widgets/date_time_picker_sheet.dart';
 import '../../domain/entities/itinerary_item.dart';
 
 class ItineraryFilters {
@@ -372,44 +373,30 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
   }
 
   Future<void> _pickStartTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: _selectedStartTime ?? const TimeOfDay(hour: 0, minute: 0),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
-              brightness: Theme.of(context).brightness,
-            ),
-          ),
-          child: child!,
-        );
-      },
+    final now = DateTime.now();
+    final init = _selectedStartTime != null
+        ? DateTime(now.year, now.month, now.day, _selectedStartTime!.hour, _selectedStartTime!.minute)
+        : DateTime(now.year, now.month, now.day, 0, 0);
+    final picked = await DateTimePickerSheet.show(
+      context,
+      initial: init,
     );
-    if (time != null) {
-      setState(() => _selectedStartTime = time);
+    if (picked != null) {
+      setState(() => _selectedStartTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
     }
   }
 
   Future<void> _pickEndTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: _selectedEndTime ?? const TimeOfDay(hour: 23, minute: 59),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
-              brightness: Theme.of(context).brightness,
-            ),
-          ),
-          child: child!,
-        );
-      },
+    final now = DateTime.now();
+    final init = _selectedEndTime != null
+        ? DateTime(now.year, now.month, now.day, _selectedEndTime!.hour, _selectedEndTime!.minute)
+        : DateTime(now.year, now.month, now.day, 23, 59);
+    final picked = await DateTimePickerSheet.show(
+      context,
+      initial: init,
     );
-    if (time != null) {
-      setState(() => _selectedEndTime = time);
+    if (picked != null) {
+      setState(() => _selectedEndTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
     }
   }
 }

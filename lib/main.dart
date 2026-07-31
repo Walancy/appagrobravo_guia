@@ -100,23 +100,32 @@ Future<void> _getFcmTokenAndSave(FirebaseMessaging messaging) async {
     return;
   }
 
-  // iOS: aguarda APNS token com retry exponencial
+  // iOS: aguarda APNS token com retry crescente
   for (int attempt = 1; attempt <= 10; attempt++) {
     try {
       final apnsToken = await messaging.getAPNSToken();
       if (apnsToken != null) {
-        // APNS token disponível — agora podemos obter o FCM token
+        debugPrint('APNS token obtido com sucesso na tentativa $attempt: $apnsToken');
         final token = await messaging.getToken();
         if (token != null) _saveFcmToken(token);
         return;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Tentativa $attempt erro APNS: $e');
+    }
 
-    // Aguarda antes da próxima tentativa (500ms, 1s, 1.5s... até 5s)
-    await Future.delayed(Duration(milliseconds: 500 * attempt));
+    await Future.delayed(Duration(milliseconds: 400 * attempt));
   }
 
-  debugPrint('FCM: APNS token não disponível após 10 tentativas. Push pode não funcionar.');
+  debugPrint('FCM: APNS token não retornado pelo iOS após 10 tentativas. Tentando fallback com getToken()...');
+  try {
+    final token = await messaging.getToken();
+    if (token != null) {
+      _saveFcmToken(token);
+    }
+  } catch (e) {
+    debugPrint('FCM fallback erro ao obter token: $e');
+  }
 }
 
 void _saveFcmToken(String token) {

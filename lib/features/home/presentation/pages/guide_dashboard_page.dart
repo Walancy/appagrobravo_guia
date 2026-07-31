@@ -47,8 +47,78 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   List<Map<String, dynamic>> _guides = [];
   List<Map<String, dynamic>> _filteredTravelers = [];
   List<Map<String, dynamic>> _filteredGuides = [];
+  List<String> _requiredDocTypes = [];
   bool _isLoading = true;
   int _selectedMembersTab = 0;
+
+  Map<String, dynamic> _getTravelerDocStatus(List? docs) {
+    final hasExpired =
+        docs != null &&
+        docs.any((d) => d['status']?.toString().toUpperCase() == 'EXPIRADO');
+    if (hasExpired) {
+      return {
+        'label': 'Documento vencido',
+        'color': Colors.orangeAccent[700]!,
+        'icon': Icon(
+          Icons.warning_amber_rounded,
+          color: Colors.orangeAccent[700],
+          size: 24,
+        ),
+        'hasAlert': true,
+      };
+    }
+
+    if (_requiredDocTypes.isNotEmpty) {
+      final userDocTypes =
+          (docs ?? [])
+              .where(
+                (d) =>
+                    d['status']?.toString().toUpperCase() == 'APROVADO' ||
+                    d['status']?.toString().toUpperCase() == 'PENDENTE',
+              )
+              .map((d) => d['tipo']?.toString().toUpperCase() ?? '')
+              .toSet();
+
+      final missingRequired = _requiredDocTypes.any(
+        (req) => !userDocTypes.contains(req),
+      );
+      if (missingRequired) {
+        return {
+          'label': 'Documentos pendentes',
+          'color': Colors.redAccent,
+          'icon': const Icon(
+            Icons.highlight_off_rounded,
+            color: Colors.redAccent,
+            size: 28,
+          ),
+          'hasAlert': true,
+        };
+      }
+    }
+
+    final hasPendingApproval =
+        docs != null &&
+        docs.any((d) => d['status']?.toString().toUpperCase() == 'PENDENTE');
+    if (hasPendingApproval) {
+      return {
+        'label': 'Aguardando aprovação',
+        'color': Colors.amber,
+        'icon': const Icon(Icons.circle, color: Colors.amber, size: 10),
+        'hasAlert': true,
+      };
+    }
+
+    return {
+      'label': 'Documentação em dia',
+      'color': AppColors.primary,
+      'icon': const Icon(
+        Icons.check_circle_outline_rounded,
+        color: AppColors.primary,
+        size: 28,
+      ),
+      'hasAlert': false,
+    };
+  }
 
   @override
   void initState() {
@@ -176,6 +246,25 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
 
   Future<void> _loadMembers(SupabaseClient supabase) async {
     try {
+      // 0. Fetch required documents for the group's mission
+      try {
+        final groupRes = await supabase
+            .from('grupos')
+            .select('missao_id, missoes:missao_id (documentos_exigidos)')
+            .eq('id', widget.groupId)
+            .maybeSingle();
+
+        if (groupRes != null && groupRes['missoes'] != null) {
+          final docsList = groupRes['missoes']['documentos_exigidos'] as List?;
+          if (docsList != null) {
+            _requiredDocTypes =
+                docsList.map((e) => e.toString().toUpperCase()).toList();
+          }
+        }
+      } catch (e) {
+        debugPrint('Erro ao buscar documentos_exigidos da missão: $e');
+      }
+
       // 1. Fetch Travelers
       final participantsRes = await supabase
           .from('gruposParticipantes')
@@ -192,7 +281,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
             .inFilter('id', travelerIds);
         final docsRes = await supabase
             .from('documentos')
-            .select('user_id, status, tipo, nome_documento')
+            .select('user_id, status, tipo, nome_documento, foto_doc')
             .inFilter('user_id', travelerIds);
 
         _travelers =
@@ -495,16 +584,6 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
               Expanded(
                 child: _buildActionItem(
                   context,
-                  context.t('Itinerário', 'Itinerary'),
-                  Icons.explore_outlined,
-                  AppColors.primary,
-                  () => widget.onTabChange?.call(1),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildActionItem(
-                  context,
                   context.t('Lembrete', 'Reminder'),
                   Icons.notifications_active_outlined,
                   AppColors.primary,
@@ -553,30 +632,32 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   ) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: 64,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Theme.of(context).dividerColor),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-              fontSize: 12,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -752,8 +833,8 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
   Widget _buildMembersSection(BuildContext context) {
     bool hasTravelerAlert = _travelers.any((t) {
       final docs = t['documentos'] as List?;
-      return docs != null &&
-          docs.any((d) => d['status']?.toString().toUpperCase() == 'PENDENTE');
+      final statusInfo = _getTravelerDocStatus(docs);
+      return statusInfo['hasAlert'] == true;
     });
 
     return Column(
@@ -933,7 +1014,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
         final avatar = user?['foto'];
         final company = user?['empresa'] ?? 'Independente';
 
-        String statusLabel = 'Confirmado';
+        String statusLabel = 'Documentação em dia';
         Color statusColor = AppColors.primary;
         Widget trailingWidget = const Icon(
           Icons.check_circle_outline_rounded,
@@ -943,42 +1024,10 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
 
         if (isTraveler) {
           final docs = item['documentos'] as List?;
-          final hasPending =
-              docs != null &&
-              docs.any(
-                (d) => d['status']?.toString().toUpperCase() == 'PENDENTE',
-              );
-          final hasExpired =
-              docs != null &&
-              docs.any(
-                (d) => d['status']?.toString().toUpperCase() == 'EXPIRADO',
-              );
-
-          if (hasExpired) {
-            statusLabel = 'Documento expirado!';
-            statusColor = Colors.orangeAccent[700]!;
-            trailingWidget = Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orangeAccent[700],
-              size: 24,
-            );
-          } else if (hasPending) {
-            statusLabel = 'Aguardando documento!';
-            statusColor = Colors.amber;
-            trailingWidget = const Icon(
-              Icons.circle,
-              color: Colors.amber,
-              size: 10,
-            );
-          } else if (docs == null || docs.isEmpty) {
-            statusLabel = 'Pendente';
-            statusColor = Colors.redAccent;
-            trailingWidget = const Icon(
-              Icons.highlight_off_rounded,
-              color: Colors.redAccent,
-              size: 28,
-            );
-          }
+          final statusInfo = _getTravelerDocStatus(docs);
+          statusLabel = statusInfo['label'] as String;
+          statusColor = statusInfo['color'] as Color;
+          trailingWidget = statusInfo['icon'] as Widget;
         }
 
         return Material(
