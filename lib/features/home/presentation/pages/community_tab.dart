@@ -36,11 +36,9 @@ class _CommunityTabState extends State<CommunityTab>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Column(
       children: [
-        const HeaderSpacer(),
+        const HeaderSpacer(extraHeight: 6),
         Container(
           decoration: BoxDecoration(
             color: Colors.transparent,

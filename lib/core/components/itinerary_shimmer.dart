@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
+import 'package:agrobravo/core/components/app_header.dart';
 
 class ItineraryShimmer extends StatelessWidget {
   const ItineraryShimmer({super.key});
@@ -16,7 +17,7 @@ class ItineraryShimmer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(height: 100), // Header spacer
+          const HeaderSpacer(),
           // Day Slider Shimmer
           SizedBox(
             height: 80,

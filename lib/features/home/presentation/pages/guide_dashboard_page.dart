@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_cubit.dart';
 import 'package:agrobravo/features/documents/presentation/cubit/documents_state.dart';
 import 'package:agrobravo/core/components/documents_alert_card.dart';
+import 'package:agrobravo/core/components/app_header.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
@@ -374,46 +375,43 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
     }
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
-      child: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  BlocBuilder<DocumentsCubit, DocumentsState>(
-                    builder: (context, state) {
-                      if (state.hasPendingDocuments) {
-                        return const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: DocumentsAlertCard(),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildMainCard(context),
-                  ),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const HeaderSpacer(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                BlocBuilder<DocumentsCubit, DocumentsState>(
+                  builder: (context, state) {
+                    if (state.hasPendingDocuments) {
+                      return const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: DocumentsAlertCard(),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildMainCard(context),
+                ),
+                const SizedBox(height: 24),
+                if (_upcomingEvents.isNotEmpty) ...[
+                  _buildUpcomingEvents(context),
                   const SizedBox(height: 24),
-                  if (_upcomingEvents.isNotEmpty) ...[
-                    _buildUpcomingEvents(context),
-                    const SizedBox(height: 24),
-                  ],
-                  _buildQuickActions(context),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildMembersSection(context),
-                  ),
                 ],
-              ),
-              const SizedBox(height: 100),
-            ],
-          ),
+                _buildQuickActions(context),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildMembersSection(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 100),
+          ],
         ),
       ),
     );
@@ -1432,52 +1430,60 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                     fontSize: 32,
                     color: AppColors.primary,
                   ),
+                  hintStyle: AppTextStyles.h1.copyWith(
+                    fontSize: 32,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                  ),
                   hint: _selectedCurrency == 'USD' ? '\$ 0.00' : 'R\$ 0,00',
                   prefixIcon: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    padding: const EdgeInsets.only(left: 14, right: 10),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        DropdownButton<String>(
-                          value: _selectedCurrency,
-                          underline: const SizedBox(),
-                          icon: const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'BRL',
-                              child: Text('BRL'),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCurrency,
+                            alignment: Alignment.center,
+                            isDense: true,
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.primary,
+                              size: 20,
                             ),
-                            DropdownMenuItem(
-                              value: 'USD',
-                              child: Text('USD'),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ],
-                          onChanged: (val) {
-                            if (val != null && val != _selectedCurrency) {
-                              final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
-                              final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
-                              setState(() {
-                                _selectedCurrency = val;
-                                if (digitsOnly.isNotEmpty) {
-                                  _amountController.text = CentavosInputFormatter(isUsd: _selectedCurrency == 'USD').formatter.format(amount);
-                                }
-                              });
-                            }
-                          },
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'BRL',
+                                child: Text('BRL'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'USD',
+                                child: Text('USD'),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null && val != _selectedCurrency) {
+                                final digitsOnly = _amountController.text.replaceAll(RegExp(r'[^\d]'), '');
+                                final amount = (double.tryParse(digitsOnly) ?? 0.0) / 100;
+                                setState(() {
+                                  _selectedCurrency = val;
+                                  if (digitsOnly.isNotEmpty) {
+                                    _amountController.text = CentavosInputFormatter(isUsd: _selectedCurrency == 'USD').formatter.format(amount);
+                                  }
+                                });
+                              }
+                            },
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Container(
                           width: 1,
-                          height: 20,
-                          color: Theme.of(context).dividerColor.withOpacity(0.03),
+                          height: 24,
+                          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
                         ),
                       ],
                     ),

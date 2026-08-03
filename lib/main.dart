@@ -76,21 +76,22 @@ Future<void> setupFCM() async {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional) {
-      await _getFcmTokenAndSave(messaging);
-      // Atualiza token quando ele rotacionar
+      // Registra ANTES do _getFcmTokenAndSave para capturar tokens entregues
+      // assincronamente pelo iOS durante o período de espera do APNS.
       messaging.onTokenRefresh.listen(_saveFcmToken);
+      await _getFcmTokenAndSave(messaging);
     }
   } catch (e, stack) {
     debugPrint('Erro ao configurar FCM/Permissões: $e\n$stack');
   }
 }
 
-/// No iOS, o APNS token é registrado de forma assíncrona pelo sistema.
-/// Aguarda até 10 tentativas com delay crescente antes de chamar getToken().
+/// No iOS, o APNS token é entregue de forma assíncrona pelo sistema operacional.
+/// A abordagem correta é confiar no `onTokenRefresh` como fonte primária e tentar
+/// `getToken()` com um delay inicial para dar tempo ao iOS de registrar o APNS token.
 Future<void> _getFcmTokenAndSave(FirebaseMessaging messaging) async {
-  // Em Android não há APNS token — pula a espera
-  if (!defaultTargetPlatform.name.contains('iOS') &&
-      defaultTargetPlatform != TargetPlatform.iOS) {
+  // Android: sem APNS, obtém token diretamente
+  if (defaultTargetPlatform != TargetPlatform.iOS) {
     try {
       final token = await messaging.getToken();
       if (token != null) _saveFcmToken(token);
@@ -100,32 +101,34 @@ Future<void> _getFcmTokenAndSave(FirebaseMessaging messaging) async {
     return;
   }
 
-  // iOS: aguarda APNS token com retry crescente
-  for (int attempt = 1; attempt <= 10; attempt++) {
+  // iOS: aguarda o APNS token com retry espaçado (máx ~30s no total)
+  // O SDK Firebase internamente aguarda o APNS token ao chamar getToken().
+  // Delays progressivos cobrem a janela assíncrona do APNs registration.
+  const delays = [1000, 2000, 3000, 5000, 8000, 10000]; // ms
+  for (int i = 0; i < delays.length; i++) {
+    await Future.delayed(Duration(milliseconds: delays[i]));
     try {
       final apnsToken = await messaging.getAPNSToken();
       if (apnsToken != null) {
-        debugPrint('APNS token obtido com sucesso na tentativa $attempt: $apnsToken');
+        debugPrint('APNS token obtido na tentativa ${i + 1}: $apnsToken');
         final token = await messaging.getToken();
-        if (token != null) _saveFcmToken(token);
-        return;
+        if (token != null) {
+          _saveFcmToken(token);
+          return;
+        }
+      } else {
+        debugPrint('iOS tentativa ${i + 1}/${delays.length}: APNS token ainda null...');
       }
     } catch (e) {
-      debugPrint('Tentativa $attempt erro APNS: $e');
+      debugPrint('iOS tentativa ${i + 1} erro: $e');
     }
-
-    await Future.delayed(Duration(milliseconds: 400 * attempt));
   }
 
-  debugPrint('FCM: APNS token não retornado pelo iOS após 10 tentativas. Tentando fallback com getToken()...');
-  try {
-    final token = await messaging.getToken();
-    if (token != null) {
-      _saveFcmToken(token);
-    }
-  } catch (e) {
-    debugPrint('FCM fallback erro ao obter token: $e');
-  }
+  // Após todas as tentativas, loga aviso. O onTokenRefresh salvará quando chegar.
+  debugPrint(
+    'FCM: APNS token não disponível após ${delays.length} tentativas. '
+    'O token será salvo via onTokenRefresh quando o iOS registrar o dispositivo.',
+  );
 }
 
 void _saveFcmToken(String token) {

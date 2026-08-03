@@ -485,75 +485,91 @@ class _HomePageState extends State<HomePage> {
             if (posts.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () => context.read<FeedCubit>().loadFeed(),
-                child: ListView(
-                  padding: const EdgeInsets.only(top: 8),
-                  children: [
-                    BlocBuilder<DocumentsCubit, DocumentsState>(
-                      builder: (context, state) {
-                        if (state.hasPendingDocuments) {
-                          return const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: DocumentsAlertCard(),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                    ItineraryMicrocards(
-                      onSeeAll: () => setState(() => _selectedIndex = 1),
-                    ),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 32,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
+                        child: IntrinsicHeight(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              BlocBuilder<DocumentsCubit, DocumentsState>(
+                                builder: (context, state) {
+                                  if (state.hasPendingDocuments) {
+                                    return const Padding(
+                                      padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                      child: DocumentsAlertCard(),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
                               ),
-                              child: const Icon(
-                                Icons.dynamic_feed_outlined,
-                                size: 38,
-                                color: AppColors.primary,
+                              ItineraryMicrocards(
+                                onSeeAll: () => setState(() => _selectedIndex = 1),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              context.t(
-                                'Nenhuma publicação ainda',
-                                'No posts yet',
+                              Expanded(
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 40,
+                                      vertical: 32,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 90,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(alpha: 0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.dynamic_feed_outlined,
+                                            size: 38,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Text(
+                                          context.t(
+                                            'Nenhuma publicação ainda',
+                                            'No posts yet',
+                                          ),
+                                          style: AppTextStyles.h3.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          context.t(
+                                            'As publicações do grupo aparecerão aqui.',
+                                            'Group posts will appear here.',
+                                          ),
+                                          style: AppTextStyles.bodyMedium.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                              style: AppTextStyles.h3.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              context.t(
-                                'As publicações do grupo aparecerão aqui.',
-                                'Group posts will appear here.',
-                              ),
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               );
             }

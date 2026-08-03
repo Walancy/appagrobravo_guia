@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +13,7 @@ import 'package:agrobravo/core/components/app_header.dart';
 import 'package:agrobravo/core/components/phone_field.dart';
 import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/core/widgets/date_time_picker_sheet.dart';
 import 'package:agrobravo/core/utils/address_data.dart';
 import 'package:agrobravo/core/utils/phone_countries.dart';
 import 'package:agrobravo/features/profile/domain/entities/profile_entity.dart';
@@ -273,11 +275,12 @@ class _AccountDataPageState extends State<AccountDataPage> {
   DateTime? _birthDate;
 
   Future<void> _selectBirthDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _birthDate ?? DateTime(1990),
-      firstDate: DateTime(1900),
+    final picked = await DateTimePickerSheet.show(
+      context,
+      initial: _birthDate ?? DateTime(1990, 1, 1),
+      firstDate: DateTime(1920),
       lastDate: DateTime.now(),
+      mode: CupertinoDatePickerMode.date,
     );
     if (picked != null && picked != _birthDate) {
       setState(() => _birthDate = picked);

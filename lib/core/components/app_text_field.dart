@@ -108,8 +108,10 @@ class AppTextField extends StatelessWidget {
           textCapitalization: textCapitalization,
           autocorrect: autocorrect,
           enableSuggestions: enableSuggestions,
+          textAlignVertical: TextAlignVertical.center,
           style: textStyle ?? AppTextStyles.bodyMedium.copyWith(color: textColor),
           decoration: InputDecoration(
+            isDense: true,
             hintText: hint,
             hintStyle: hintStyle ?? AppTextStyles.bodyMedium.copyWith(
               color: isLightModeOnDarkBackground

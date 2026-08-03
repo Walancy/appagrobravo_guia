@@ -224,10 +224,39 @@ class _ChatPageState extends State<ChatPage> {
               .select('lider_id, grupo_id')
               .inFilter('grupo_id', groupIdsToFetchGuides.toList());
 
-          final leaderIds = (leadersRes as List)
-              .map((l) => l['lider_id'] as String?)
-              .where((id) => id != null && id != currentUserId)
-              .cast<String>()
+          // Map leader_id -> groupIds, groupNames, missionNames
+          final Map<String, List<String>> leaderGroupIdsMap = {};
+          final Map<String, List<String>> leaderGroupNamesMap = {};
+          final Map<String, Set<String>> leaderMissionNamesMap = {};
+
+          for (final l in leadersRes as List) {
+            final lid = l['lider_id'] as String?;
+            final gid = l['grupo_id'] as String?;
+            if (lid != null && gid != null) {
+              leaderGroupIdsMap.putIfAbsent(lid, () => []);
+              if (!leaderGroupIdsMap[lid]!.contains(gid)) {
+                leaderGroupIdsMap[lid]!.add(gid);
+              }
+
+              final matchingGroup = groups.firstWhere(
+                (g) => g.id == gid,
+                orElse: () => ChatEntity(id: gid, title: 'Grupo', subtitle: ''),
+              );
+              if (matchingGroup.title.isNotEmpty) {
+                leaderGroupNamesMap.putIfAbsent(lid, () => []);
+                if (!leaderGroupNamesMap[lid]!.contains(matchingGroup.title)) {
+                  leaderGroupNamesMap[lid]!.add(matchingGroup.title);
+                }
+              }
+              if (matchingGroup.subtitle.isNotEmpty) {
+                leaderMissionNamesMap.putIfAbsent(lid, () => {});
+                leaderMissionNamesMap[lid]!.add(matchingGroup.subtitle);
+              }
+            }
+          }
+
+          final leaderIds = leaderGroupIdsMap.keys
+              .where((id) => id != currentUserId)
               .toSet();
 
           if (leaderIds.isNotEmpty) {
@@ -240,26 +269,35 @@ class _ChatPageState extends State<ChatPage> {
               final uid = u['id'] as String?;
               if (uid == null) continue;
 
-              if (!guides.any((g) => g.id == uid)) {
-                final leaderEntry = (leadersRes as List).firstWhere(
-                  (l) => l['lider_id'] == uid,
-                  orElse: () => null,
-                );
-                final gid = leaderEntry?['grupo_id'] as String? ?? '';
-                final matchingGroup = groups.firstWhere(
-                  (g) => g.id == gid,
-                  orElse: () => ChatEntity(id: gid, title: 'Grupo', subtitle: ''),
-                );
+              final gIds = leaderGroupIdsMap[uid] ?? [];
+              final gNames = leaderGroupNamesMap[uid] ?? [];
+              final mNames = leaderMissionNamesMap[uid] ?? {};
 
+              final existingIdx = guides.indexWhere((g) => g.id == uid);
+              if (existingIdx >= 0) {
+                final existing = guides[existingIdx];
+                final updatedGroupIds = {...existing.groupIds, ...gIds}.toList();
+                final updatedGroupNames = {...existing.groupNames, ...gNames}.toList();
+                final updatedMissionNames = {...existing.missionNames, ...mNames};
+                guides[existingIdx] = GuideInfo(
+                  id: existing.id,
+                  name: existing.name,
+                  role: existing.role,
+                  avatarUrl: existing.avatarUrl,
+                  groupIds: updatedGroupIds,
+                  groupNames: updatedGroupNames,
+                  missionNames: updatedMissionNames,
+                );
+              } else {
                 guides.add(
                   GuideInfo(
                     id: uid,
                     name: u['nome'] as String? ?? 'Guia',
                     role: u['cargo'] as String? ?? 'Guia da Missão',
                     avatarUrl: u['foto'] as String?,
-                    groupIds: gid.isNotEmpty ? [gid] : [],
-                    groupNames: matchingGroup.title.isNotEmpty ? [matchingGroup.title] : [],
-                    missionNames: matchingGroup.subtitle.isNotEmpty ? {matchingGroup.subtitle} : {},
+                    groupIds: gIds,
+                    groupNames: gNames,
+                    missionNames: mNames,
                   ),
                 );
               }
@@ -499,7 +537,7 @@ class _ChatPageState extends State<ChatPage> {
       body: Column(
         children: [
           // Espaço para não sobrepor a AppBar — padrão do projeto
-          const HeaderSpacer(extraHeight: 51),
+          const HeaderSpacer(),
 
           BlocBuilder<DocumentsCubit, DocumentsState>(
             builder: (context, state) {

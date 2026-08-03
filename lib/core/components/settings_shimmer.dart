@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
+import 'package:agrobravo/core/components/app_header.dart';
 
 class SettingsShimmer extends StatelessWidget {
   const SettingsShimmer({super.key});
@@ -88,6 +89,7 @@ class SettingsShimmer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const HeaderSpacer(),
           Shimmer.fromColors(
             baseColor: baseColor,
             highlightColor: highlightColor,

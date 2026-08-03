@@ -69,6 +69,7 @@ class _IncidentModalState extends State<IncidentModal> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final initialDt = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -78,7 +79,8 @@ class _IncidentModalState extends State<IncidentModal> {
     );
     final result = await DateTimePickerSheet.show(
       context,
-      initial: initialDt,
+      initial: initialDt.isAfter(now) ? now : initialDt,
+      lastDate: now,
     );
     if (result != null && mounted) {
       setState(() {
@@ -111,15 +113,19 @@ class _IncidentModalState extends State<IncidentModal> {
     _actionController.dispose();
     _locationController.dispose();
     super.dispose();
-  }  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final maxHeight = MediaQuery.of(context).size.height * 0.90;
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
+        constraints: BoxConstraints(maxHeight: maxHeight),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
