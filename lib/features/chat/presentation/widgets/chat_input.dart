@@ -127,8 +127,11 @@ class _ChatInputState extends State<ChatInput> {
       if (dialogShown) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permissão concedida! Mantenha pressionado para gravar.'),
+            SnackBar(
+              content: Text(context.t(
+                'Permissão concedida! Mantenha pressionado para gravar.',
+                'Permission granted! Hold to record.',
+              )),
               behavior: SnackBarBehavior.floating,
               backgroundColor: AppColors.primary,
             ),

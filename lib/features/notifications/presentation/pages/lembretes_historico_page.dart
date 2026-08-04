@@ -96,7 +96,7 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
     if (!mounted) return;
     result.fold(
       (e) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: ${e.toString()}')),
+        SnackBar(content: Text('${context.t('Erro', 'Error')}: ${e.toString()}')),
       ),
       (_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -196,7 +196,7 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
     if (!mounted) return;
     result.fold(
       (e) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: ${e.toString()}')),
+        SnackBar(content: Text('${context.t('Erro', 'Error')}: ${e.toString()}')),
       ),
       (_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,7 +242,7 @@ class _LembretesHistoricoPageState extends State<LembretesHistoricoPage>
           if (!mounted) return;
           result.fold(
             (e) => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro: ${e.toString()}')),
+              SnackBar(content: Text('${context.t('Erro', 'Error')}: ${e.toString()}')),
             ),
             (_) {
               ScaffoldMessenger.of(context).showSnackBar(

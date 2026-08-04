@@ -94,8 +94,8 @@ class _GenericEventCardState extends State<GenericEventCard> {
 
       // SnackBar com info de alarme
       final alarmMsg = result.alarmScheduled && result.alarmTime != null
-          ? '✅ Check-in registrado! Alarme de checkout agendado para ${DateFormat('HH:mm').format(result.alarmTime!)}'
-          : '✅ Check-in registrado!';
+          ? 'Check-in registrado! Alarme de checkout agendado para ${DateFormat('HH:mm').format(result.alarmTime!)}'
+          : 'Check-in registrado!';
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -347,7 +347,7 @@ class _GenericEventCardState extends State<GenericEventCard> {
                     }
                   },
                   icon: const Icon(Icons.location_on_outlined, size: 16),
-                  label: const Text('Ver no Mapa'),
+                  label: Text(context.t('Ver no Mapa', 'View on Map')),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     backgroundColor: AppColors.primary.withOpacity(0.05),

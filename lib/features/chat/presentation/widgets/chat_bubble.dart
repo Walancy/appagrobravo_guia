@@ -709,8 +709,8 @@ class _AudioPlayerState extends State<_AudioPlayer> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao reproduzir áudio'),
+          SnackBar(
+            content: Text(context.t('Erro ao reproduzir áudio', 'Error playing audio')),
             behavior: SnackBarBehavior.floating,
           ),
         );

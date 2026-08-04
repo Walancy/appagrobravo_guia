@@ -3,6 +3,7 @@ import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_spacing.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import 'package:get_it/get_it.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../../domain/repositories/itinerary_repository.dart';
 import '../../domain/entities/menu_item.dart';
 
@@ -127,7 +128,7 @@ class _EventMenuBottomSheetState extends State<EventMenuBottomSheet> {
               child: Row(
                 children: [
                   FilterChip(
-                    label: const Text('Vegetariano'),
+                    label: Text(context.t('Vegetariano', 'Vegetarian')),
                     selected: _showVegetarian,
                     onSelected: (selected) {
                       _showVegetarian = selected;
@@ -138,7 +139,7 @@ class _EventMenuBottomSheetState extends State<EventMenuBottomSheet> {
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
-                    label: const Text('Vegano'),
+                    label: Text(context.t('Vegano', 'Vegan')),
                     selected: _showVegan,
                     onSelected: (selected) {
                       _showVegan = selected;
@@ -149,7 +150,7 @@ class _EventMenuBottomSheetState extends State<EventMenuBottomSheet> {
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
-                    label: const Text('Sem álcool'),
+                    label: Text(context.t('Sem álcool', 'Alcohol-free')),
                     selected: _showNonAlcoholic,
                     onSelected: (selected) {
                       _showNonAlcoholic = selected;

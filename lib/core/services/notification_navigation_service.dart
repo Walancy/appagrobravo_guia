@@ -33,6 +33,24 @@ class NotificationNavigationService {
     log('NotificationNavigationService initialized', name: 'push');
   }
 
+  /// Called by [LocalNotificationService] when the user taps a foreground
+  /// local notification. [payload] is the raw `target_route` string stored
+  /// as the notification payload.
+  static void navigateFromLocalNotification(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    log('navigateFromLocalNotification: payload=$payload', name: 'push');
+
+    final resolvedRoute = _normalizeRoute(payload);
+    if (resolvedRoute == null) return;
+
+    if (!_routerReady) {
+      _pendingRoute = resolvedRoute;
+      return;
+    }
+
+    _navigateTo(resolvedRoute);
+  }
+
   /// Call after MaterialApp.router has mounted so cold-start notification taps
   /// can safely navigate.
   static void markRouterReady() {
@@ -203,18 +221,27 @@ class NotificationNavigationService {
           return;
         }
 
-        // For detail screens: go to parent (with navbar) first, then push detail
+        // For detail screens: go to parent (with navbar) first, then push detail.
+        // Uses two nested addPostFrameCallback to guarantee the parent screen
+        // is fully rendered before pushing the detail route.
         final stack = _resolveStack(route);
         if (stack != null) {
           appRouter.go(stack.$1);
+          log('Navigated (go) to: ${stack.$1}', name: 'push');
+
           if (stack.$2.isNotEmpty) {
-            // Small delay to let the parent screen mount before pushing
-            Future.delayed(const Duration(milliseconds: 150), () {
-              appRouter.push(stack.$2);
-              log('Navigated: go(${stack.$1}) + push(${stack.$2})', name: 'push');
+            // First callback: parent screen started rebuilding after go().
+            // Second callback: parent screen is fully rendered → safe to push.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                try {
+                  appRouter.push(stack.$2);
+                  log('Pushed detail: ${stack.$2}', name: 'push');
+                } catch (e) {
+                  log('Error pushing ${stack.$2}: $e', name: 'push');
+                }
+              });
             });
-          } else {
-             log('Navigated (go) to: ${stack.$1} with no detail push', name: 'push');
           }
           return;
         }

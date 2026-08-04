@@ -170,7 +170,7 @@ class _EmergencyModalState extends State<EmergencyModal> {
                     const SizedBox(height: AppSpacing.lg),
                     ElevatedButton(
                       onPressed: _loadContacts,
-                      child: const Text('Tentar Novamente'),
+                      child: Text(context.t('Tentar Novamente', 'Try Again')),
                     ),
                   ],
                 ),

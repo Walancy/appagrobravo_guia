@@ -334,7 +334,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       (e) {
         setState(() => _isActing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao editar check-in: $e')),
+          SnackBar(content: Text('${context.t('Erro ao editar check-in', 'Error editing check-in')}: $e')),
         );
       },
       (status) {
@@ -410,7 +410,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       (e) {
         setState(() => _isActing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao descartar check-in: $e')),
+          SnackBar(content: Text('${context.t('Erro ao descartar check-in', 'Error discarding check-in')}: $e')),
         );
       },
       (status) {
@@ -426,7 +426,74 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   }
 
   /// Abre diálogo para re-editar o horário do check-out e regrava.
+  /// Desfaz todo o fluxo (check-in + check-out), voltando ao estágio pendente.
+  Future<void> _descartarTudo() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.undo_rounded, color: Colors.red, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              context.t('Descartar tudo', 'Discard all'),
+              style: AppTextStyles.h3.copyWith(fontSize: 16),
+            ),
+          ],
+        ),
+        content: Text(
+          context.t(
+            'Isso vai apagar o check-in e o check-out desta atividade. O status voltará para pendente.',
+            'This will erase the check-in and check-out for this activity. Status will revert to pending.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.t('Cancelar', 'Cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.t('Descartar', 'Discard')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isActing = true);
+    final repo = getIt<ItineraryRepository>();
+    final result = await repo.resetarCheckin(widget.eventId, _currentGuiaId);
+
+    if (!mounted) return;
+    result.fold(
+      (e) {
+        setState(() => _isActing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.t('Erro ao descartar', 'Error discarding')}: $e')),
+        );
+      },
+      (status) {
+        // Cancela alarme pendente
+        EventAlarmService.instance.cancelarAlarme(widget.eventId);
+        setState(() {
+          _guiaStatus = status;
+          _isActing = false;
+          _selectedTime = TimeOfDay.now();
+        });
+      },
+    );
+  }
+
   Future<void> _editarCheckout() async {
+
     final currentCheckoutTime = _guiaStatus?.checkoutAt != null
         ? TimeOfDay.fromDateTime(_guiaStatus!.checkoutAt!)
         : TimeOfDay.now();
@@ -492,7 +559,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       (e) {
         setState(() => _isActing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao editar check-out: $e')),
+          SnackBar(content: Text('${context.t('Erro ao editar check-out', 'Error editing check-out')}: $e')),
         );
       },
       (status) {
@@ -857,24 +924,41 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         // Resumo de horários
         _buildConclusionSummary(),
         const SizedBox(height: 8),
-        // Botão de editar check-out
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: _isActing ? null : _editarCheckout,
-            icon: Icon(Icons.edit_outlined, size: 14, color: _doneColor.withOpacity(0.7)),
-            label: Text(
-              context.t('Editar check-out', 'Edit check-out'),
-              style: AppTextStyles.bodySmall.copyWith(
-                color: _doneColor.withOpacity(0.7),
-                fontSize: 12,
+        // Ações de edição: editar check-out | descartar tudo
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TextButton.icon(
+              onPressed: _isActing ? null : _descartarTudo,
+              icon: const Icon(Icons.undo_rounded, size: 14, color: Colors.red),
+              label: Text(
+                context.t('Descartar tudo', 'Discard all'),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            TextButton.icon(
+              onPressed: _isActing ? null : _editarCheckout,
+              icon: Icon(Icons.edit_outlined, size: 14, color: _doneColor.withOpacity(0.7)),
+              label: Text(
+                context.t('Editar check-out', 'Edit check-out'),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: _doneColor.withOpacity(0.7),
+                  fontSize: 12,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -927,6 +1011,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       ],
     );
   }
+
 
   Widget _buildConclusionSummary() {
     final status = _guiaStatus;

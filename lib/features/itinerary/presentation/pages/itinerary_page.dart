@@ -37,7 +37,7 @@ class ItineraryPage extends StatelessWidget {
           builder: (context, state) {
             return state.maybeWhen(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (msg) => Center(child: Text('Erro: $msg')),
+              error: (msg) => Center(child: Text('${context.t('Erro', 'Error')}: $msg')),
               loaded: (group, items, travelTimes, pendingDocs) {
                 final isEnded = group.endDate.isBefore(DateTime.now());
                 final displayPendingDocs = isEnded ? <String>[] : pendingDocs;

@@ -1258,7 +1258,7 @@ class _GuideDashboardPageState extends State<GuideDashboardPage> {
                           ),
                         ),
                       ),
-                      child: const Text('Ver mais detalhes'),
+                      child: Text(context.t('Ver mais detalhes', 'See more details')),
                     ),
                   ),
                 ],

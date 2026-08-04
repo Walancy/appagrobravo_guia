@@ -31,7 +31,7 @@ class ChatAttachmentBottomSheet extends StatelessWidget {
             ),
           ),
 
-          Text('Enviar anexo', style: AppTextStyles.h3.copyWith(fontSize: 18)),
+          Text(context.t('Enviar anexo', 'Send attachment'), style: AppTextStyles.h3.copyWith(fontSize: 18)),
 
           const SizedBox(height: AppSpacing.md),
           Padding(

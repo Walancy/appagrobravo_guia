@@ -129,7 +129,7 @@ class _ReminderModalState extends State<ReminderModal> {
 
       result.fold(
         (l) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: ${l.toString()}')),
+          SnackBar(content: Text('${context.t('Erro', 'Error')}: ${l.toString()}')),
         ),
         (_) {
           Navigator.pop(context);

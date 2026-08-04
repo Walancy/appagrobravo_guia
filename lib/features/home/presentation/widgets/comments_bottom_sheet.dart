@@ -202,7 +202,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Editar comentário'),
+              title: Text(context.t('Editar comentário', 'Edit comment')),
               onTap: () {
                 Navigator.pop(context);
                 _onEditComment(comment);
@@ -211,9 +211,9 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text(
-                'Excluir comentário',
-                style: TextStyle(color: Colors.red),
+              title: Text(
+                context.t('Excluir comentário', 'Delete comment'),
+                style: const TextStyle(color: Colors.red),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -275,7 +275,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ),
           ),
 
-          Text('Comentários', style: AppTextStyles.h3.copyWith(fontSize: 18)),
+          Text(context.t('Comentários', 'Comments'), style: AppTextStyles.h3.copyWith(fontSize: 18)),
 
           Expanded(
             child: _isLoading

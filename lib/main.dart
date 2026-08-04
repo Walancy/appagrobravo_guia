@@ -36,7 +36,9 @@ Future<void> setupFCM() async {
   try {
     final messaging = FirebaseMessaging.instance;
 
-    // Habilita exibição nativa de notificação push em primeiro plano (iOS)
+    // iOS foreground: mantém alert:true para que o iOS exiba o banner do sistema.
+    // O tap no banner dispara onMessageOpenedApp (mesmo com app em foreground),
+    // que já tem o handler de navegação correto.
     try {
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
@@ -50,19 +52,24 @@ Future<void> setupFCM() async {
     // Registra handler de background
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Escuta mensagens recebidas em primeiro plano (foreground)
+    // Escuta mensagens recebidas em primeiro plano (foreground).
+    // iOS: o sistema exibe o banner (alert:true) e o tap aciona onMessageOpenedApp.
+    // Android: o sistema não exibe banner em foreground, usamos local notification.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('FCM foreground message received: ${message.messageId}');
       if (defaultTargetPlatform == TargetPlatform.android) {
         final notification = message.notification;
         if (notification != null) {
+          final targetRoute = message.data['target_route']?.toString();
           LocalNotificationService.showNotification(
-            notification.title ?? '',
+            notification.title ?? 'AgroBravo',
             notification.body ?? '',
+            payload: targetRoute,
           );
         }
       }
     });
+
 
     // Solicita permissão ao usuário (iOS mostra o diálogo nativo)
     final settings = await messaging.requestPermission(
@@ -199,8 +206,8 @@ void main() async {
   // Escuta mudanças de estado de autenticação para atualizar o fcm_token reativamente
   if (isFirebaseSupported) {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
-      final user = data.session?.user ?? Supabase.instance.client.auth.currentUser;
-      if (user != null) {
+      // Atualiza FCM somente no login real, não em tokenRefreshed (ocorre a cada ~1h)
+      if (data.event == AuthChangeEvent.signedIn) {
         _getFcmTokenAndSave(FirebaseMessaging.instance);
       }
     });

@@ -5,6 +5,7 @@ import 'package:gal/gal.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
   final String imageUrl;
@@ -45,8 +46,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         if (!granted) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Permissão negada para salvar na galeria.'),
+              SnackBar(
+                content: Text(context.t('Permissão negada para salvar na galeria.', 'Gallery permission denied.')),
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -67,8 +68,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Foto salva na galeria!'),
+          SnackBar(
+            content: Text(context.t('Foto salva na galeria!', 'Photo saved to gallery!')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -76,8 +77,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao salvar a foto.'),
+          SnackBar(
+            content: Text(context.t('Erro ao salvar a foto.', 'Error saving photo.')),
             behavior: SnackBarBehavior.floating,
           ),
         );

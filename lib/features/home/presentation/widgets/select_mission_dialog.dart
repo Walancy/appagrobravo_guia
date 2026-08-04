@@ -60,7 +60,7 @@ class SelectMissionDialog extends StatelessWidget {
 
             // Mission List (assuming a few for now, otherwise scrollable)
             if (missions.isEmpty)
-              const Center(child: Text('Nenhuma missão encontrada'))
+              Center(child: Text(context.t('Nenhuma missão encontrada', 'No mission found')))
             else
               StatefulBuilder(
                 builder: (context, setState) {
