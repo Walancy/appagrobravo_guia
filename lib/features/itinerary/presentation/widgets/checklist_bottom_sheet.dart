@@ -12,6 +12,19 @@ import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repos
 import 'package:agrobravo/features/itinerary/domain/entities/guia_evento_status.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Resultado retornado ao fechar o sheet — permite o card atualizar seu ícone.
+class ChecklistResult {
+  final GuiaEventoStatus? status;
+  final bool alarmScheduled;
+  final DateTime? alarmTime;
+
+  const ChecklistResult({
+    this.status,
+    this.alarmScheduled = false,
+    this.alarmTime,
+  });
+}
+
 class ChecklistBottomSheet extends StatefulWidget {
   final String eventName;
   final String? eventLocation;
@@ -51,6 +64,11 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   bool _isActing = false;
   DateTime? _lastActionTime;
   String? _error;
+
+  // Cores semânticas de cada estágio
+  static const Color _checkinColor = Colors.green;
+  static final Color _checkoutColor = Colors.orange.shade700;
+  static const Color _doneColor = Color(0xFF2E7D32); // green-800
 
   String get _currentGuiaId =>
       Supabase.instance.client.auth.currentUser?.id ?? '';
@@ -180,6 +198,8 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         );
       },
       (status) async {
+        bool alarmScheduled = false;
+
         // Agenda alarme SOMENTE se endDateTime estiver disponível
         if (widget.endDateTime != null) {
           await EventAlarmService.instance.agendarAlarmeCheckout(
@@ -187,17 +207,21 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             eventoNome: widget.eventName,
             endDateTime: widget.endDateTime!,
           );
+          alarmScheduled = true;
         } else {
           debugPrint(
-              '[ChecklistBottomSheet] ⚠ endDateTime é nulo para o evento "${widget.eventName}" — nenhum alarme será agendado. Verifique se hora_fim está preenchido no banco.');
+              '[ChecklistBottomSheet] ⚠ endDateTime é nulo para o evento "${widget.eventName}" — nenhum alarme será agendado.');
         }
+
         if (mounted) {
-          setState(() {
-            _guiaStatus = status;
-            _isActing = false;
-            // Reseta horário para "agora" preparando para eventual checkout
-            _selectedTime = TimeOfDay.now();
-          });
+          // Fecha o sheet e retorna o resultado para o card atualizar o ícone
+          Navigator.of(context).pop(
+            ChecklistResult(
+              status: status,
+              alarmScheduled: alarmScheduled,
+              alarmTime: alarmScheduled ? widget.endDateTime : null,
+            ),
+          );
         }
       },
     );
@@ -239,6 +263,258 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
             _isActing = false;
           });
         }
+      },
+    );
+  }
+
+  /// Abre diálogo para re-editar o horário do check-in e regrava.
+  Future<void> _editarCheckin() async {
+    final currentCheckinTime = _guiaStatus?.checkinAt != null
+        ? TimeOfDay.fromDateTime(_guiaStatus!.checkinAt!)
+        : TimeOfDay.now();
+
+    final currentDt = () {
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day,
+          currentCheckinTime.hour, currentCheckinTime.minute);
+    }();
+
+    final picked = await DateTimePickerSheet.show(context, initial: currentDt);
+    if (picked == null || !mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit_outlined, color: Colors.orange, size: 20),
+            const SizedBox(width: 8),
+            Text(context.t('Editar Check-in', 'Edit Check-in'),
+                style: AppTextStyles.h3.copyWith(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          context.t(
+            'Confirmar novo horário de check-in: ${DateFormat('HH:mm').format(picked)}?',
+            'Confirm new check-in time: ${DateFormat('HH:mm').format(picked)}?',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.t('Cancelar', 'Cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.t('Confirmar', 'Confirm')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isActing = true);
+    final repo = getIt<ItineraryRepository>();
+    final result = await repo.registrarCheckin(
+      widget.eventId,
+      _currentGuiaId,
+      picked,
+      _presencas,
+    );
+
+    if (!mounted) return;
+    result.fold(
+      (e) {
+        setState(() => _isActing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao editar check-in: $e')),
+        );
+      },
+      (status) {
+        setState(() {
+          _guiaStatus = status;
+          _isActing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.orange,
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Check-in atualizado para ${DateFormat('HH:mm').format(picked)}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Abre diálogo de confirmação e descarta o check-in, voltando ao estágio pendente.
+  Future<void> _descartarCheckin() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.undo_rounded, color: Colors.red, size: 20),
+            const SizedBox(width: 8),
+            Text(context.t('Descartar Check-in', 'Discard Check-in'),
+                style: AppTextStyles.h3.copyWith(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          context.t(
+            'Tem certeza? O status voltará para pendente.',
+            'Are you sure? Status will revert to pending.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.t('Cancelar', 'Cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.t('Descartar', 'Discard')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isActing = true);
+    final repo = getIt<ItineraryRepository>();
+    final result = await repo.resetarCheckin(widget.eventId, _currentGuiaId);
+
+    if (!mounted) return;
+    result.fold(
+      (e) {
+        setState(() => _isActing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao descartar check-in: $e')),
+        );
+      },
+      (status) {
+        // Cancela alarme ao descartar
+        EventAlarmService.instance.cancelarAlarme(widget.eventId);
+        setState(() {
+          _guiaStatus = status;
+          _isActing = false;
+          _selectedTime = TimeOfDay.now();
+        });
+      },
+    );
+  }
+
+  /// Abre diálogo para re-editar o horário do check-out e regrava.
+  Future<void> _editarCheckout() async {
+    final currentCheckoutTime = _guiaStatus?.checkoutAt != null
+        ? TimeOfDay.fromDateTime(_guiaStatus!.checkoutAt!)
+        : TimeOfDay.now();
+
+    final currentDt = () {
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day,
+          currentCheckoutTime.hour, currentCheckoutTime.minute);
+    }();
+
+    final picked = await DateTimePickerSheet.show(context, initial: currentDt);
+    if (picked == null || !mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit_outlined, color: AppColors.secondary, size: 20),
+            const SizedBox(width: 8),
+            Text(context.t('Editar Check-out', 'Edit Check-out'),
+                style: AppTextStyles.h3.copyWith(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          context.t(
+            'Confirmar novo horário de check-out: ${DateFormat('HH:mm').format(picked)}?',
+            'Confirm new check-out time: ${DateFormat('HH:mm').format(picked)}?',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.t('Cancelar', 'Cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.t('Confirmar', 'Confirm')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isActing = true);
+    final repo = getIt<ItineraryRepository>();
+    final result = await repo.registrarCheckout(
+      widget.eventId,
+      _currentGuiaId,
+      picked,
+      _presencas,
+    );
+
+    if (!mounted) return;
+    result.fold(
+      (e) {
+        setState(() => _isActing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao editar check-out: $e')),
+        );
+      },
+      (status) {
+        setState(() {
+          _guiaStatus = status;
+          _isActing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.secondary,
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Check-out atualizado para ${DateFormat('HH:mm').format(picked)}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -383,7 +659,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
           ? DateFormat('HH:mm').format(status.checkinAt!)
           : '--:--';
       return _badge(
-        color: Colors.green,
+        color: _checkinColor,
         icon: Icons.login_rounded,
         label: 'Check-in · $time',
       );
@@ -392,9 +668,9 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         ? DateFormat('HH:mm').format(status.checkoutAt!)
         : '--:--';
     return _badge(
-      color: Colors.blue,
-      icon: Icons.logout_rounded,
-      label: 'Check-out · $time',
+      color: _doneColor,
+      icon: Icons.task_alt_rounded,
+      label: 'Concluído · $time',
     );
   }
 
@@ -445,7 +721,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       children: [
         _buildTimePicker(
           label: context.t('Horário do Check-in', 'Check-in Time'),
-          accentColor: Colors.green,
+          accentColor: _checkinColor,
         ),
         const SizedBox(height: 12),
         _buildSelectAllBar(),
@@ -460,7 +736,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         _buildActionButton(
           label: context.t('Confirmar Check-in', 'Confirm Check-in'),
           icon: Icons.login_rounded,
-          color: Colors.green,
+          color: _checkinColor,
           onPressed: _confirmarCheckin,
         ),
         const SizedBox(height: 24),
@@ -471,12 +747,83 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
   // ─── Estágio 2 — Check-in feito (fazer check-out) ─────────────────────────
 
   Widget _buildStageCheckin() {
+    final checkinStr = _guiaStatus?.checkinAt != null
+        ? DateFormat('HH:mm').format(_guiaStatus!.checkinAt!)
+        : '--:--';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Faixa contextual laranja
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _checkoutColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _checkoutColor.withOpacity(0.15)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.logout_rounded, color: _checkoutColor, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.t(
+                    'Check-in registrado às $checkinStr — registre a saída quando terminar.',
+                    'Check-in at $checkinStr — register departure when done.',
+                  ),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: _checkoutColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Ações de edição do check-in
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: _isActing ? null : _editarCheckin,
+              icon: Icon(Icons.edit_outlined, size: 14, color: _checkoutColor.withOpacity(0.8)),
+              label: Text(
+                context.t('Editar check-in', 'Edit check-in'),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: _checkoutColor.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 4),
+            TextButton.icon(
+              onPressed: _isActing ? null : _descartarCheckin,
+              icon: const Icon(Icons.undo_rounded, size: 14, color: Colors.red),
+              label: Text(
+                context.t('Descartar', 'Discard'),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
         _buildTimePicker(
           label: context.t('Horário do Check-out', 'Check-out Time'),
-          accentColor: AppColors.primary,
+          accentColor: _checkoutColor,
         ),
         const SizedBox(height: 12),
         _buildSelectAllBar(),
@@ -491,7 +838,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         _buildActionButton(
           label: context.t('Confirmar Check-out', 'Confirm Check-out'),
           icon: Icons.logout_rounded,
-          color: AppColors.primary,
+          color: _checkoutColor,
           onPressed: _confirmarCheckout,
         ),
         const SizedBox(height: 24),
@@ -509,18 +856,38 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
       children: [
         // Resumo de horários
         _buildConclusionSummary(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        // Botão de editar check-out
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _isActing ? null : _editarCheckout,
+            icon: Icon(Icons.edit_outlined, size: 14, color: _doneColor.withOpacity(0.7)),
+            label: Text(
+              context.t('Editar check-out', 'Edit check-out'),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: _doneColor.withOpacity(0.7),
+                fontSize: 12,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.08),
+            color: _doneColor.withOpacity(0.07),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.withOpacity(0.06)),
+            border: Border.all(color: _doneColor.withOpacity(0.1)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.task_alt_rounded, color: Colors.blue, size: 20),
+              Icon(Icons.task_alt_rounded, color: _doneColor, size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -529,7 +896,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
                     '$present of $total travelers present',
                   ),
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.blue,
+                    color: _doneColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -575,19 +942,19 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.07),
+        color: _doneColor.withOpacity(0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.06)),
+        border: Border.all(color: _doneColor.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          _timeInfo(Icons.login_rounded, Colors.green, context.t('Check-in', 'Check-in'), checkinStr),
+          _timeInfo(Icons.login_rounded, _checkinColor, context.t('Check-in', 'Check-in'), checkinStr),
           const SizedBox(width: 8),
           Expanded(
             child: Container(height: 1, color: Colors.grey.withOpacity(0.2)),
           ),
           const SizedBox(width: 8),
-          _timeInfo(Icons.logout_rounded, Colors.blue, context.t('Check-out', 'Check-out'), checkoutStr),
+          _timeInfo(Icons.logout_rounded, _checkoutColor, context.t('Check-out', 'Check-out'), checkoutStr),
         ],
       ),
     );
@@ -616,7 +983,7 @@ class _ChecklistBottomSheetState extends State<ChecklistBottomSheet> {
         decoration: BoxDecoration(
           color: accentColor.withOpacity(0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accentColor.withOpacity(0.06)),
+          border: Border.all(color: accentColor.withOpacity(0.12)),
         ),
         child: Row(
           children: [

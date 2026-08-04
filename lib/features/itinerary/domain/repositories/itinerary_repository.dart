@@ -62,5 +62,11 @@ abstract class ItineraryRepository {
     DateTime checkoutAt,
     List<Map<String, dynamic>> presencas,
   );
+
+  /// Reverte o check-in: volta status para 'pendente' e limpa checkin_at / checkout_at.
+  Future<Either<Exception, GuiaEventoStatus>> resetarCheckin(
+    String eventoId,
+    String guiaId,
+  );
 }
 

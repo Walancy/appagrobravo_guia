@@ -8,7 +8,12 @@ import 'checklist_bottom_sheet.dart';
 import 'event_attachments_bottom_sheet.dart';
 import 'event_menu_bottom_sheet.dart';
 
-class GenericEventCard extends StatelessWidget {
+import 'package:agrobravo/core/di/injection.dart';
+import 'package:agrobravo/features/itinerary/domain/entities/guia_evento_status.dart';
+import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class GenericEventCard extends StatefulWidget {
   final ItineraryItemEntity item;
   final String groupId;
 
@@ -17,6 +22,107 @@ class GenericEventCard extends StatelessWidget {
     required this.item,
     required this.groupId,
   });
+
+  @override
+  State<GenericEventCard> createState() => _GenericEventCardState();
+}
+
+class _GenericEventCardState extends State<GenericEventCard> {
+  GuiaEventoStatus? _status;
+  bool _statusLoaded = false;
+
+  String get _currentGuiaId =>
+      Supabase.instance.client.auth.currentUser?.id ?? '';
+
+  // Cores e aparência por estágio
+  static const Color _checkinColor = Colors.green;
+  static final Color _checkoutColor = Colors.orange.shade700;
+  static const Color _doneColor = Color(0xFF2E7D32);
+
+  IconData get _checklistIcon {
+    if (_status == null || _status!.isPendente) return Icons.checklist_rtl_rounded;
+    if (_status!.isCheckinFeito) return Icons.logout_rounded;
+    return Icons.task_alt_rounded;
+  }
+
+  Color get _checklistBgColor {
+    if (_status == null || _status!.isPendente) return AppColors.primary;
+    if (_status!.isCheckinFeito) return _checkoutColor;
+    return _doneColor;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStatus();
+  }
+
+  Future<void> _loadStatus() async {
+    final repo = getIt<ItineraryRepository>();
+    final result = await repo.getGuiaEventoStatus(widget.item.id, _currentGuiaId);
+    if (!mounted) return;
+    result.fold(
+      (_) {},
+      (status) => setState(() {
+        _status = status;
+        _statusLoaded = true;
+      }),
+    );
+    if (!_statusLoaded && mounted) setState(() => _statusLoaded = true);
+  }
+
+  Future<void> _openChecklist() async {
+    final result = await showModalBottomSheet<ChecklistResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ChecklistBottomSheet(
+        eventName: widget.item.name,
+        eventLocation: widget.item.location,
+        eventIcon: _getIconForType(widget.item.type),
+        groupId: widget.groupId,
+        eventId: widget.item.id,
+        endDateTime: widget.item.endDateTime,
+      ),
+    );
+
+    if (!mounted) return;
+
+    // Se foi feito check-in, result contém o novo status + info de alarme
+    if (result != null && result.status != null) {
+      setState(() => _status = result.status);
+
+      // SnackBar com info de alarme
+      final alarmMsg = result.alarmScheduled && result.alarmTime != null
+          ? '✅ Check-in registrado! Alarme de checkout agendado para ${DateFormat('HH:mm').format(result.alarmTime!)}'
+          : '✅ Check-in registrado!';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: _checkinColor,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  alarmMsg,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      // Qualquer outro fechamento (checkout, edições, fechar) — recarrega status
+      _loadStatus();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +143,7 @@ class GenericEventCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                _getIconForType(item.type),
+                _getIconForType(widget.item.type),
                 color: AppColors.primary,
                 size: 20,
               ),
@@ -50,22 +156,22 @@ class GenericEventCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            item.name,
+                            widget.item.name,
                             style: AppTextStyles.bodyLarge.copyWith(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                        if (item.type == ItineraryType.hotel) ...[
-                          if (item.name.toLowerCase().contains('check-in') ||
-                              (item.description?.toLowerCase().contains(
+                        if (widget.item.type == ItineraryType.hotel) ...[
+                          if (widget.item.name.toLowerCase().contains('check-in') ||
+                              (widget.item.description?.toLowerCase().contains(
                                     'check-in',
                                   ) ??
                                   false))
                             _buildHotelTag('CHECK-IN', Colors.blue),
-                          if (item.name.toLowerCase().contains('check-out') ||
-                              (item.description?.toLowerCase().contains(
+                          if (widget.item.name.toLowerCase().contains('check-out') ||
+                              (widget.item.description?.toLowerCase().contains(
                                     'check-out',
                                   ) ??
                                   false))
@@ -73,10 +179,10 @@ class GenericEventCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (item.location != null) ...[
+                    if (widget.item.location != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        item.location!,
+                        widget.item.location!,
                         style: AppTextStyles.bodySmall.copyWith(
                           fontSize: 11,
                           color: Theme.of(context).colorScheme.onSurface
@@ -88,9 +194,9 @@ class GenericEventCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (item.startDateTime != null)
+              if (widget.item.startDateTime != null)
                 Text(
-                  DateFormat('HH:mm').format(item.startDateTime!),
+                  DateFormat('HH:mm').format(widget.item.startDateTime!),
                   style: AppTextStyles.bodyLarge.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -98,17 +204,17 @@ class GenericEventCard extends StatelessWidget {
                 ),
             ],
           ),
-          if (item.description != null && item.description!.isNotEmpty) ...[
+          if (widget.item.description != null && widget.item.description!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              item.description!,
+              widget.item.description!,
               style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ],
-          if (item.type == ItineraryType.food) ...[
+          if (widget.item.type == ItineraryType.food) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () {
@@ -118,9 +224,9 @@ class GenericEventCard extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   builder:
                       (context) => EventMenuBottomSheet(
-                        eventId: item.id,
-                        eventName: item.name,
-                        eventIcon: _getIconForType(item.type),
+                        eventId: widget.item.id,
+                        eventName: widget.item.name,
+                        eventIcon: _getIconForType(widget.item.type),
                       ),
                 );
               },
@@ -144,7 +250,7 @@ class GenericEventCard extends StatelessWidget {
                 ],
               ),
             ),
-          ] else if (item.menuUrl != null && item.menuUrl!.isNotEmpty) ...[
+          ] else if (widget.item.menuUrl != null && widget.item.menuUrl!.isNotEmpty) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () {
@@ -154,10 +260,10 @@ class GenericEventCard extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   builder:
                       (context) => EventAttachmentsBottomSheet(
-                        eventName: item.name,
-                        menuUrl: item.menuUrl,
+                        eventName: widget.item.name,
+                        menuUrl: widget.item.menuUrl,
                         attachments: null,
-                        eventIcon: _getIconForType(item.type),
+                        eventIcon: _getIconForType(widget.item.type),
                       ),
                 );
               },
@@ -182,7 +288,7 @@ class GenericEventCard extends StatelessWidget {
               ),
             ),
           ],
-          if (item.attachments != null && item.attachments!.isNotEmpty) ...[
+          if (widget.item.attachments != null && widget.item.attachments!.isNotEmpty) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () {
@@ -192,10 +298,10 @@ class GenericEventCard extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   builder:
                       (context) => EventAttachmentsBottomSheet(
-                        eventName: item.name,
+                        eventName: widget.item.name,
                         menuUrl: null,
-                        attachments: item.attachments,
-                        eventIcon: _getIconForType(item.type),
+                        attachments: widget.item.attachments,
+                        eventIcon: _getIconForType(widget.item.type),
                       ),
                 );
               },
@@ -226,8 +332,8 @@ class GenericEventCard extends StatelessWidget {
               Expanded(
                 child: TextButton.icon(
                   onPressed: () async {
-                    if (item.location != null && item.location!.isNotEmpty) {
-                      final query = Uri.encodeComponent(item.location!);
+                    if (widget.item.location != null && widget.item.location!.isNotEmpty) {
+                      final query = Uri.encodeComponent(widget.item.location!);
                       final googleMapsUrl = Uri.parse(
                         'https://www.google.com/maps/search/?api=1&query=$query',
                       );
@@ -256,39 +362,58 @@ class GenericEventCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder:
-                          (context) => ChecklistBottomSheet(
-                            eventName: item.name,
-                            eventLocation: item.location,
-                            eventIcon: _getIconForType(item.type),
-                            groupId: groupId,
-                            eventId: item.id,
-                            endDateTime: item.endDateTime,
+              // Botão de checklist com ícone e cor variáveis por estado
+              Tooltip(
+                message: _statusLoaded
+                    ? (_status == null || _status!.isPendente
+                        ? 'Fazer Check-in'
+                        : _status!.isCheckinFeito
+                            ? 'Fazer Check-out'
+                            : 'Ver resumo')
+                    : 'Checklist',
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: _checklistBgColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: IconButton(
+                        onPressed: _openChecklist,
+                        icon: Icon(
+                          _checklistIcon,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 36,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ),
+                    // Badge de status: pontinho colorido no canto superior direito
+                    if (_statusLoaded && _status != null && !_status!.isPendente)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: _status!.isCheckoutFeito ? _doneColor : _checkoutColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
                           ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.checklist_rtl_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  tooltip: 'Checklist',
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 36,
-                  ),
-                  padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            _status!.isCheckoutFeito ? Icons.check : Icons.hourglass_bottom_rounded,
+                            color: Colors.white,
+                            size: 7,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],

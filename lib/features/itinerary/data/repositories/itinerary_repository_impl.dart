@@ -745,4 +745,34 @@ class ItineraryRepositoryImpl implements ItineraryRepository {
       return Left(Exception('Erro ao registrar check-out: $e'));
     }
   }
+
+  @override
+  Future<Either<Exception, GuiaEventoStatus>> resetarCheckin(
+    String eventoId,
+    String guiaId,
+  ) async {
+    try {
+      final now = DateTime.now().toIso8601String();
+      final response = await _supabaseClient
+          .from('eventos_guia_status')
+          .upsert(
+            {
+              'evento_id': eventoId,
+              'guia_id': guiaId,
+              'status': 'pendente',
+              'checkin_at': null,
+              'checkout_at': null,
+              'updated_at': now,
+            },
+            onConflict: 'evento_id, guia_id',
+          )
+          .select()
+          .single();
+
+      return Right(GuiaEventoStatus.fromJson(response));
+    } catch (e) {
+      debugPrint('Erro ao resetar check-in: $e');
+      return Left(Exception('Erro ao resetar check-in: $e'));
+    }
+  }
 }

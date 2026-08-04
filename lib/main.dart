@@ -131,15 +131,28 @@ Future<void> _getFcmTokenAndSave(FirebaseMessaging messaging) async {
   );
 }
 
-void _saveFcmToken(String token) {
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return;
-  Supabase.instance.client
-      .from('users')
-      .update({'fcm_token': token})
-      .eq('id', userId)
-      .then((_) => debugPrint('FCM token salvo: $token'))
-      .catchError((e) => debugPrint('Erro ao salvar FCM token: $e'));
+void _saveFcmToken(String token) async {
+  var userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) {
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) break;
+    }
+  }
+  if (userId == null) {
+    debugPrint('FCM: userId null após aguardar restauração de sessão.');
+    return;
+  }
+  try {
+    await Supabase.instance.client
+        .from('users')
+        .update({'fcm_token': token})
+        .eq('id', userId);
+    debugPrint('FCM token salvo com sucesso no Supabase para user $userId: $token');
+  } catch (e) {
+    debugPrint('Erro ao salvar FCM token no Supabase: $e');
+  }
 }
 
 void main() async {
@@ -186,25 +199,9 @@ void main() async {
   // Escuta mudanças de estado de autenticação para atualizar o fcm_token reativamente
   if (isFirebaseSupported) {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
-      final user = session?.user;
-
-      debugPrint('Supabase AuthChangeEvent: $event, user: ${user?.id}');
-
-      if (user != null && (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed)) {
-        try {
-          final token = await FirebaseMessaging.instance.getToken();
-          if (token != null) {
-            await Supabase.instance.client
-                .from('users')
-                .update({'fcm_token': token})
-                .eq('id', user.id);
-            debugPrint('FCM token atualizado reativamente para o usuário: ${user.id}');
-          }
-        } catch (e) {
-          debugPrint('Erro ao salvar FCM token reativamente: $e');
-        }
+      final user = data.session?.user ?? Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        _getFcmTokenAndSave(FirebaseMessaging.instance);
       }
     });
   }

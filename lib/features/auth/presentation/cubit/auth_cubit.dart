@@ -56,6 +56,7 @@ class AuthCubit extends Cubit<AuthState> {
           emit(AuthState.pendingGuide(user));
           return;
         }
+
         if (user.isFirstAccess) {
           emit(AuthState.requireFirstAccessPasswordChange(user));
         } else {
