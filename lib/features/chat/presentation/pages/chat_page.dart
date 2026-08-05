@@ -83,11 +83,14 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _loadLastVisits() async {
     try {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      final map = <String, DateTime>{};
+
+      // 1. Carregar localmente do SharedPreferences como fallback
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys().where(
         (k) => k.startsWith('chat_last_visit_'),
       );
-      final map = <String, DateTime>{};
       for (final k in keys) {
         final val = prefs.getString(k);
         if (val != null) {
@@ -96,8 +99,28 @@ class _ChatPageState extends State<ChatPage> {
               dt.isUtc ? dt : dt.toUtc();
         }
       }
+
+      // 2. Buscar do Supabase (batepapo_leituras)
+      if (currentUserId != null) {
+        final reads = await _supabase
+            .from('batepapo_leituras')
+            .select('batepapo_id, last_read_at')
+            .eq('user_id', currentUserId);
+
+        for (final row in reads) {
+          final bpId = row['batepapo_id'] as String?;
+          final lastReadStr = row['last_read_at'] as String?;
+          if (bpId != null && lastReadStr != null) {
+            final dt = DateTime.parse(lastReadStr).toUtc();
+            map['bp_$bpId'] = dt;
+          }
+        }
+      }
+
       _lastVisit = map;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ChatPage] _loadLastVisits ERRO: $e');
+    }
   }
 
   void _notifyUnreadStatus() {
@@ -107,9 +130,11 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _markAsRead(String entityId) async {
     try {
+      final currentUserId = _supabase.auth.currentUser?.id;
       final now = DateTime.now().toUtc();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('chat_last_visit_$entityId', now.toIso8601String());
+
       if (mounted) {
         setState(() {
           _lastVisit[entityId] = now;
@@ -117,7 +142,28 @@ class _ChatPageState extends State<ChatPage> {
         });
         _notifyUnreadStatus();
       }
-    } catch (_) {}
+
+      // Persistir no Supabase na tabela batepapo_leituras
+      if (currentUserId != null) {
+        String? batePapoId;
+        for (final entry in _batePapoToEntityId.entries) {
+          if (entry.value == entityId) {
+            batePapoId = entry.key;
+            break;
+          }
+        }
+
+        if (batePapoId != null) {
+          await _supabase.from('batepapo_leituras').upsert({
+            'user_id': currentUserId,
+            'batepapo_id': batePapoId,
+            'last_read_at': now.toIso8601String(),
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[ChatPage] _markAsRead ERRO: $e');
+    }
   }
 
   @override
@@ -444,7 +490,10 @@ class _ChatPageState extends State<ChatPage> {
 
       // Fetch last message
       final currentUserId = _supabase.auth.currentUser?.id;
-      final lastVisitForEntity = _lastVisit[entityId];
+      final lastVisitForEntity = _lastVisit[entityId] ?? _lastVisit['bp_$batePapoId'];
+      if (lastVisitForEntity != null) {
+        _lastVisit[entityId] = lastVisitForEntity;
+      }
 
       final msg =
           await _supabase
@@ -462,7 +511,7 @@ class _ChatPageState extends State<ChatPage> {
         }
       }
 
-      // Unread count — only if user has visited before
+      // Unread count
       if (currentUserId != null) {
         try {
           var query = _supabase
@@ -477,6 +526,23 @@ class _ChatPageState extends State<ChatPage> {
               'created_at',
               lastVisitForEntity.toIso8601String(),
             );
+          } else {
+            // Se o usuário nunca abriu a conversa (primeiro acesso), inicializa no Supabase
+            final now = DateTime.now().toUtc();
+            _lastVisit[entityId] = now;
+            _supabase.from('batepapo_leituras').upsert({
+              'user_id': currentUserId,
+              'batepapo_id': batePapoId,
+              'last_read_at': now.toIso8601String(),
+            }).then((_) {}).catchError((_) {});
+
+            if (mounted) {
+              setState(() {
+                _unreadCounts[entityId] = 0;
+              });
+              _notifyUnreadStatus();
+            }
+            return;
           }
 
           final countResp = await query.count(CountOption.exact);

@@ -1,16 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:agrobravo/core/components/app_header.dart';
+import 'package:agrobravo/core/components/notifications_shimmer.dart';
+import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
-import 'package:agrobravo/core/components/app_header.dart';
-import 'package:agrobravo/core/constants/translations.dart';
+import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart';
 import 'package:agrobravo/features/notifications/domain/entities/notification_entity.dart';
 import 'package:agrobravo/features/notifications/presentation/cubit/notifications_cubit.dart';
 import 'package:agrobravo/features/notifications/presentation/cubit/notifications_state.dart';
-import 'package:agrobravo/core/di/injection.dart';
-import 'package:agrobravo/features/home/domain/repositories/feed_repository.dart';
-import 'package:go_router/go_router.dart';
+
+/// Agrupa notificações por período: Hoje / Ontem / Esta semana / Mais antigas.
+class _NotificationGroup {
+  final String label;
+  final List<NotificationEntity> items;
+  _NotificationGroup(this.label, this.items);
+}
+
+List<_NotificationGroup> _groupNotifications(
+  BuildContext context,
+  List<NotificationEntity> notifications,
+) {
+  final now = DateTime.now();
+  final todayStart = DateTime(now.year, now.month, now.day);
+  final yesterdayStart = todayStart.subtract(const Duration(days: 1));
+  final weekStart = todayStart.subtract(const Duration(days: 7));
+
+  final today = <NotificationEntity>[];
+  final yesterday = <NotificationEntity>[];
+  final thisWeek = <NotificationEntity>[];
+  final older = <NotificationEntity>[];
+
+  for (final n in notifications) {
+    final d = n.createdAt;
+    if (!d.isBefore(todayStart)) {
+      today.add(n);
+    } else if (!d.isBefore(yesterdayStart)) {
+      yesterday.add(n);
+    } else if (!d.isBefore(weekStart)) {
+      thisWeek.add(n);
+    } else {
+      older.add(n);
+    }
+  }
+
+  return [
+    if (today.isNotEmpty)
+      _NotificationGroup(context.t('Hoje', 'Today'), today),
+    if (yesterday.isNotEmpty)
+      _NotificationGroup(context.t('Ontem', 'Yesterday'), yesterday),
+    if (thisWeek.isNotEmpty)
+      _NotificationGroup(context.t('Esta semana', 'This week'), thisWeek),
+    if (older.isNotEmpty)
+      _NotificationGroup(context.t('Mais antigas', 'Older'), older),
+  ];
+}
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -20,74 +67,92 @@ class NotificationsPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<NotificationsCubit>()..loadNotifications(),
       child: Scaffold(
-        appBar: AppHeader(mode: HeaderMode.back, title: context.t('Notificações', 'Notifications')),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: AppHeader(
+          mode: HeaderMode.back,
+          title: context.t('Notificações', 'Notifications'),
+          actions: [
+            BlocBuilder<NotificationsCubit, NotificationsState>(
+              builder: (context, state) {
+                return state.maybeWhen(
+                  loaded: (notifications) {
+                    if (notifications.isEmpty) return const SizedBox.shrink();
+                    final hasUnread = notifications.any((n) => !n.isRead);
+                    if (!hasUnread) return const SizedBox.shrink();
+
+                    return TextButton.icon(
+                      onPressed: () =>
+                          context.read<NotificationsCubit>().markAllAsRead(),
+                      icon: const Icon(Icons.done_all_rounded, size: 16),
+                      label: Text(
+                        context.t('Marcar lidas', 'Mark read'),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                  orElse: () => const SizedBox.shrink(),
+                );
+              },
+            ),
+          ],
+        ),
         body: BlocBuilder<NotificationsCubit, NotificationsState>(
           builder: (context, state) {
             return state.when(
-              initial: () => const Center(child: CircularProgressIndicator()),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (message) => Center(child: Text(message)),
+              initial: () => const NotificationsShimmer(),
+              loading: () => const NotificationsShimmer(),
+              error: (message) => Center(
+                child: Text(
+                  message,
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
+                ),
+              ),
               loaded: (notifications) {
                 if (notifications.isEmpty) {
-                  return Center(
-                    child: Text(context.t('Nenhuma notificação encontrada', 'No notifications found')),
-                  );
+                  return _buildEmptyState(context);
                 }
 
-                final last7Days = notifications
-                    .where(
-                      (n) => n.createdAt.isAfter(
-                        DateTime.now().subtract(const Duration(days: 7)),
-                      ),
-                    )
-                    .toList();
-
-                final last30Days = notifications
-                    .where(
-                      (n) =>
-                          n.createdAt.isAfter(
-                            DateTime.now().subtract(const Duration(days: 30)),
-                          ) &&
-                          !last7Days.contains(n),
-                    )
-                    .toList();
-
-                final older = notifications
-                    .where(
-                      (n) => !last7Days.contains(n) && !last30Days.contains(n),
-                    )
+                final groups = _groupNotifications(context, notifications);
+                final followRequests = notifications
+                    .where((n) => n.type == NotificationType.follow)
                     .toList();
 
                 return RefreshIndicator(
                   onRefresh: () =>
                       context.read<NotificationsCubit>().loadNotifications(),
-                  child: ListView(
-                    children: [
-                      _buildFollowRequestsSummary(context, notifications),
-                      _buildAllCaughtUpHeader(context, notifications),
-
-                      if (last7Days.isNotEmpty) ...[
-                        _buildSectionHeader(context, context.t('Últimos 7 dias', 'Last 7 days')),
-                        ...last7Days.map(
-                          (item) => _NotificationItem(notification: item),
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      if (followRequests.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: _FollowRequestsSummary(
+                            followRequests: followRequests,
+                          ),
+                        ),
+                      for (final group in groups) ...[
+                        SliverToBoxAdapter(
+                          child: _SectionHeader(label: group.label),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return _NotificationItem(
+                                notification: group.items[index],
+                              );
+                            },
+                            childCount: group.items.length,
+                          ),
                         ),
                       ],
-
-                      if (last30Days.isNotEmpty) ...[
-                        _buildSectionHeader(context, context.t('Últimos 30 dias', 'Last 30 days')),
-                        ...last30Days.map(
-                          (item) => _NotificationItem(notification: item),
-                        ),
-                      ],
-
-                      if (older.isNotEmpty) ...[
-                        _buildSectionHeader(context, context.t('Mais antigas', 'Older')),
-                        ...older.map(
-                          (item) => _NotificationItem(notification: item),
-                        ),
-                      ],
-
-                      const SizedBox(height: 40),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 40),
+                      ),
                     ],
                   ),
                 );
@@ -99,487 +164,448 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFollowRequestsSummary(
-    BuildContext context,
-    List<NotificationEntity> notifications,
-  ) {
-    // Check for follow notifications that are not responded yet
-    // For now, using the mock design but we'd filter by type
-    final followRequests = notifications
-        .where((n) => n.type == NotificationType.follow)
-        .toList();
-    if (followRequests.isEmpty) return const SizedBox.shrink();
+  Widget _buildEmptyState(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () => context.read<NotificationsCubit>().loadNotifications(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.notifications_off_outlined,
+                      size: 36,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.35),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.t('Nenhuma notificação', 'No notifications'),
+                    style: AppTextStyles.h3.copyWith(fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.t(
+                      'Você está em dia com todas as suas notificações.',
+                      'You are all caught up with your notifications.',
+                    ),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.45),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    return InkWell(
-      onTap: () {
-        final currentUserId = getIt<FeedRepository>().getCurrentUserId();
-        if (currentUserId != null) {
-          context.push('/connections/$currentUserId?initialIndex=1');
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            Stack(
+// ─── Header de Seção ─────────────────────────────────────────────────────────
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: Row(
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 1.2,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Divider(
+              thickness: 1,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.06),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Card de Solicitações de Conexão Agrupadas ────────────────────────────────
+class _FollowRequestsSummary extends StatelessWidget {
+  final List<NotificationEntity> followRequests;
+  const _FollowRequestsSummary({required this.followRequests});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            final currentUserId = getIt<FeedRepository>().getCurrentUserId();
+            if (currentUserId != null) {
+              context.push('/connections/$currentUserId?initialIndex=1');
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundImage: followRequests[0].userAvatar != null
                       ? NetworkImage(followRequests[0].userAvatar!)
                       : null,
-                  backgroundColor:
-                      Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : AppColors.backgroundLight,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                   child: followRequests[0].userAvatar == null
-                      ? Icon(
+                      ? const Icon(
                           Icons.person,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          size: 20,
+                          color: AppColors.primary,
                         )
                       : null,
                 ),
-                if (followRequests.length > 1)
-                  Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        shape: BoxShape.circle,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.t('Solicitações de conexão', 'Connection requests'),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
                       ),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage: followRequests[1].userAvatar != null
-                            ? NetworkImage(followRequests[1].userAvatar!)
-                            : null,
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : AppColors.backgroundLight,
-                        child: followRequests[1].userAvatar == null
-                            ? Icon(
-                                Icons.person,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.5),
-                              )
-                            : null,
+                      const SizedBox(height: 2),
+                      Text(
+                        followRequests.length == 1
+                            ? followRequests[0].userName
+                            : '${followRequests[0].userName} e outros ${followRequests.length - 1}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                    ],
                   ),
-              ],
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.t('Solicitações de conexão', 'Connection requests'),
-                    style: AppTextStyles.bodyMedium.copyWith(
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${followRequests.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    '${followRequests[0].userName}${followRequests.length > 1 ? ' + ${context.t("outras", "and")} ${followRequests.length - 1} ${context.t("contas", "others")}' : ''}',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.secondary,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAllCaughtUpHeader(
-    BuildContext context,
-    List<NotificationEntity> notifications,
-  ) {
-    final unreadCount = notifications.where((n) => !n.isRead).length;
-    if (unreadCount == 0) {
-      return Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: Icon(
-                Icons.check,
-                size: 18,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t('Tudo atualizado', 'All caught up'),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  context.t('Você viu todas as notificações', 'You have seen all notifications'),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
                 ),
               ],
             ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Text(
-        title,
-        style: AppTextStyles.h3.copyWith(
-          fontSize: 16,
-          color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ),
     );
   }
 }
 
+// ─── Item de Notificação Individal ────────────────────────────────────────────
 class _NotificationItem extends StatelessWidget {
   final NotificationEntity notification;
-
   const _NotificationItem({required this.notification});
 
-  void _pushRoute(BuildContext context, String route) {
-    debugPrint('[NOTIF-TAP] _pushRoute called with route="$route"');
-    final uri = Uri.tryParse(route.trim());
-    if (uri == null || uri.path.isEmpty || !uri.path.startsWith('/')) {
-      return;
+  String _formatTime(BuildContext context, DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return context.t('Agora mesmo', 'Just now');
+    if (diff.inMinutes < 60) {
+      return context.t('Há ${diff.inMinutes} min', '${diff.inMinutes}m ago');
     }
-
-    String finalRoute = uri.toString();
-
-    // Backend manda /chat-group/:id → No Guia não há tela separada para chat de grupo, é na tab 2
-    if (uri.path.startsWith('/chat-group/')) {
-      final groupId = uri.pathSegments.last;
-      context.go('/home?tab=2&groupId=$groupId&t=${DateTime.now().millisecondsSinceEpoch}');
-      return;
+    if (diff.inHours < 24) {
+      return context.t('Há ${diff.inHours} h', '${diff.inHours}h ago');
     }
-
-    // Backend manda /chat-direct/:id → No Guia a rota é /chat/dm/:id
-    if (uri.path.startsWith('/chat-direct/')) {
-      final userId = uri.pathSegments.last;
-      finalRoute = '/chat/dm/$userId';
+    if (diff.inDays == 1) return context.t('Ontem', 'Yesterday');
+    if (diff.inDays < 7) {
+      return context.t('Há ${diff.inDays} dias', '${diff.inDays}d ago');
     }
-
-    // Intercept /itinerary/:groupId → navigate to itinerary tab in HomePage
-    final itineraryMatch = RegExp(r'^/itinerary/(.+)$').firstMatch(uri.path);
-    if (itineraryMatch != null) {
-      final groupId = itineraryMatch.group(1)!;
-      context.go('/home?tab=1&groupId=$groupId&t=${DateTime.now().millisecondsSinceEpoch}');
-      return;
-    }
-
-    // /home routes → replace (switch tabs)
-    if (finalRoute.startsWith('/home')) {
-      context.go(finalRoute);
-      return;
-    }
-
-    // Detail routes → push on top so back button works
-    try {
-      context.push(finalRoute);
-    } catch (e) {
-      debugPrint('[NOTIF-TAP] _pushRoute: ERROR $e');
-    }
+    final weeks = (diff.inDays / 7).floor();
+    return context.t('Há $weeks sem', '${weeks}w ago');
   }
 
-  String _formatTime(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inSeconds < 60) return '${diff.inSeconds}s';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}min';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
-    final weeks = (diff.inDays / 7).floor();
-    return '$weeks sem';
+  void _handleTap(BuildContext context) {
+    if (!notification.isRead) {
+      context.read<NotificationsCubit>().markAsRead(notification.id);
+    }
+
+    if (notification.targetRoute != null && notification.targetRoute!.isNotEmpty) {
+      final route = notification.targetRoute!;
+      if (route.startsWith('/')) {
+        try {
+          context.push(route);
+          return;
+        } catch (_) {}
+      }
+    }
+
+    if (notification.type == NotificationType.follow) {
+      final currentUserId = getIt<FeedRepository>().getCurrentUserId();
+      if (currentUserId != null) {
+        context.push('/connections/$currentUserId?initialIndex=1');
+      }
+    } else if (notification.type == NotificationType.like ||
+        notification.type == NotificationType.comment ||
+        notification.type == NotificationType.mention) {
+      if (notification.postId != null && notification.postOwnerId != null) {
+        context.go('/user-feed/${notification.postOwnerId}?postId=${notification.postId}');
+      }
+    } else if (notification.type == NotificationType.documentApproved ||
+        notification.type == NotificationType.documentRejected ||
+        notification.type == NotificationType.documentPending) {
+      context.go('/documents');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        if (!notification.isRead) {
-          context.read<NotificationsCubit>().markAsRead(notification.id);
-        }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isUnread = !notification.isRead;
 
-        if (notification.targetRoute != null && notification.targetRoute!.isNotEmpty) {
-          _pushRoute(context, notification.targetRoute!);
-          return;
-        }
-
-        if (notification.type == NotificationType.follow) {
-          final currentUserId = getIt<FeedRepository>().getCurrentUserId();
-          if (currentUserId != null) {
-            context.push('/connections/$currentUserId?initialIndex=1');
-          }
-        } else if (notification.type == NotificationType.like ||
-            notification.type == NotificationType.comment ||
-            notification.type == NotificationType.mention) {
-          if (notification.postId != null && notification.postOwnerId != null) {
-            context.push(
-              '/user-feed/${notification.postOwnerId}?postId=${notification.postId}',
-            );
-          }
-        } else if (notification.type == NotificationType.message) {
-          final senderId = notification.senderId;
-          if (senderId != null) {
-            context.push(
-              '/chat/dm/$senderId',
-              extra: {
-                'name': notification.userName,
-                'role': '',
-                'avatarUrl': notification.userAvatar,
-              },
-            );
-          }
-        }
-      },
-      child: Container(
-        color: notification.isRead
-            ? Colors.transparent
-            : AppColors.primary.withOpacity(0.05),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      decoration: BoxDecoration(
+        color: isUnread
+            ? (isDark
+                ? AppColors.primary.withValues(alpha: 0.12)
+                : AppColors.primary.withValues(alpha: 0.05))
+            : (isDark
+                ? Theme.of(context).colorScheme.surface
+                : Colors.white),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isUnread
+              ? AppColors.primary.withValues(alpha: 0.25)
+              : (isDark
+                  ? Colors.white10
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
         ),
-        child: Row(
-          children: [
-            _buildLeading(context),
-            const SizedBox(width: 12),
-            Expanded(
-              child: RichText(
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: notification.userName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(text: ' '),
-                    TextSpan(text: notification.message),
-                    const TextSpan(text: ' '),
-                    TextSpan(
-                      text: _formatTime(notification.createdAt),
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 13,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _handleTap(context),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _LeadingIconWidget(notification: notification),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.35,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: notification.userName,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            const TextSpan(text: ' '),
+                            TextSpan(text: notification.message),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatTime(context, notification.createdAt),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 11,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                if (isUnread)
+                  Container(
+                    width: 9,
+                    height: 9,
+                    margin: const EdgeInsets.only(top: 4, left: 8),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(width: 8),
-            _buildAction(context),
-          ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLeading(BuildContext context) {
-    IconData? icon;
-    Color? bgColor;
-    Color iconColor = AppColors.primary;
+// ─── Ícone ou Avatar de Contexto ─────────────────────────────────────────────
+class _LeadingIconWidget extends StatelessWidget {
+  final NotificationEntity notification;
+  const _LeadingIconWidget({required this.notification});
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    Color bgColor;
+    Color iconColor;
 
     switch (notification.type) {
       case NotificationType.documentApproved:
         icon = Icons.check_circle_rounded;
-        bgColor = Colors.green.withOpacity(0.1);
-        iconColor = Colors.green;
+        bgColor = Colors.green.withValues(alpha: 0.12);
+        iconColor = Colors.green.shade600;
         break;
       case NotificationType.documentRejected:
-      case NotificationType.documentPending:
-        icon = Icons.error_rounded;
-        bgColor = AppColors.error.withOpacity(0.1);
+        icon = Icons.cancel_rounded;
+        bgColor = AppColors.error.withValues(alpha: 0.12);
         iconColor = AppColors.error;
+        break;
+      case NotificationType.documentPending:
+        icon = Icons.pending_rounded;
+        bgColor = Colors.orange.withValues(alpha: 0.12);
+        iconColor = Colors.orange.shade700;
         break;
       case NotificationType.guideAlert:
         icon = Icons.campaign_rounded;
-        bgColor = AppColors.primary.withOpacity(0.1);
+        bgColor = AppColors.primary.withValues(alpha: 0.12);
         iconColor = AppColors.primary;
         break;
-      case NotificationType.missionUpdate:
-        icon = Icons.explore_rounded;
-        bgColor = AppColors.secondary.withOpacity(0.1);
-        iconColor = AppColors.secondary;
+      case NotificationType.like:
+        icon = Icons.favorite_rounded;
+        bgColor = Colors.pink.withValues(alpha: 0.12);
+        iconColor = Colors.pink.shade400;
         break;
-      case NotificationType.message:
+      case NotificationType.comment:
         icon = Icons.chat_bubble_rounded;
-        bgColor = Colors.blue.withOpacity(0.1);
-        iconColor = Colors.blue;
+        bgColor = Colors.blue.withValues(alpha: 0.12);
+        iconColor = Colors.blue.shade500;
+        break;
+      case NotificationType.mention:
+        icon = Icons.alternate_email_rounded;
+        bgColor = Colors.purple.withValues(alpha: 0.12);
+        iconColor = Colors.purple.shade400;
         break;
       default:
-        break;
+        icon = Icons.notifications_rounded;
+        bgColor = AppColors.secondary.withValues(alpha: 0.12);
+        iconColor = AppColors.secondary;
     }
 
-    if (icon != null) {
-      return CircleAvatar(
-        radius: 22,
-        backgroundColor: bgColor,
-        child: Icon(icon, color: iconColor, size: 24),
-      );
-    }
-
-    return CircleAvatar(
-      radius: 22,
-      backgroundImage: notification.userAvatar != null
-          ? NetworkImage(notification.userAvatar!)
-          : null,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.1)
-          : AppColors.backgroundLight,
-      child: notification.userAvatar == null
-          ? Icon(
-              Icons.person,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildAction(BuildContext context) {
-    if (notification.type == NotificationType.documentRejected ||
-        notification.type == NotificationType.documentPending) {
-      return SizedBox(
-        height: 32,
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Builder(builder: (context) => Text(
-            context.t('Resolver', 'Resolve'),
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          )),
-        ),
-      );
-    }
-
-    if (notification.type == NotificationType.follow && !notification.isRead) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
+    if (notification.userAvatar != null && notification.userAvatar!.isNotEmpty) {
+      return Stack(
         children: [
-          SizedBox(
-            height: 32,
-            child: ElevatedButton(
-              onPressed: () {
-                if (notification.solicitacaoUserId != null) {
-                  context.read<NotificationsCubit>().respondFollowRequest(
-                    notification.solicitacaoUserId!,
-                    true,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: NetworkImage(notification.userAvatar!),
+          ),
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1.5,
                 ),
               ),
-              child: Builder(builder: (context) => Text(
-                context.t('Aceitar', 'Accept'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-              )),
+              child: Icon(icon, size: 10, color: iconColor),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              Icons.close,
-              size: 18,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            onPressed: () {
-              if (notification.solicitacaoUserId != null) {
-                context.read<NotificationsCubit>().respondFollowRequest(
-                  notification.solicitacaoUserId!,
-                  false,
-                );
-              }
-            },
           ),
         ],
       );
     }
 
-    if (notification.postImage != null) {
-      return Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          image: DecorationImage(
-            image: NetworkImage(notification.postImage!),
-            fit: BoxFit.cover,
-          ),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 20, color: iconColor),
+    );
   }
 }

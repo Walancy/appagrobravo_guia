@@ -141,25 +141,28 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       }
 
       final notifications =
-          data.map((json) {
-            final model = NotificationModel.fromJson(json);
-            final solicitanteId = json['solicitacao_user_id'] as String?;
-            final profile =
-                solicitanteId != null ? profilesMap[solicitanteId] : null;
+          data
+              .map((json) {
+                final model = NotificationModel.fromJson(json);
+                final solicitanteId = json['solicitacao_user_id'] as String?;
+                final profile =
+                    solicitanteId != null ? profilesMap[solicitanteId] : null;
 
-            final postId = json['post_id'] as String?;
-            final postThumbnail =
-                postId != null ? postThumbnails[postId] : null;
-            final postOwnerId = postId != null ? postOwners[postId] : null;
+                final postId = json['post_id'] as String?;
+                final postThumbnail =
+                    postId != null ? postThumbnails[postId] : null;
+                final postOwnerId = postId != null ? postOwners[postId] : null;
 
-            return model
-                .copyWith(
-                  userName: profile?['nome'],
-                  userAvatar: profile?['foto'],
-                )
-                .toEntity()
-                .copyWith(postImage: postThumbnail, postOwnerId: postOwnerId);
-          }).toList();
+                return model
+                    .copyWith(
+                      userName: profile?['nome'],
+                      userAvatar: profile?['foto'],
+                    )
+                    .toEntity()
+                    .copyWith(postImage: postThumbnail, postOwnerId: postOwnerId);
+              })
+              .where((n) => n.type != NotificationType.message && n.batepapoId == null)
+              .toList();
 
       // Cache
       await _saveNotificationsToCache(notifications);

@@ -445,6 +445,12 @@ class _HomePageState extends State<HomePage> {
                 setState(() {
                   _selectedGroupId = groupId;
                 });
+                _saveLastGroup(groupId);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context.read<ItineraryCubit>().loadItinerary(groupId);
+                  }
+                });
               },
             );
           },
