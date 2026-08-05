@@ -126,6 +126,7 @@ abstract class NotificationModel with _$NotificationModel {
       postImage: null,
       postId: postId,
       solicitacaoUserId: solicitacaoUserId,
+      solicitacaoRespondida: solicitacaoRespondida ?? false,
       docId: docId,
       postOwnerId: null, // Will be set in repository
       batepapoId: batepapoId,

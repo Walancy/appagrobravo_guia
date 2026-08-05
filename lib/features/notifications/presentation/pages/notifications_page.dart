@@ -118,9 +118,12 @@ class NotificationsPage extends StatelessWidget {
                   return _buildEmptyState(context);
                 }
 
-                final groups = _groupNotifications(context, notifications);
+                final displayNotifications = notifications
+                    .where((n) => n.type != NotificationType.message)
+                    .toList();
+                final groups = _groupNotifications(context, displayNotifications);
                 final followRequests = notifications
-                    .where((n) => n.type == NotificationType.follow)
+                    .where((n) => n.type == NotificationType.follow && !(n.solicitacaoRespondida ?? false))
                     .toList();
 
                 return RefreshIndicator(

@@ -25,6 +25,7 @@ abstract class NotificationEntity with _$NotificationEntity {
     String? postImage,
     String? postId,
     String? solicitacaoUserId,
+    bool? solicitacaoRespondida,
     String? docId,
     String? postOwnerId,
     String? batepapoId,

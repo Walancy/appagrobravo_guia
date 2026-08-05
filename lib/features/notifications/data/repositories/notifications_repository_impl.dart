@@ -99,6 +99,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
               .toSet()
               .toList();
 
+      Set<String> activePendingRequesterIds = {};
       Map<String, dynamic> profilesMap = {};
       if (requesterIds.isNotEmpty) {
         try {
@@ -109,6 +110,18 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
           for (var profile in (profilesResponse as List)) {
             profilesMap[profile['id']] = profile;
+          }
+
+          final conexoesRes = await _supabaseClient
+              .from('conexoes')
+              .select('seguidor_id')
+              .eq('seguido_id', userId)
+              .eq('aprovou', false)
+              .inFilter('seguidor_id', requesterIds);
+
+          for (var row in (conexoesRes as List)) {
+            final sId = row['seguidor_id'] as String?;
+            if (sId != null) activePendingRequesterIds.add(sId);
           }
         } catch (_) {}
       }
@@ -153,13 +166,21 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
                     postId != null ? postThumbnails[postId] : null;
                 final postOwnerId = postId != null ? postOwners[postId] : null;
 
+                final isPendingFollow = solicitanteId != null && activePendingRequesterIds.contains(solicitanteId);
+                final isRespondida = (json['solicitacaorespondida'] as bool? ?? false) ||
+                    (model.toEntity().type == NotificationType.follow && !isPendingFollow);
+
                 return model
                     .copyWith(
                       userName: profile?['nome'],
                       userAvatar: profile?['foto'],
                     )
                     .toEntity()
-                    .copyWith(postImage: postThumbnail, postOwnerId: postOwnerId);
+                    .copyWith(
+                      postImage: postThumbnail,
+                      postOwnerId: postOwnerId,
+                      solicitacaoRespondida: isRespondida,
+                    );
               })
               .where((n) => n.type != NotificationType.message && n.batepapoId == null)
               .toList();
