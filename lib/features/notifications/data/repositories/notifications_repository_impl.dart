@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:agrobravo/features/notifications/data/models/notification_model.dart';
 import 'package:agrobravo/features/notifications/domain/entities/notification_entity.dart';
 import 'package:agrobravo/features/notifications/domain/entities/participante_entity.dart';
