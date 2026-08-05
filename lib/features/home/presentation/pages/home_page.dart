@@ -62,6 +62,7 @@ class _HomePageState extends State<HomePage> {
   String? _itineraryScrollToItemId;
   String? _lastShownTitle;
   String? _lastShownBody;
+  bool _hasUnreadChat = false;
 
   @override
   void initState() {
@@ -463,7 +464,16 @@ class _HomePageState extends State<HomePage> {
                 onActionPressed: () => setState(() => _selectedIndex = 0),
               );
             }
-            return ChatPage(groupId: _selectedGroupId);
+            return ChatPage(
+              groupId: _selectedGroupId,
+              onUnreadChanged: (hasUnread) {
+                if (mounted && _hasUnreadChat != hasUnread) {
+                  setState(() {
+                    _hasUnreadChat = hasUnread;
+                  });
+                }
+              },
+            );
           },
         ),
         // Tab 3
@@ -761,6 +771,7 @@ class _HomePageState extends State<HomePage> {
               Icons.chat_bubble_outline_rounded,
               Icons.chat_bubble_rounded,
               context.t('Chats', 'Chats'),
+              hasBadge: _hasUnreadChat,
             ),
           _buildNavItem(
             3,

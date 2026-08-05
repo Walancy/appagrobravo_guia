@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/itinerary_item.dart';
@@ -12,6 +13,7 @@ import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/guia_evento_status.dart';
 import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class GenericEventCard extends StatefulWidget {
   final ItineraryItemEntity item;

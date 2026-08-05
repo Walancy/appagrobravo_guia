@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/home/domain/entities/mission_entity.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class SelectMissionDialog extends StatelessWidget {
   final List<MissionEntity> missions;

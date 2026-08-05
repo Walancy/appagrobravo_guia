@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
@@ -7,6 +8,7 @@ import 'package:agrobravo/features/itinerary/domain/repositories/itinerary_repos
 import 'package:get_it/get_it.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/emergency_contacts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 
 class EmergencyModal extends StatefulWidget {
   const EmergencyModal({super.key});

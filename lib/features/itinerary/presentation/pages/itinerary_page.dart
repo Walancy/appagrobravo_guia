@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
+import 'package:agrobravo/core/constants/translations.dart';
 import '../../domain/entities/itinerary_group.dart';
 import '../../domain/entities/itinerary_item.dart';
 import '../cubit/itinerary_cubit.dart';

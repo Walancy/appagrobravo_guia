@@ -32,8 +32,9 @@ class _MissionInfo {
 
 class ChatPage extends StatefulWidget {
   final String? groupId;
+  final ValueChanged<bool>? onUnreadChanged;
 
-  const ChatPage({super.key, this.groupId});
+  const ChatPage({super.key, this.groupId, this.onUnreadChanged});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -99,6 +100,11 @@ class _ChatPageState extends State<ChatPage> {
     } catch (_) {}
   }
 
+  void _notifyUnreadStatus() {
+    final hasUnread = _unreadCounts.values.any((c) => c > 0);
+    widget.onUnreadChanged?.call(hasUnread);
+  }
+
   Future<void> _markAsRead(String entityId) async {
     try {
       final now = DateTime.now().toUtc();
@@ -109,6 +115,7 @@ class _ChatPageState extends State<ChatPage> {
           _lastVisit[entityId] = now;
           _unreadCounts[entityId] = 0;
         });
+        _notifyUnreadStatus();
       }
     } catch (_) {}
   }
@@ -387,6 +394,7 @@ class _ChatPageState extends State<ChatPage> {
       }
 
       _subscribeToMessages();
+      _notifyUnreadStatus();
       debugPrint('[ChatPage] _loadAll concluído com sucesso');
     } catch (e, st) {
       debugPrint('[ChatPage] _loadAll ERRO FATAL: $e');
@@ -477,6 +485,7 @@ class _ChatPageState extends State<ChatPage> {
             setState(() {
               _unreadCounts[entityId] = countResp.count;
             });
+            _notifyUnreadStatus();
           }
         } catch (_) {}
       }
@@ -522,6 +531,7 @@ class _ChatPageState extends State<ChatPage> {
                           (_unreadCounts[entityId] ?? 0) + 1;
                     }
                   });
+                  _notifyUnreadStatus();
                 }
               },
             )
@@ -584,6 +594,30 @@ class _ChatPageState extends State<ChatPage> {
     if (widget.groupId != null) {
       filteredTravelers = filteredTravelers.where((t) => t.groupId == widget.groupId).toList();
     }
+
+    // Helper for sorting items by last message time descending (most recent first)
+    int compareByLastMessageTime(String idA, String nameA, String idB, String nameB) {
+      final timeA = _lastMessageTimes[idA];
+      final timeB = _lastMessageTimes[idB];
+      if (timeA != null && timeB != null) {
+        return timeB.compareTo(timeA);
+      } else if (timeA != null) {
+        return -1;
+      } else if (timeB != null) {
+        return 1;
+      } else {
+        return nameA.toLowerCase().compareTo(nameB.toLowerCase());
+      }
+    }
+
+    filteredGroups = List.from(filteredGroups)
+      ..sort((a, b) => compareByLastMessageTime(a.id, a.title, b.id, b.title));
+
+    filteredGuides = List.from(filteredGuides)
+      ..sort((a, b) => compareByLastMessageTime(a.id, a.name, b.id, b.name));
+
+    filteredTravelers = List.from(filteredTravelers)
+      ..sort((a, b) => compareByLastMessageTime(a.id, a.name, b.id, b.name));
 
     if (filteredGroups.isEmpty && filteredGuides.isEmpty && filteredTravelers.isEmpty) {
       return _buildEmpty(
