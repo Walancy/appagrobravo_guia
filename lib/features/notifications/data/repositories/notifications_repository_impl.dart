@@ -244,6 +244,29 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
           'seguidor_id': userId,
           'seguido_id': currentUserId,
         });
+
+        // Notifica o solicitante que a solicitação foi aceita
+        try {
+          final acceptorData = await _supabaseClient
+              .from('users')
+              .select('nome')
+              .eq('id', currentUserId)
+              .maybeSingle();
+          final acceptorName =
+              (acceptorData?['nome'] as String?)?.split(' ').first ?? 'Alguém';
+
+          await _supabaseClient.from('notificacoes').insert({
+            'user_id': userId,
+            'titulo': acceptorName,
+            'mensagem': 'aceitou sua solicitação de conexão',
+            'assunto': 'CONEXAO_ACEITA',
+            'solicitacao_user_id': currentUserId,
+            'lido': false,
+            'target_route': '/profile/$currentUserId',
+          });
+        } catch (e) {
+          debugPrint('[Notifications] respondFollowRequest notification error: $e');
+        }
       } else {
         await _supabaseClient.from('conexoes').delete().match({
           'seguidor_id': userId,
