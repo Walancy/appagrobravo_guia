@@ -5,6 +5,7 @@ import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:agrobravo/features/home/presentation/pages/guide_dashboard_page.dart';
 import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
+import 'package:agrobravo/core/components/actions_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:agrobravo/core/constants/translations.dart';
@@ -273,42 +274,27 @@ class _ExpenseListPageState extends State<ExpenseListPage> {
                 if (Supabase.instance.client.auth.currentUser?.id == expense['user_id'] &&
                     status == 'Pendente') ...[
                   const SizedBox(width: 4),
-                  PopupMenuButton<String>(
+                  IconButton(
                     icon: Icon(Icons.more_vert_rounded, color: Colors.grey[600]),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 120),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => ActionsBottomSheet.show(
+                      context,
+                      actions: [
+                        BottomSheetAction(
+                          label: context.t('Editar', 'Edit'),
+                          icon: Icons.edit_outlined,
+                          color: Colors.blue,
+                          onTap: () => _editExpense(expense),
+                        ),
+                        BottomSheetAction(
+                          label: context.t('Excluir', 'Delete'),
+                          icon: Icons.delete_outline_rounded,
+                          color: Colors.red,
+                          onTap: () => _confirmDeleteExpense(expense['id']),
+                        ),
+                      ],
                     ),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _editExpense(expense);
-                      } else if (value == 'delete') {
-                        _confirmDeleteExpense(expense['id']);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Text(context.t('Editar', 'Edit')),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
-                            const SizedBox(width: 8),
-                            Text(context.t('Excluir', 'Delete'), style: const TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ],

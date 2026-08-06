@@ -46,7 +46,7 @@ class _ReminderModalState extends State<ReminderModal> {
       (list) {
         setState(() {
           _participantes = list;
-          _selectedIds.addAll(list.map((p) => p.id));
+          // Sem pré-seleção: o guia escolhe explicitamente os destinatários
           _loadingParticipantes = false;
         });
       },

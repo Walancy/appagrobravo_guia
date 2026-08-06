@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -74,10 +75,8 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
 
   void _scrollListener() {
     if (!_scrollController.hasClients) return;
-
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-    final isAtBottom = maxScroll - currentScroll <= 200;
+    // Com reverse:true, pixels=0 significa que está no fim visual (mensagem mais recente)
+    final isAtBottom = _scrollController.position.pixels <= 200;
 
     if (isAtBottom && _showScrollToBottom) {
       setState(() => _showScrollToBottom = false);
@@ -89,7 +88,7 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -195,11 +194,8 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
               onTitleTap: () {
                 Navigator.push(
                   context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        GroupInfoPage(chat: widget.chat),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
+                  CupertinoPageRoute(
+                    builder: (_) => GroupInfoPage(chat: widget.chat),
                   ),
                 );
               },
@@ -303,12 +299,8 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                       listener: (context, state) {
                         state.maybeWhen(
                           loaded: (messages) {
-                            // Auto scroll to bottom on new message or list changes if close to bottom
-                            if (!_showScrollToBottom) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) _scrollToBottom();
-                              });
-                            }
+                            // Com reverse:true não precisamos rolar para o fim manualmente;
+                            // a lista já abre no item mais recente (índice 0).
                           },
                           orElse: () {},
                         );
@@ -330,28 +322,32 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                             }
                             return ListView.builder(
                               controller: _scrollController,
+                              reverse: true,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               itemCount: messages.length,
                               itemBuilder: (context, index) {
-                                final msg = messages[index];
+                                // Com reverse:true, índice 0 = mensagem mais recente
+                                final reversedMessages = messages.reversed.toList();
+                                final msg = reversedMessages[index];
                                 final isSelected = _selectedMessageIds.contains(
                                   msg.id,
                                 );
 
                                 bool showDateHeader = false;
-                                if (index == 0) {
+                                // Próximo item na ordem cronológica é o de índice maior
+                                if (index == messages.length - 1) {
                                   showDateHeader = true;
                                 } else {
-                                  final prevMsg = messages[index - 1];
+                                  final nextMsg = reversedMessages[index + 1];
                                   final currentDate = DateTime(
                                     msg.timestamp.year,
                                     msg.timestamp.month,
                                     msg.timestamp.day,
                                   );
                                   final prevDate = DateTime(
-                                    prevMsg.timestamp.year,
-                                    prevMsg.timestamp.month,
-                                    prevMsg.timestamp.day,
+                                    nextMsg.timestamp.year,
+                                    nextMsg.timestamp.month,
+                                    nextMsg.timestamp.day,
                                   );
                                   if (currentDate.isAfter(prevDate)) {
                                     showDateHeader = true;

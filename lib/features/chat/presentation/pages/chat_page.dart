@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -745,10 +746,8 @@ class _ChatPageState extends State<ChatPage> {
         _markAsRead(g.id);
         await Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (_, _, _) => ChatDetailPage(chat: g),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
+          CupertinoPageRoute(
+            builder: (_) => ChatDetailPage(chat: g),
           ),
         );
         _markAsRead(g.id);
@@ -775,10 +774,8 @@ class _ChatPageState extends State<ChatPage> {
         _markAsRead(g.id);
         await Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (_, _, _) => IndividualChatPage(guide: guideEntity),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
+          CupertinoPageRoute(
+            builder: (_) => IndividualChatPage(guide: guideEntity),
           ),
         );
         _markAsRead(g.id);
@@ -801,18 +798,15 @@ class _ChatPageState extends State<ChatPage> {
         _markAsRead(t.id);
         await Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder:
-                (_, _, _) => IndividualChatPage(
-                  guide: GuideEntity(
-                    id: t.id,
-                    name: t.name,
-                    role: t.role ?? t.groupName,
-                    avatarUrl: t.avatarUrl,
-                  ),
-                ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
+          CupertinoPageRoute(
+            builder: (_) => IndividualChatPage(
+              guide: GuideEntity(
+                id: t.id,
+                name: t.name,
+                role: t.role ?? t.groupName,
+                avatarUrl: t.avatarUrl,
+              ),
+            ),
           ),
         );
         _markAsRead(t.id);

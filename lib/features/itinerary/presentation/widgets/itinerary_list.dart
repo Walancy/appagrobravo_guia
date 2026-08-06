@@ -95,22 +95,6 @@ class _ItineraryListState extends State<ItineraryList> {
             if (!widget.filters!.types.contains(item.type)) return false;
           }
 
-          // 3. Filter by time range
-          final startTime = widget.filters?.startTime;
-          final endTime = widget.filters?.endTime;
-          if ((startTime != null || endTime != null) &&
-              item.startDateTime != null) {
-            final itemTime = TimeOfDay.fromDateTime(item.startDateTime!);
-            final itemMinutes = itemTime.hour * 60 + itemTime.minute;
-            final effectiveStart = startTime ?? const TimeOfDay(hour: 0, minute: 0);
-            final effectiveEnd = endTime ?? const TimeOfDay(hour: 23, minute: 59);
-            final startMinutes = effectiveStart.hour * 60 + effectiveStart.minute;
-            final endMinutes = effectiveEnd.hour * 60 + effectiveEnd.minute;
-            if (itemMinutes < startMinutes || itemMinutes > endMinutes) {
-              return false;
-            }
-          }
-
           return true;
         }).toList();
 

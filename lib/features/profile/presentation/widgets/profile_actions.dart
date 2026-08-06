@@ -168,22 +168,24 @@ class ProfileActions extends StatelessWidget {
         if (phone != null && phone!.isNotEmpty) {
           return Row(
             children: [
-              _ActionButton(
-                label: 'WhatsApp',
-                icon: Icons.chat_rounded,
-                style: _ActionStyle.whatsapp,
-                onPressed: () async {
-                  final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
-                  // Telefones novos já são salvos com DDI ("+55 (11) ...");
-                  // legados (sem "+") recebem o 55 do Brasil como fallback.
-                  final waNumber = phone!.trim().startsWith('+')
-                      ? cleanPhone
-                      : '55$cleanPhone';
-                  final url = Uri.parse('https://wa.me/$waNumber');
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
-                },
+              Expanded(
+                child: _ActionButton(
+                  label: 'WhatsApp',
+                  icon: Icons.chat_rounded,
+                  style: _ActionStyle.whatsapp,
+                  onPressed: () async {
+                    final cleanPhone = phone!.replaceAll(RegExp(r'\D'), '');
+                    // Telefones novos já são salvos com DDI ("+55 (11) ...");
+                    // legados (sem "+") recebem o 55 do Brasil como fallback.
+                    final waNumber = phone!.trim().startsWith('+')
+                        ? cleanPhone
+                        : '55$cleanPhone';
+                    final url = Uri.parse('https://wa.me/$waNumber');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -300,7 +302,6 @@ class _ActionButton extends StatelessWidget {
       case _ActionStyle.whatsapp:
         return SizedBox(
           height: 42,
-          width: 110,
           child: ElevatedButton.icon(
             onPressed: onPressed,
             icon: Icon(icon, size: 16),

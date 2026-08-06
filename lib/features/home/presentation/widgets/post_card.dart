@@ -3,6 +3,7 @@ import 'package:agrobravo/core/tokens/app_colors.dart';
 import 'package:agrobravo/core/tokens/app_spacing.dart';
 import 'package:agrobravo/core/tokens/app_text_styles.dart';
 import 'package:agrobravo/features/home/domain/entities/post_entity.dart';
+import 'package:agrobravo/core/components/actions_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -145,61 +146,29 @@ class _PostCardState extends State<PostCard>
                   ),
                 ),
                 if (widget.isOwner)
-                  PopupMenuButton<String>(
-                    color: Theme.of(context).colorScheme.surface,
-                    surfaceTintColor: Theme.of(context).colorScheme.surface,
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        widget.onDelete?.call();
-                      } else if (value == 'edit') {
-                        widget.onEdit?.call();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit_outlined,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Editar',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
+                  IconButton(
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    onPressed: () => ActionsBottomSheet.show(
+                      context,
+                      actions: [
+                        BottomSheetAction(
+                          label: 'Editar',
+                          icon: Icons.edit_outlined,
+                          onTap: () => widget.onEdit?.call(),
                         ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline,
-                              size: 20,
-                              color: AppColors.error,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'Excluir',
-                              style: TextStyle(color: AppColors.error),
-                            ),
-                          ],
+                        BottomSheetAction(
+                          label: 'Excluir',
+                          icon: Icons.delete_outline,
+                          color: AppColors.error,
+                          onTap: () => widget.onDelete?.call(),
                         ),
-                      ),
-                    ],
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Icon(
-                        Icons.more_vert_rounded,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                      ],
                     ),
                   ),
               ],

@@ -6,6 +6,7 @@ import 'package:agrobravo/core/constants/translations.dart';
 import 'package:agrobravo/features/home/domain/repositories/dashboard_actions_repository.dart';
 import 'package:agrobravo/features/home/presentation/widgets/incident_modal.dart';
 import 'package:agrobravo/core/components/custom_confirm_bottom_sheet.dart';
+import 'package:agrobravo/core/components/actions_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -241,43 +242,28 @@ class _IncidentListPageState extends State<IncidentListPage> {
                   ),
                 ),
                 if (Supabase.instance.client.auth.currentUser?.id == incident['guia_id']) ...[
-                  const SizedBox(width: 8),
-                  PopupMenuButton<String>(
+                  const SizedBox(width: 4),
+                  IconButton(
                     icon: Icon(Icons.more_vert_rounded, color: Colors.grey[600]),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 120),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => ActionsBottomSheet.show(
+                      context,
+                      actions: [
+                        BottomSheetAction(
+                          label: context.t('Editar', 'Edit'),
+                          icon: Icons.edit_outlined,
+                          color: Colors.blue,
+                          onTap: () => _editIncident(incident),
+                        ),
+                        BottomSheetAction(
+                          label: context.t('Excluir', 'Delete'),
+                          icon: Icons.delete_outline_rounded,
+                          color: Colors.red,
+                          onTap: () => _confirmDeleteIncident(incident['id']),
+                        ),
+                      ],
                     ),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _editIncident(incident);
-                      } else if (value == 'delete') {
-                        _confirmDeleteIncident(incident['id']);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Text(context.t('Editar', 'Edit')),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
-                            const SizedBox(width: 8),
-                            Text(context.t('Excluir', 'Delete'), style: const TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ],

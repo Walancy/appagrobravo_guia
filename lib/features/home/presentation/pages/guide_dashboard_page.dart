@@ -1560,9 +1560,13 @@ class RegisterExpenseDialogState extends State<RegisterExpenseDialog> {
                 ),
                 const SizedBox(height: 24),
                 AppTextField(
-                  label: context.t('Descrição / Local', 'Description / Location'),
+                  label: context.t('Descrição', 'Description'),
                   controller: _descriptionController,
                   hint: context.t('Ex: Almoço no aeroporto', 'e.g., Lunch at the airport'),
+                  maxLines: 5,
+                  minLines: 2,
+                  textInputAction: TextInputAction.newline,
+                  keyboardType: TextInputType.multiline,
                 ),
                 const SizedBox(height: 24),
                 Row(

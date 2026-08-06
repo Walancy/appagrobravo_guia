@@ -1,32 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../../../core/tokens/app_colors.dart';
 import '../../../../core/tokens/app_text_styles.dart';
-import '../../../../core/widgets/date_time_picker_sheet.dart';
 import '../../domain/entities/itinerary_item.dart';
 
 class ItineraryFilters {
   final Set<ItineraryType> types;
-  final TimeOfDay? startTime;
-  final TimeOfDay? endTime;
 
-  const ItineraryFilters({this.types = const {}, this.startTime, this.endTime});
+  const ItineraryFilters({this.types = const {}});
 
-  bool get isActive => types.isNotEmpty || startTime != null || endTime != null;
+  bool get isActive => types.isNotEmpty;
 
-  int get count =>
-      types.length + (startTime != null ? 1 : 0) + (endTime != null ? 1 : 0);
+  int get count => types.length;
 
   ItineraryFilters copyWith({
     Set<ItineraryType>? types,
-    TimeOfDay? startTime,
-    TimeOfDay? endTime,
-    bool clearStartTime = false,
-    bool clearEndTime = false,
   }) {
     return ItineraryFilters(
       types: types ?? this.types,
-      startTime: clearStartTime ? null : (startTime ?? this.startTime),
-      endTime: clearEndTime ? null : (endTime ?? this.endTime),
     );
   }
 }
@@ -45,15 +35,11 @@ class ItineraryFilterModal extends StatefulWidget {
 
 class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
   late Set<ItineraryType> _selectedTypes;
-  TimeOfDay? _selectedStartTime;
-  TimeOfDay? _selectedEndTime;
 
   @override
   void initState() {
     super.initState();
     _selectedTypes = Set.from(widget.initialFilters.types);
-    _selectedStartTime = widget.initialFilters.startTime;
-    _selectedEndTime = widget.initialFilters.endTime;
   }
 
   void _toggleType(ItineraryType type) {
@@ -165,110 +151,6 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                     .toList(),
               ),
 
-              const SizedBox(height: 24),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hora início',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        InkWell(
-                          onTap: _pickStartTime,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 16,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _selectedStartTime != null
-                                      ? _selectedStartTime!.format(context)
-                                      : 'Selecionar',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hora fim',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        InkWell(
-                          onTap: _pickEndTime,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time_filled,
-                                  size: 16,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _selectedEndTime != null
-                                      ? _selectedEndTime!.format(context)
-                                      : 'Selecionar',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 32),
 
               Row(
@@ -298,11 +180,7 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
                       onPressed: () {
                         Navigator.pop(
                           context,
-                          ItineraryFilters(
-                            types: _selectedTypes,
-                            startTime: _selectedStartTime,
-                            endTime: _selectedEndTime,
-                          ),
+                          ItineraryFilters(types: _selectedTypes),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -372,31 +250,4 @@ class _ItineraryFilterModalState extends State<ItineraryFilterModal> {
     }
   }
 
-  Future<void> _pickStartTime() async {
-    final now = DateTime.now();
-    final init = _selectedStartTime != null
-        ? DateTime(now.year, now.month, now.day, _selectedStartTime!.hour, _selectedStartTime!.minute)
-        : DateTime(now.year, now.month, now.day, 0, 0);
-    final picked = await DateTimePickerSheet.show(
-      context,
-      initial: init,
-    );
-    if (picked != null) {
-      setState(() => _selectedStartTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
-    }
-  }
-
-  Future<void> _pickEndTime() async {
-    final now = DateTime.now();
-    final init = _selectedEndTime != null
-        ? DateTime(now.year, now.month, now.day, _selectedEndTime!.hour, _selectedEndTime!.minute)
-        : DateTime(now.year, now.month, now.day, 23, 59);
-    final picked = await DateTimePickerSheet.show(
-      context,
-      initial: init,
-    );
-    if (picked != null) {
-      setState(() => _selectedEndTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
-    }
-  }
 }

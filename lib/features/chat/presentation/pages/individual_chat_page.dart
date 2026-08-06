@@ -92,10 +92,8 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
 
   void _scrollListener() {
     if (!_scrollController.hasClients) return;
-
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-    final isAtBottom = maxScroll - currentScroll <= 200;
+    // Com reverse:true, pixels=0 significa que está no fim visual (mensagem mais recente)
+    final isAtBottom = _scrollController.position.pixels <= 200;
 
     if (isAtBottom && _showScrollToBottom) {
       setState(() => _showScrollToBottom = false);
@@ -107,7 +105,7 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -313,11 +311,8 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                       listener: (context, state) {
                         state.maybeWhen(
                           loaded: (messages) {
-                            if (!_showScrollToBottom) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) _scrollToBottom();
-                              });
-                            }
+                            // Com reverse:true não precisamos rolar manualmente;
+                            // a lista já abre no item mais recente (índice 0).
                           },
                           orElse: () {},
                         );
@@ -342,10 +337,12 @@ class _IndividualChatViewState extends State<_IndividualChatView> {
                             }
                             return ListView.builder(
                               controller: _scrollController,
+                              reverse: true,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               itemCount: messages.length,
                               itemBuilder: (context, index) {
-                                final msg = messages[index];
+                                final reversedMessages = messages.reversed.toList();
+                                final msg = reversedMessages[index];
                                 final isSelected = _selectedMessageIds.contains(
                                   msg.id,
                                 );

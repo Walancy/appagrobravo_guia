@@ -170,69 +170,70 @@ class GuideMissionCard extends StatelessWidget {
           Divider(color: theme.dividerColor.withOpacity(0.03)),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  SizedBox(
-                    height: 28,
-                    child: Stack(
-                      children: List.generate(
-                        groupsCount > 3 ? 3 : groupsCount,
-                        (index) {
-                          final group = guideMission.groups[index];
-                          final groupLogo = group.logo;
-                          final initials = group.name.isNotEmpty
-                              ? group.name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join()
-                              : '?';
-                          return Padding(
-                            padding: EdgeInsets.only(left: index * 18.0),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: theme.cardColor,
-                                border: Border.all(
-                                  color: theme.colorScheme.surface,
-                                  width: 2,
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      height: 28,
+                      child: Stack(
+                        children: List.generate(
+                          groupsCount > 3 ? 3 : groupsCount,
+                          (index) {
+                            final group = guideMission.groups[index];
+                            final groupLogo = group.logo;
+                            final initials = group.name.isNotEmpty
+                                ? group.name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join()
+                                : '?';
+                            return Padding(
+                              padding: EdgeInsets.only(left: index * 18.0),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: theme.cardColor,
+                                  border: Border.all(
+                                    color: theme.colorScheme.surface,
+                                    width: 2,
+                                  ),
+                                  image:
+                                      groupLogo != null
+                                          ? DecorationImage(
+                                            image: NetworkImage(groupLogo),
+                                            fit: BoxFit.cover,
+                                          )
+                                          : null,
                                 ),
-                                image:
-                                    groupLogo != null
-                                        ? DecorationImage(
-                                          image: NetworkImage(groupLogo),
-                                          fit: BoxFit.cover,
-                                        )
-                                        : null,
-                              ),
-                              child: groupLogo == null
-                                  ? Center(
-                                      child: Text(
-                                        initials,
-                                        style: const TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
+                                child: groupLogo == null
+                                    ? Center(
+                                        child: Text(
+                                          initials,
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary,
+                                          ),
                                         ),
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                          );
-                        },
+                                      )
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    context.t('$groupsCount grupos', '$groupsCount groups'),
-                    style: AppTextStyles.h3.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                    const SizedBox(width: 8),
+                    Text(
+                      context.t('$groupsCount grupos', '$groupsCount groups'),
+                      style: AppTextStyles.h3.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
