@@ -13,6 +13,7 @@ class AppTextField extends StatelessWidget {
   final String? prefixText;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
+  final String? errorText;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final TextStyle? textStyle;
@@ -40,6 +41,7 @@ class AppTextField extends StatelessWidget {
     this.prefixText,
     this.controller,
     this.validator,
+    this.errorText,
     this.keyboardType,
     this.inputFormatters,
     this.textStyle,
@@ -140,6 +142,16 @@ class AppTextField extends StatelessWidget {
             ),
             suffixIcon: suffixIcon,
             suffixIconColor: textColor,
+            errorText: errorText,
+            errorStyle: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
           ),
         ),
       ],

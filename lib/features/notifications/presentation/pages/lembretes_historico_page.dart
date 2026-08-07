@@ -700,6 +700,8 @@ class _DestinatariosSheet extends StatefulWidget {
 
 class _DestinatariosSheetState extends State<_DestinatariosSheet> {
   List<Map<String, dynamic>> _usuarios = [];
+  // user_id -> {lido: bool, lido_em: DateTime?}
+  Map<String, Map<String, dynamic>> _leituras = {};
   bool _loading = true;
 
   @override
@@ -738,16 +740,42 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
         return;
       }
 
-      final usersRes = await widget.supabase
-          .from('users')
-          .select('id, nome, foto')
-          .inFilter('id', ids);
+      // Busca dados dos usuários e leituras em paralelo
+      final futures = await Future.wait([
+        widget.supabase
+            .from('users')
+            .select('id, nome, foto')
+            .inFilter('id', ids),
+        // Para lembretes já enviados, busca status de leitura via lembrete_id
+        if (widget.lembrete.isEnviado)
+          widget.supabase
+              .from('notificacoes')
+              .select('user_id, lido, created_at')
+              .eq('lembrete_id', widget.lembrete.id)
+              .inFilter('user_id', ids)
+        else
+          Future.value(<dynamic>[]),
+      ]);
+
+      final usersRes = futures[0] as List;
+      final leiturasRes = futures[1] as List;
+
+      // Monta mapa de leituras: user_id -> {lido, lido_em}
+      final leiturasMap = <String, Map<String, dynamic>>{};
+      for (final row in leiturasRes) {
+        final userId = row['user_id'] as String;
+        leiturasMap[userId] = {
+          'lido': row['lido'] as bool? ?? false,
+          'lido_em': row['lido'] == true ? row['created_at'] : null,
+        };
+      }
 
       if (mounted) {
         setState(() {
-          _usuarios = (usersRes as List).cast<Map<String, dynamic>>()
+          _usuarios = (usersRes).cast<Map<String, dynamic>>()
             ..sort((a, b) =>
                 (a['nome'] as String? ?? '').compareTo(b['nome'] as String? ?? ''));
+          _leituras = leiturasMap;
           _loading = false;
         });
       }
@@ -759,6 +787,9 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
   @override
   Widget build(BuildContext context) {
     final isParaTodos = widget.lembrete.destinatarios == null;
+    final totalLidos = _leituras.values.where((v) => v['lido'] == true).length;
+    final totalDestinatarios = _usuarios.length;
+    final fmt = DateFormat("HH:mm", 'pt_BR');
 
     return Container(
       decoration: BoxDecoration(
@@ -825,6 +856,46 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
               ),
             ],
           ),
+          // Contador de leituras (só para lembretes já enviados)
+          if (widget.lembrete.isEnviado && !_loading && _usuarios.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: totalLidos == totalDestinatarios
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    totalLidos == totalDestinatarios
+                        ? Icons.done_all_rounded
+                        : Icons.mark_email_unread_outlined,
+                    size: 18,
+                    color: totalLidos == totalDestinatarios
+                        ? Colors.green[600]
+                        : Colors.orange[700],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.t(
+                      '$totalLidos de $totalDestinatarios leram',
+                      '$totalLidos of $totalDestinatarios read',
+                    ),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: totalLidos == totalDestinatarios
+                          ? Colors.green[700]
+                          : Colors.orange[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (_loading)
             const Padding(
@@ -855,6 +926,14 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
                   final u = _usuarios[index];
                   final nome = u['nome'] as String? ?? 'Sem nome';
                   final foto = u['foto'] as String?;
+                  final userId = u['id'] as String;
+                  final leitura = _leituras[userId];
+                  final lido = leitura?['lido'] as bool? ?? false;
+                  final lidoEm = leitura?['lido_em'] as String?;
+                  final horaStr = lidoEm != null
+                      ? fmt.format(DateTime.parse(lidoEm).toLocal())
+                      : null;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
@@ -887,11 +966,44 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.primary,
-                          size: 18,
-                        ),
+                        // Status de leitura (só para lembretes enviados)
+                        if (widget.lembrete.isEnviado)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                lido
+                                    ? Icons.done_all_rounded
+                                    : Icons.schedule_rounded,
+                                color: lido ? Colors.green[600] : Colors.grey[400],
+                                size: 18,
+                              ),
+                              if (horaStr != null)
+                                Text(
+                                  horaStr,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.green[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              else
+                                Text(
+                                  context.t('Não lido', 'Unread'),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                            ],
+                          )
+                        else
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
                       ],
                     ),
                   );
@@ -903,11 +1015,14 @@ class _DestinatariosSheetState extends State<_DestinatariosSheet> {
       ),
     );
   }
+
 }
 
 // ─── Card de Enviado ─────────────────────────────────────────────────────────
 
-class _LembreteCard extends StatelessWidget {
+
+
+class _LembreteCard extends StatefulWidget {
   final LembreteEntity lembrete;
   final bool isDark;
   final VoidCallback onTap;
@@ -919,19 +1034,47 @@ class _LembreteCard extends StatelessWidget {
   });
 
   @override
+  State<_LembreteCard> createState() => _LembreteCardState();
+}
+
+class _LembreteCardState extends State<_LembreteCard> {
+  int? _lidoCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLidoCount();
+  }
+
+  Future<void> _fetchLidoCount() async {
+    try {
+      final supabase = getIt<SupabaseClient>();
+      final res = await supabase
+          .from('notificacoes')
+          .select('lido')
+          .eq('lembrete_id', widget.lembrete.id);
+      final list = (res as List).cast<Map<String, dynamic>>();
+      if (mounted) {
+        setState(() {
+          _lidoCount = list.where((r) => r['lido'] == true).length;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     final fmt = DateFormat("dd/MM/yyyy 'às' HH:mm", 'pt_BR');
-    final dateStr = fmt.format(lembrete.createdAt.toLocal());
-    final isParaTodos = lembrete.destinatarios == null;
+    final dateStr = fmt.format(widget.lembrete.createdAt.toLocal());
+    final isParaTodos = widget.lembrete.destinatarios == null;
+    final total = widget.lembrete.totalDestinatarios;
     final totalStr = isParaTodos
         ? context.t('Todos do grupo', 'Entire group')
-        : context.t(
-            '${lembrete.totalDestinatarios} pessoa(s)',
-            '${lembrete.totalDestinatarios} person(s)',
-          );
+        : context.t('$total pessoa(s)', '$total person(s)');
+    final lidos = _lidoCount;
 
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -964,7 +1107,7 @@ class _LembreteCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        lembrete.titulo,
+                        widget.lembrete.titulo,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -1001,11 +1144,11 @@ class _LembreteCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[850] : Colors.grey[50],
+                color: widget.isDark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                lembrete.mensagem,
+                widget.lembrete.mensagem,
                 style: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
               ),
             ),
@@ -1026,8 +1169,43 @@ class _LembreteCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                const Spacer(),
+                // Indicador de leituras
+                if (lidos != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.done_all_rounded,
+                        size: 15,
+                        color: lidos == total ? Colors.green[600] : Colors.grey[400],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        context.t(
+                          '$lidos de $total leram',
+                          '$lidos of $total read',
+                        ),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: lidos == total ? Colors.green[700] : Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  )
+                else
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
               ],
             ),
           ],

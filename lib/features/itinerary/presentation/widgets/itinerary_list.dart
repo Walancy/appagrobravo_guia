@@ -133,10 +133,6 @@ class _ItineraryListState extends State<ItineraryList> {
         itemBuilder: (context, index) {
           final item = displayedItems[index];
           final bool isLast = index == displayedItems.length - 1;
-          final bool nextIsExtra =
-              !isLast &&
-              (displayedItems[index + 1].type == ItineraryType.transfer ||
-                  displayedItems[index + 1].type == ItineraryType.returnType);
 
           // Determine if we should show the "Next day" tag
           bool showNextDayTag = false;
@@ -211,7 +207,10 @@ class _ItineraryListState extends State<ItineraryList> {
             );
           }
 
-          // Try to find travel time:
+          // Travel time is only ever shown for an actual configured
+          // transfer event; `tempo_deslocamento` on non-transfer events
+          // (flights, hotels, disembarks...) holds unrelated auto-filled
+          // data and must never be used as a stand-in for it.
           String? travelDuration;
 
           if (item.type == ItineraryType.transfer) {
@@ -219,26 +218,6 @@ class _ItineraryListState extends State<ItineraryList> {
                 (item.travelTime != null && item.travelTime!.isNotEmpty)
                     ? item.travelTime
                     : item.durationString;
-          } else {
-            final bool nextIsTransfer =
-                !isLast &&
-                displayedItems[index + 1].type == ItineraryType.transfer;
-
-            if (!isLast && !nextIsTransfer) {
-              final nextItem = displayedItems[index + 1];
-              travelDuration = nextItem.travelTime;
-
-              if (travelDuration == null || travelDuration.isEmpty) {
-                try {
-                  final travel = widget.travelTimes.firstWhere(
-                    (t) =>
-                        t['id_origem'].toString() == item.id.toString() &&
-                        t['id_destino'].toString() == nextItem.id.toString(),
-                  );
-                  travelDuration = travel['tempo_deslocamento'];
-                } catch (_) {}
-              }
-            }
           }
 
           return Stack(
@@ -265,9 +244,7 @@ class _ItineraryListState extends State<ItineraryList> {
                   card,
                   if (travelDuration != null)
                     TravelTimeWidget(duration: travelDuration),
-                  if (!isLast && travelDuration == null && !nextIsExtra)
-                    const TravelTimeWidget(duration: null),
-                  if (!isLast && travelDuration == null && nextIsExtra)
+                  if (!isLast && travelDuration == null)
                     const SizedBox(height: 10),
                 ],
               ),

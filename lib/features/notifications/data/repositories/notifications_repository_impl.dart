@@ -295,8 +295,10 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     List<String>? destinatarios,
   }) async {
     try {
+      debugPrint('[NotificationsRepository] Iniciando sendGroupNotification para grupo: $groupId');
       final currentUserId = _supabaseClient.auth.currentUser?.id;
       if (currentUserId == null) {
+        debugPrint('[NotificationsRepository] Erro: Usuário não autenticado');
         return Left(Exception('Usuário não autenticado'));
       }
 
@@ -313,7 +315,6 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       if (destinatarios != null && destinatarios.isNotEmpty) {
         // Destinatários específicos selecionados pelo guia
         allUserIds = destinatarios.toSet();
-        allUserIds.remove(currentUserId);
       } else {
         // Todos os participantes + líderes do grupo
         final participantsRes = await _supabaseClient
@@ -331,42 +332,53 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
             (leadersRes as List).map((e) => e['lider_id'] as String).toSet();
 
         allUserIds = {...participantIds, ...leaderIds};
-        allUserIds.remove(currentUserId);
+        // Se houver mais de 1 usuário, remove o próprio guia para não enviar push a si mesmo;
+        // se só houver 1 usuário (grupo de testes), mantém ele para o teste funcionar.
+        if (allUserIds.length > 1) {
+          allUserIds.remove(currentUserId);
+        }
       }
 
-      if (allUserIds.isEmpty) {
-        return const Right(unit);
-      }
+      debugPrint('[NotificationsRepository] Destinatários identificados: ${allUserIds.length}');
 
-      // Inserir notificações (trigger existente dispara o push)
-      final notifications = allUserIds.map((userId) {
-        return {
-          'user_id': userId,
-          'grupo_id': groupId,
-          'missao_id': missaoId,
-          'titulo': title,
-          'assunto': title,
-          'mensagem': message,
-          'lido': false,
-        };
-      }).toList();
-
-      await _supabaseClient.from('notificacoes').insert(notifications);
-
-      // Registrar no histórico de lembretes
-      await _supabaseClient.from('lembretes').insert({
+      // 1. Criar registro no histórico de lembretes
+      final lembreteInsertRes = await _supabaseClient.from('lembretes').insert({
         'grupo_id': groupId,
         'missao_id': missaoId,
         'criado_por': currentUserId,
         'titulo': title,
         'mensagem': message,
         'destinatarios': destinatarios, // null = todos
-        'total_destinatarios': allUserIds.length,
+        'total_destinatarios': allUserIds.isNotEmpty ? allUserIds.length : 1,
         'status': 'enviado',
-      });
+      }).select('id').maybeSingle();
+
+      final lembreteId = lembreteInsertRes?['id'] as String?;
+      debugPrint('[NotificationsRepository] Lembrete registrado no banco com ID: $lembreteId');
+
+      // 2. Inserir notificações individuais (o trigger do banco dispara o push FCM automaticamente)
+      if (allUserIds.isNotEmpty) {
+        final notifications = allUserIds.map((userId) {
+          return {
+            'user_id': userId,
+            'grupo_id': groupId,
+            'missao_id': missaoId,
+            'titulo': title,
+            'assunto': title,
+            'mensagem': message,
+            'lido': false,
+            'lembrete_id': lembreteId,
+          };
+        }).toList();
+
+        await _supabaseClient.from('notificacoes').insert(notifications);
+        debugPrint('[NotificationsRepository] ${notifications.length} notificação(ões) enviada(s) com sucesso!');
+      }
 
       return const Right(unit);
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[NotificationsRepository] Exceção em sendGroupNotification: $e');
+      debugPrint(stack.toString());
       return Left(Exception('Erro ao enviar notificação para o grupo: $e'));
     }
   }

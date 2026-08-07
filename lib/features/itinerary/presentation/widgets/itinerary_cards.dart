@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'checklist_bottom_sheet.dart';
 import 'event_attachments_bottom_sheet.dart';
 import 'event_menu_bottom_sheet.dart';
+import 'package:agrobravo/core/components/map_picker_sheet.dart';
 
 import 'package:agrobravo/core/di/injection.dart';
 import 'package:agrobravo/features/itinerary/domain/entities/guia_evento_status.dart';
@@ -334,18 +335,12 @@ class _GenericEventCardState extends State<GenericEventCard> {
               Expanded(
                 child: TextButton.icon(
                   onPressed: () async {
-                    if (widget.item.location != null && widget.item.location!.isNotEmpty) {
-                      final query = Uri.encodeComponent(widget.item.location!);
-                      final googleMapsUrl = Uri.parse(
-                        'https://www.google.com/maps/search/?api=1&query=$query',
+                    if (widget.item.location != null &&
+                        widget.item.location!.isNotEmpty) {
+                      await MapPickerSheet.show(
+                        context,
+                        location: widget.item.location!,
                       );
-
-                      if (await canLaunchUrl(googleMapsUrl)) {
-                        await launchUrl(
-                          googleMapsUrl,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
                     }
                   },
                   icon: const Icon(Icons.location_on_outlined, size: 16),
@@ -1202,6 +1197,30 @@ class TransferCard extends StatelessWidget {
   }
 }
 
+// Normaliza texto de duração vindo do banco (que pode chegar em qualquer
+// idioma, ex: "1 hour 38 mins", "1 hora 30 minutos") para "Xh Ym",
+// independente da língua em que foi salvo.
+String _formatTravelDuration(String raw) {
+  final hourMatch = RegExp(
+    r'(\d+)\s*h(?:oras?|ours?|rs?)?\b',
+    caseSensitive: false,
+  ).firstMatch(raw);
+  final minMatch = RegExp(
+    r'(\d+)\s*m(?:in(?:uto)?s?)?\b',
+    caseSensitive: false,
+  ).firstMatch(raw);
+
+  final hours = int.tryParse(hourMatch?.group(1) ?? '');
+  final minutes = int.tryParse(minMatch?.group(1) ?? '');
+  if (hours == null && minutes == null) return raw;
+
+  final parts = <String>[
+    if (hours != null && hours > 0) '${hours}h',
+    if (minutes != null && minutes > 0) '${minutes}m',
+  ];
+  return parts.isEmpty ? '0m' : parts.join(' ');
+}
+
 class TravelTimeWidget extends StatelessWidget {
   final String? duration;
   const TravelTimeWidget({super.key, this.duration});
@@ -1209,6 +1228,8 @@ class TravelTimeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasDuration = duration != null && duration!.isNotEmpty;
+    final String? formattedDuration =
+        hasDuration ? _formatTravelDuration(duration!) : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1220,7 +1241,7 @@ class TravelTimeWidget extends StatelessWidget {
           Expanded(
             child: Text(
               hasDuration
-                  ? 'Tempo de viagem: $duration'
+                  ? 'Tempo de viagem: $formattedDuration'
                   : 'Não foi possível calcular o tempo de deslocamento',
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,

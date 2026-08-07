@@ -25,7 +25,8 @@ class _ReminderModalState extends State<ReminderModal> {
   bool _isLoading = false;
   bool _isSendingToAll = true;
   bool _isAgendando = false;
-  bool _agendandoSemHorario = false; // flag para indicar erro visual
+  bool _agendandoSemHorario = false; // flag para indicar erro visual no horário
+  bool _mensagemVazia = false; // flag para erro visual no campo de mensagem
   DateTime? _agendadoPara;
   List<ParticipanteEntity> _participantes = [];
   final Set<String> _selectedIds = {};
@@ -68,38 +69,53 @@ class _ReminderModalState extends State<ReminderModal> {
 
   Future<void> _send() async {
     final text = _descriptionController.text.trim();
+    debugPrint('[ReminderModal] Clicou em Enviar/Agendar. Texto: "$text", Agendando: $_isAgendando, ParaTodos: $_isSendingToAll, Selecionados: ${_selectedIds.length}');
+
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(context.t('Digite uma mensagem.', 'Type a message.'))),
-      );
+      debugPrint('[ReminderModal] Validação falhou: mensagem vazia.');
+      setState(() => _mensagemVazia = true);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(context.t('Digite uma mensagem para o lembrete.', 'Type a message for the reminder.')),
+            backgroundColor: Colors.red[700],
+          ),
+        );
       return;
     }
 
     if (!_isSendingToAll && _selectedIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t(
-            'Selecione ao menos um destinatário.',
-            'Select at least one recipient.',
-          )),
-        ),
-      );
+      debugPrint('[ReminderModal] Validação falhou: nenhum destinatário selecionado.');
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(context.t(
+              'Selecione ao menos um destinatário.',
+              'Select at least one recipient.',
+            )),
+            backgroundColor: Colors.orange[800],
+          ),
+        );
       return;
     }
 
     // Valida horário obrigatório quando agendando
     if (_isAgendando && _agendadoPara == null) {
+      debugPrint('[ReminderModal] Validação falhou: data/hora não definida para agendamento.');
       setState(() => _agendandoSemHorario = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t(
-            'Defina a data e hora do agendamento.',
-            'Set the date and time for scheduling.',
-          )),
-          backgroundColor: Colors.red[700],
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(context.t(
+              'Defina a data e hora do agendamento.',
+              'Set the date and time for scheduling.',
+            )),
+            backgroundColor: Colors.red[700],
+          ),
+        );
       return;
     }
 
@@ -109,6 +125,8 @@ class _ReminderModalState extends State<ReminderModal> {
       final repo = getIt<NotificationsRepository>();
       final destinatarios = _isSendingToAll ? null : _selectedIds.toList();
       final title = context.t('Lembrete do Guia', 'Guide Reminder');
+
+      debugPrint('[ReminderModal] Chamando repositório para ${_isAgendando ? "agendar" : "enviar"}...');
 
       final result = _isAgendando
           ? await repo.agendarLembrete(
@@ -128,18 +146,41 @@ class _ReminderModalState extends State<ReminderModal> {
       if (!mounted) return;
 
       result.fold(
-        (l) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.t('Erro', 'Error')}: ${l.toString()}')),
-        ),
+        (l) {
+          debugPrint('[ReminderModal] Erro do repositório: $l');
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                content: Text('${context.t('Erro', 'Error')}: ${l.toString()}'),
+                backgroundColor: Colors.red[700],
+              ),
+            );
+        },
         (_) {
+          debugPrint('[ReminderModal] Sucesso!');
           Navigator.pop(context);
           final msg = _isAgendando
               ? context.t('Lembrete agendado!', 'Reminder scheduled!')
               : context.t('Lembrete enviado!', 'Reminder sent!');
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(msg)));
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(content: Text(msg)));
         },
       );
+    } catch (e, stack) {
+      debugPrint('[ReminderModal] Exceção em _send: $e');
+      debugPrint(stack.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('${context.t('Erro', 'Error')}: $e'),
+              backgroundColor: Colors.red[700],
+            ),
+          );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -255,11 +296,19 @@ class _ReminderModalState extends State<ReminderModal> {
                         ],
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: context.t('Mensagem', 'Message'),
+                          label: context.t('Mensagem *', 'Message *'),
                           controller: _descriptionController,
                           hint: context.t(
                               'Escreva o lembrete...', 'Write the reminder...'),
                           maxLines: 3,
+                          errorText: _mensagemVazia
+                              ? context.t('Campo obrigatório. Digite uma mensagem.', 'Required field. Type a message.')
+                              : null,
+                          onChanged: (val) {
+                            if (_mensagemVazia && val.trim().isNotEmpty) {
+                              setState(() => _mensagemVazia = false);
+                            }
+                          },
                         ),
                         const SizedBox(height: 24),
                         Row(
